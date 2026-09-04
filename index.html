@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project Manager Web</title>
+    <script>
+      // Applied before paint to avoid a light->dark flash on load.
+      try {
+        var stored = JSON.parse(localStorage.getItem('pm-web:theme') || 'null')
+        var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

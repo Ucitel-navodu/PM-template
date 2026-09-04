@@ -109,3 +109,5 @@ export interface ProjectInfo {
 }
 
 export type Lang = 'CZ' | 'EN'
+
+export type Theme = 'light' | 'dark'

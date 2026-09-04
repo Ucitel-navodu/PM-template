@@ -1,14 +1,15 @@
 import { useApp } from '../context/AppContext'
 import { formatMoney, formatPercent } from '../lib/format'
 import { PAYMENT_STATUSES } from '../data/config'
+import { btnPrimary, deleteBtn, inputGhost, selectGhost, tableWrap, tbodyRow, tfootRow, theadRow } from '../lib/ui'
 import type { Milestone, PaymentStatus } from '../types'
 
 const STATUS_COLOR: Record<PaymentStatus, string> = {
-  'Not due': 'bg-gray-100 text-gray-600',
-  Invoiced: 'bg-blue-50 text-blue-600',
-  Paid: 'bg-green-50 text-green-700',
-  Overdue: 'bg-red-50 text-red-700',
-  Cancelled: 'bg-gray-100 text-gray-400 line-through',
+  'Not due': 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
+  Invoiced: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300',
+  Paid: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+  Overdue: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
+  Cancelled: 'bg-gray-100 text-gray-400 line-through dark:bg-white/5 dark:text-gray-500',
 }
 
 let nextId = 100
@@ -24,18 +25,15 @@ export function MilestonesPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button
-          onClick={() => addMilestone(blankMilestone())}
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-        >
+        <button onClick={() => addMilestone(blankMilestone())} className={btnPrimary}>
           + {tr('nav_milestones')}
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className={tableWrap}>
         <table className="w-full min-w-[900px] text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+            <tr className={theadRow}>
               <th className="px-3 py-2">ID</th>
               <th className="px-3 py-2">{tr('milestones_name')}</th>
               <th className="px-3 py-2">{tr('milestones_linked_task')}</th>
@@ -50,31 +48,31 @@ export function MilestonesPage() {
             {milestones.map((m) => {
               const linkedTask = tasks.find((t) => t.id === m.linkedTaskId)
               return (
-                <tr key={m.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                  <td className="px-3 py-1.5 font-medium text-gray-500">{m.id}</td>
+                <tr key={m.id} className={tbodyRow}>
+                  <td className="px-3 py-1.5 font-medium text-gray-500 dark:text-gray-400">{m.id}</td>
                   <td className="px-3 py-1.5">
                     <input
                       value={m.name}
                       onChange={(e) => updateMilestone(m.id, { name: e.target.value })}
-                      className="w-56 rounded border border-transparent bg-transparent px-1 py-0.5 hover:border-gray-200 focus:border-gray-300 focus:bg-white focus:outline-none"
+                      className={`w-56 ${inputGhost}`}
                     />
                   </td>
-                  <td className="px-3 py-1.5 text-gray-500">{linkedTask?.name ?? '—'}</td>
+                  <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400">{linkedTask?.name ?? '—'}</td>
                   <td className="px-3 py-1.5">
                     <input
                       type="date"
                       value={m.plannedDate ?? ''}
                       onChange={(e) => updateMilestone(m.id, { plannedDate: e.target.value || undefined })}
-                      className="rounded border border-transparent bg-transparent px-1 py-0.5 text-xs hover:border-gray-200"
+                      className={selectGhost}
                     />
                   </td>
-                  <td className="px-3 py-1.5 text-gray-600">{formatPercent(m.paymentTriggerPct)}</td>
+                  <td className="px-3 py-1.5 text-gray-600 dark:text-gray-300">{formatPercent(m.paymentTriggerPct)}</td>
                   <td className="px-3 py-1.5">
                     <input
                       type="number"
                       value={m.paymentAmount}
                       onChange={(e) => updateMilestone(m.id, { paymentAmount: Number(e.target.value) })}
-                      className="w-28 rounded border border-transparent bg-transparent px-1 py-0.5 text-right hover:border-gray-200 focus:border-gray-300 focus:bg-white focus:outline-none"
+                      className={`w-28 text-right ${inputGhost}`}
                     />
                   </td>
                   <td className="px-3 py-1.5">
@@ -91,7 +89,7 @@ export function MilestonesPage() {
                     </select>
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <button onClick={() => deleteMilestone(m.id)} className="text-xs text-gray-400 hover:text-red-600">
+                    <button onClick={() => deleteMilestone(m.id)} className={deleteBtn}>
                       ✕
                     </button>
                   </td>
@@ -100,9 +98,9 @@ export function MilestonesPage() {
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t border-gray-200 bg-gray-50 font-medium">
+            <tr className={tfootRow}>
               <td className="px-3 py-2" colSpan={5}>
-                Total
+                {tr('common_total')}
               </td>
               <td className="px-3 py-2">
                 {formatMoney(

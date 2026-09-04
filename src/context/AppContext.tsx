@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { BudgetItem, Lang, Milestone, ProjectInfo, Risk, Task } from '../types'
+import type { BudgetItem, Lang, Milestone, ProjectInfo, Risk, Task, Theme } from '../types'
 import { projectInfo as seedProjectInfo, seedBudget, seedMilestones, seedRisks, seedTasks } from '../data/seed'
 import { loadState, saveState } from '../lib/storage'
 import { t, type TKey } from '../i18n'
@@ -8,6 +8,9 @@ interface AppState {
   lang: Lang
   setLang: (l: Lang) => void
   tr: (key: TKey) => string
+
+  theme: Theme
+  toggleTheme: () => void
 
   projectInfo: ProjectInfo
   setProjectInfo: (p: ProjectInfo) => void
@@ -37,8 +40,13 @@ interface AppState {
 
 const AppContext = createContext<AppState | null>(null)
 
+function prefersDarkSystem(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>(() => loadState('lang', 'CZ' as Lang))
+  const [theme, setTheme] = useState<Theme>(() => loadState<Theme>('theme', prefersDarkSystem() ? 'dark' : 'light'))
   const [projectInfo, setProjectInfo] = useState<ProjectInfo>(() => loadState('projectInfo', seedProjectInfo))
   const [tasks, setTasks] = useState<Task[]>(() => loadState('tasks', seedTasks))
   const [milestones, setMilestones] = useState<Milestone[]>(() => loadState('milestones', seedMilestones))
@@ -46,6 +54,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [risks, setRisks] = useState<Risk[]>(() => loadState('risks', seedRisks))
 
   useEffect(() => saveState('lang', lang), [lang])
+  useEffect(() => {
+    saveState('theme', theme)
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }, [theme])
   useEffect(() => saveState('projectInfo', projectInfo), [projectInfo])
   useEffect(() => saveState('tasks', tasks), [tasks])
   useEffect(() => saveState('milestones', milestones), [milestones])
@@ -57,6 +69,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lang,
       setLang,
       tr: (key: TKey) => t(key, lang),
+
+      theme,
+      toggleTheme: () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light')),
 
       projectInfo,
       setProjectInfo,
@@ -89,7 +104,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setRisks(seedRisks)
       },
     }),
-    [lang, projectInfo, tasks, milestones, budget, risks],
+    [lang, theme, projectInfo, tasks, milestones, budget, risks],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

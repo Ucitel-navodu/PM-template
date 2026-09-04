@@ -46,3 +46,19 @@ export const HEALTH_BG: Record<Health, string> = {
   Grey: '#f1f2f4',
   Blue: '#e3edff',
 }
+
+export const HEALTH_COLOR_DARK: Record<Health, string> = {
+  Green: '#6fcf7a',
+  Orange: '#ffb74d',
+  Red: '#ff6b6b',
+  Grey: '#b5b9c2',
+  Blue: '#7ea6ff',
+}
+
+export const HEALTH_BG_DARK: Record<Health, string> = {
+  Green: 'rgba(46, 125, 50, 0.22)',
+  Orange: 'rgba(224, 138, 0, 0.22)',
+  Red: 'rgba(198, 40, 40, 0.24)',
+  Grey: 'rgba(138, 143, 152, 0.22)',
+  Blue: 'rgba(41, 98, 255, 0.22)',
+}

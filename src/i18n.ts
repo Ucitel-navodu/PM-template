@@ -90,6 +90,26 @@ const dict = {
   gantt_today: { CZ: 'Dnes', EN: 'Today' },
 
   lang_switch: { CZ: 'EN', EN: 'CZ' },
+  theme_light: { CZ: 'Světlý', EN: 'Light' },
+  theme_dark: { CZ: 'Tmavý', EN: 'Dark' },
+
+  dash_calendar: { CZ: 'Kalendář', EN: 'Calendar' },
+  dash_calendar_today: { CZ: 'Dnes', EN: 'Today' },
+  dash_calendar_legend_done: { CZ: 'Hotovo', EN: 'Done' },
+  dash_calendar_legend_upcoming: { CZ: 'Nadcházející', EN: 'Upcoming' },
+  dash_calendar_legend_overdue: { CZ: 'Po termínu', EN: 'Overdue' },
+  dash_upcoming_tasks: { CZ: 'Nadcházející úkoly', EN: 'Upcoming tasks' },
+  dash_done_tasks: { CZ: 'Nedávno dokončené', EN: 'Recently done' },
+  dash_no_upcoming: { CZ: 'Žádné nadcházející úkoly.', EN: 'No upcoming tasks.' },
+  dash_no_done: { CZ: 'Zatím nic dokončeno.', EN: 'Nothing completed yet.' },
+
+  weekday_mon: { CZ: 'po', EN: 'Mo' },
+  weekday_tue: { CZ: 'út', EN: 'Tu' },
+  weekday_wed: { CZ: 'st', EN: 'We' },
+  weekday_thu: { CZ: 'čt', EN: 'Th' },
+  weekday_fri: { CZ: 'pá', EN: 'Fr' },
+  weekday_sat: { CZ: 'so', EN: 'Sa' },
+  weekday_sun: { CZ: 'ne', EN: 'Su' },
 } as const
 
 export type TKey = keyof typeof dict

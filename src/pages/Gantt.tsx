@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { computeHealth } from '../lib/health'
-import { HEALTH_COLOR } from '../data/config'
+import { HEALTH_COLOR, HEALTH_COLOR_DARK } from '../data/config'
 import { formatDate } from '../lib/format'
 
 type AxisMode = 'week' | 'month' | 'quarter'
@@ -10,7 +10,8 @@ const MS_DAY = 86400000
 const ROW_H = 32
 
 export function GanttPage() {
-  const { tr, tasks } = useApp()
+  const { tr, tasks, theme } = useApp()
+  const healthColor = theme === 'dark' ? HEALTH_COLOR_DARK : HEALTH_COLOR
   const [mode, setMode] = useState<AxisMode>('month')
 
   const scheduled = useMemo(
@@ -78,13 +79,15 @@ export function GanttPage() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-500">{tr('gantt_axis_mode')}:</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{tr('gantt_axis_mode')}:</span>
         {(['week', 'month', 'quarter'] as AxisMode[]).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
             className={`rounded-md px-3 py-1 text-sm font-medium ${
-              mode === m ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              mode === m
+                ? 'bg-brand-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10'
             }`}
           >
             {m.toUpperCase()}
@@ -92,16 +95,16 @@ export function GanttPage() {
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#1d1d29]">
         <div className="flex min-w-[900px]">
           {/* fixed label column */}
-          <div className="w-64 shrink-0 border-r border-gray-200">
-            <div style={{ height: 28 }} className="border-b border-gray-200" />
+          <div className="w-64 shrink-0 border-r border-gray-200 dark:border-white/10">
+            <div style={{ height: 28 }} className="border-b border-gray-200 dark:border-white/10" />
             {scheduled.map((task) => (
               <div
                 key={task.id}
                 style={{ height: ROW_H }}
-                className="flex items-center truncate border-b border-gray-50 pl-3 pr-2 text-sm text-gray-700 last:border-0"
+                className="flex items-center truncate border-b border-gray-50 pl-3 pr-2 text-sm text-gray-700 last:border-0 dark:border-white/5 dark:text-gray-200"
                 title={task.name}
               >
                 {task.milestone ? '◆ ' : ''}
@@ -112,11 +115,14 @@ export function GanttPage() {
 
           {/* timeline column: all percentage positioning is relative to this element only */}
           <div className="relative flex-1">
-            <div className="relative border-b border-gray-200 text-xs text-gray-500" style={{ height: 28 }}>
+            <div
+              className="relative border-b border-gray-200 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400"
+              style={{ height: 28 }}
+            >
               {periods.map((p, i) => (
                 <div
                   key={i}
-                  className="absolute top-0 h-full truncate border-l border-gray-100 pl-1 pt-1.5"
+                  className="absolute top-0 h-full truncate border-l border-gray-100 pl-1 pt-1.5 dark:border-white/10"
                   style={{ left: `${p.x}%`, width: `${p.w}%` }}
                 >
                   {p.label}
@@ -127,7 +133,7 @@ export function GanttPage() {
             <div className="relative">
               {todayX >= 0 && todayX <= 100 && (
                 <div
-                  className="pointer-events-none absolute bottom-0 top-0 z-10 border-l-2 border-dashed border-blue-500"
+                  className="pointer-events-none absolute bottom-0 top-0 z-10 border-l-2 border-dashed border-brand-500"
                   style={{ left: `${todayX}%` }}
                   title={tr('gantt_today')}
                 />
@@ -138,12 +144,12 @@ export function GanttPage() {
                 const finish = new Date(task.currentFinish!)
                 const left = pos(start)
                 const width = Math.max(pos(finish) - left, 0.4)
-                const color = health ? HEALTH_COLOR[health] : '#9ca3af'
+                const color = health ? healthColor[health] : '#9ca3af'
                 return (
                   <div
                     key={task.id}
                     style={{ height: ROW_H }}
-                    className="relative border-b border-gray-50 last:border-0"
+                    className="relative border-b border-gray-50 last:border-0 dark:border-white/5"
                   >
                     <div
                       className="absolute top-1/2 h-5 -translate-y-1/2 rounded"
