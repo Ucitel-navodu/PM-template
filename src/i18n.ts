@@ -1,0 +1,99 @@
+import type { Lang } from './types'
+
+// Subset of the LANGUAGE sheet (key + CZ + EN), covering the strings used in this app.
+const dict = {
+  app_title: { CZ: 'Řízení projektu', EN: 'Project Management' },
+  nav_dashboard: { CZ: 'Dashboard', EN: 'Dashboard' },
+  nav_tasks: { CZ: 'Úkoly', EN: 'Tasks' },
+  nav_gantt: { CZ: 'Gantt', EN: 'Gantt' },
+  nav_milestones: { CZ: 'Milníky', EN: 'Milestones' },
+  nav_budget: { CZ: 'Rozpočet', EN: 'Budget' },
+  nav_risks: { CZ: 'Rizika', EN: 'Risks' },
+
+  common_status: { CZ: 'Stav', EN: 'Status' },
+  common_owner: { CZ: 'Vlastník', EN: 'Owner' },
+  common_health: { CZ: 'Health', EN: 'Health' },
+  common_notes: { CZ: 'Poznámky', EN: 'Notes' },
+  common_duration: { CZ: 'Trvání', EN: 'Duration' },
+  common_source: { CZ: 'Zdroj', EN: 'Source' },
+  common_project_area: { CZ: 'Oblast projektu', EN: 'Project Area' },
+
+  tasks_title: { CZ: 'Úkoly', EN: 'Tasks' },
+  tasks_task_name: { CZ: 'Název úkolu', EN: 'Task Name' },
+  tasks_phase: { CZ: 'Fáze', EN: 'Phase' },
+  tasks_baseline_finish: { CZ: 'Baseline termín', EN: 'Baseline Finish' },
+  tasks_current_start: { CZ: 'Aktuální start', EN: 'Current Start' },
+  tasks_current_finish: { CZ: 'Aktuální konec', EN: 'Current Finish' },
+  tasks_percent_complete: { CZ: '% dokončení', EN: 'Percent Complete' },
+  tasks_expected_progress: { CZ: 'Očekávaný progress', EN: 'Expected Progress' },
+  tasks_predecessors: { CZ: 'Předchůdci', EN: 'Predecessors' },
+  tasks_critical: { CZ: 'Priorita', EN: 'Priority' },
+  gantt_milestone: { CZ: 'Milník', EN: 'Milestone' },
+  common_mgmt_export: { CZ: 'Export pro vedení', EN: 'Mgmt Export' },
+  tasks_add: { CZ: '+ Přidat úkol', EN: '+ Add task' },
+  tasks_delete: { CZ: 'Smazat', EN: 'Delete' },
+  tasks_export_csv: { CZ: 'Export do CSV', EN: 'Export to CSV' },
+  tasks_filter_all: { CZ: 'Vše', EN: 'All' },
+
+  health_green: { CZ: 'OK', EN: 'OK' },
+  health_orange: { CZ: 'Varování', EN: 'Warning' },
+  health_red: { CZ: 'Kritické', EN: 'Critical' },
+  health_grey: { CZ: 'Nehodnoceno', EN: 'Not evaluated' },
+  health_blue: { CZ: 'Chyba dat', EN: 'Data issue' },
+
+  dash_title: { CZ: 'PROJEKTOVÝ DASHBOARD', EN: 'PROJECT DASHBOARD' },
+  dash_project_info: { CZ: 'Informace o projektu', EN: 'Project Information' },
+  dash_task_status: { CZ: 'Souhrn stavů úkolů', EN: 'Task Status Summary' },
+  dash_task_health: { CZ: 'Souhrn Health', EN: 'Task Health Status' },
+  dash_milestones: { CZ: 'Milníky a platby', EN: 'Milestones / Payments' },
+  dash_budget: { CZ: 'Rozpočet', EN: 'Budget Summary' },
+  dash_risks: { CZ: 'Top rizika', EN: 'Top Risks' },
+  dash_business_owner: { CZ: 'Vlastník byznysu', EN: 'Business Owner' },
+  dash_start: { CZ: 'Start', EN: 'Start' },
+  dash_planned_finish: { CZ: 'Plánovaný konec', EN: 'Planned finish' },
+  dash_budget_label: { CZ: 'Rozpočet', EN: 'Budget' },
+  dash_overdue_tasks: { CZ: 'Úkoly po termínu', EN: 'Overdue tasks' },
+  common_total: { CZ: 'Celkem', EN: 'Total' },
+
+  milestones_title: { CZ: 'Milníky / platební spouštěče', EN: 'Milestones / Payment triggers' },
+  milestones_name: { CZ: 'Název milníku', EN: 'Milestone name' },
+  milestones_planned_date: { CZ: 'Plánovaný termín', EN: 'Planned date' },
+  milestones_trigger: { CZ: 'Platební spouštěč / %', EN: 'Payment trigger / %' },
+  milestones_amount: { CZ: 'Částka', EN: 'Payment amount' },
+  milestones_payment_status: { CZ: 'Stav platby', EN: 'Payment status' },
+  milestones_linked_task: { CZ: 'Navázaný úkol', EN: 'Linked task' },
+
+  budget_title: { CZ: 'ROZPOČET', EN: 'BUDGET' },
+  budget_category: { CZ: 'Kategorie', EN: 'Category' },
+  budget_supplier: { CZ: 'Dodavatel', EN: 'Supplier' },
+  budget_description: { CZ: 'Popis', EN: 'Description' },
+  budget_linked_milestone: { CZ: 'Navázaný milník', EN: 'Linked milestone' },
+  budget_planned: { CZ: 'Plánováno', EN: 'Planned amount' },
+  budget_committed: { CZ: 'Závazek / PO', EN: 'Committed / PO' },
+  budget_actual: { CZ: 'Skutečnost / fakturováno', EN: 'Actual / invoiced' },
+  budget_forecast: { CZ: 'Forecast', EN: 'Forecast' },
+  budget_variance: { CZ: 'Odchylka', EN: 'Variance' },
+  budget_due_date: { CZ: 'Splatnost', EN: 'Due date' },
+  budget_approved: { CZ: 'Schválený rozpočet', EN: 'Approved budget' },
+  budget_summary_planned: { CZ: 'Plánované položky', EN: 'Planned items' },
+  budget_summary_variance: { CZ: 'Odchylka vs. schváleno', EN: 'Variance vs approved' },
+
+  risks_title: { CZ: 'Registr rizik', EN: 'Risks Register' },
+  risks_type: { CZ: 'Typ', EN: 'Type' },
+  risks_description: { CZ: 'Popis', EN: 'Description' },
+  risks_probability: { CZ: 'Pravděpodobnost', EN: 'Probability' },
+  risks_impact: { CZ: 'Dopad', EN: 'Impact' },
+  risks_mitigation: { CZ: 'Opatření', EN: 'Mitigation' },
+  risks_due_date: { CZ: 'Termín', EN: 'Due date' },
+
+  gantt_axis_mode: { CZ: 'Režim osy', EN: 'Axis mode' },
+  gantt_today: { CZ: 'Dnes', EN: 'Today' },
+
+  lang_switch: { CZ: 'EN', EN: 'CZ' },
+} as const
+
+export type TKey = keyof typeof dict
+
+export function t(key: TKey, lang: Lang): string {
+  return dict[key][lang]
+}
