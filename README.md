@@ -54,11 +54,27 @@ soubor). Tenhle soubor:
 - nepotřebuje instalaci, admin práva ani Node.js (ten je potřeba jen jednou při buildu),
 - dá se volně kopírovat/mailovat/sdílet přes Teams/USB jako obyčejný soubor.
 
-Data se ukládají do `localStorage` prohlížeče na daném PC (přežije reload i zavření
-prohlížeče, ale nepřenese se samo na jiný počítač nebo do jiného prohlížeče). Pro přenesení
-rozpracovaného projektu mezi počítači slouží tlačítka **Export/Import projektu** v hlavičce
-(`src/components/ProjectFileControls.tsx`, formát v `src/lib/projectFile.ts`) – uloží/načtou
-celý stav (projectInfo, tasks, milestones, budget, risks) jako jeden `.json` soubor.
+Data se ukládají do `localStorage` prohlížeče na daném PC. Pád nebo násilné zavření
+prohlížeče samo o sobě data neztratí — zápis do `localStorage` je synchronní a probíhá
+hned při každé změně, ne až při čistém vypnutí (ověřeno testem). Pro přenesení
+rozpracovaného projektu mezi počítači/uživateli slouží tlačítka **Export/Import projektu**
+v hlavičce (`src/components/ProjectFileControls.tsx`, formát v `src/lib/projectFile.ts`) –
+uloží/načtou celý stav (projectInfo, tasks, milestones, budget, risks) jako jeden `.json`
+soubor. Hlavička zároveň ukazuje, jak dávno proběhl poslední export (barevně eskaluje
+šedá → oranžová → červená), a appka varuje při zavírání záložky, pokud jsou neexportované
+změny (`beforeunload` – pokryje běžné zavření/reload/restart, ne tvrdý pád procesu, na
+který z JS žádný hook nespustí).
+
+### Důležité: izolace storage mezi kopiemi souboru
+
+Prohlížeče (ověřeno v Chromiu) používají pro `file://` stránky **jeden sdílený storage
+origin bez ohledu na cestu/název souboru** — dvě různé kopie tohoto HTML souboru otevřené
+ve stejném prohlížeči by bez dalšího opatření četly/zapisovaly STEJNÁ data v `localStorage`
+a mohly by si je tiše přepsat. `src/lib/storage.ts` tohle řeší tak, že na `file://`
+klíčuje všechna data hashí z `window.location.pathname` — každá uložená/přejmenovaná kopie
+souboru tak dostane svůj vlastní izolovaný prostor. Platí to, pokud si každý projekt uloží
+pod jiným názvem/cestou (přirozený postup); pokud by se stejná cesta opakovaně přepisovala
+novým stažením, sdílela by dál stejný slot.
 
 ## Struktura
 

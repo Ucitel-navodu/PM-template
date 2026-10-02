@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BudgetItem, Lang, Milestone, ProjectInfo, Risk, Task, Theme } from '../types'
 import { projectInfo as seedProjectInfo, seedBudget, seedMilestones, seedRisks, seedTasks } from '../data/seed'
 import { loadState, saveState } from '../lib/storage'
@@ -40,6 +40,8 @@ interface AppState {
 
   exportProject: () => void
   importProject: (bundle: ProjectBundle) => void
+  hasUnsavedChanges: boolean
+  lastExportedAt: string | null
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -57,6 +59,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [budget, setBudget] = useState<BudgetItem[]>(() => loadState('budget', seedBudget))
   const [risks, setRisks] = useState<Risk[]>(() => loadState('risks', seedRisks))
 
+  const [lastExportedAt, setLastExportedAt] = useState<string | null>(() => loadState('lastExportedAt', null))
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const isFirstDataRun = useRef(true)
+
+  // Mark "unsaved" whenever project data changes - but not on the very first
+  // render, where this is just the initial load from storage/seed, not a
+  // real edit. Only resets to false via an explicit export or import.
+  useEffect(() => {
+    if (isFirstDataRun.current) {
+      isFirstDataRun.current = false
+      return
+    }
+    setHasUnsavedChanges(true)
+  }, [projectInfo, tasks, milestones, budget, risks])
+
+  // Warn on tab close/refresh if there's anything not yet exported. This
+  // catches a normal close, reload, or a graceful "restart to update" -
+  // it cannot catch a hard crash or a forced process kill, since no JS
+  // runs in that case (localStorage itself is already safe from those:
+  // every write is persisted to disk immediately, not just on clean exit).
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [hasUnsavedChanges])
+
+  useEffect(() => saveState('lastExportedAt', lastExportedAt), [lastExportedAt])
   useEffect(() => saveState('lang', lang), [lang])
   useEffect(() => {
     saveState('theme', theme)
@@ -110,6 +143,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       exportProject: () => {
         downloadProjectFile(buildProjectBundle({ projectInfo, tasks, milestones, budget, risks }))
+        setHasUnsavedChanges(false)
+        setLastExportedAt(new Date().toISOString())
       },
       importProject: (bundle) => {
         setProjectInfo(bundle.projectInfo)
@@ -117,9 +152,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMilestones(bundle.milestones)
         setBudget(bundle.budget)
         setRisks(bundle.risks)
+        setHasUnsavedChanges(false)
       },
+      hasUnsavedChanges,
+      lastExportedAt,
     }),
-    [lang, theme, projectInfo, tasks, milestones, budget, risks],
+    [lang, theme, projectInfo, tasks, milestones, budget, risks, hasUnsavedChanges, lastExportedAt],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

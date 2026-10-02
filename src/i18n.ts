@@ -119,6 +119,12 @@ const dict = {
   },
   project_import_success: { CZ: 'Projekt byl úspěšně načten.', EN: 'Project loaded successfully.' },
   project_import_error: { CZ: 'Soubor se nepodařilo načíst: ', EN: 'Could not load file: ' },
+
+  project_never_exported: { CZ: 'Zatím neexportováno', EN: 'Never exported' },
+  project_exported_just_now: { CZ: 'Export: právě teď', EN: 'Exported: just now' },
+  project_exported_minutes_ago: { CZ: 'Export: před {n} min', EN: 'Exported: {n} min ago' },
+  project_exported_hours_ago: { CZ: 'Export: před {n} h', EN: 'Exported: {n}h ago' },
+  project_unsaved_changes: { CZ: 'Neuložené změny', EN: 'Unsaved changes' },
 } as const
 
 export type TKey = keyof typeof dict
