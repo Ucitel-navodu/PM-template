@@ -8,6 +8,7 @@ import { MilestonesPage } from './pages/Milestones'
 import { BudgetPage } from './pages/Budget'
 import { RisksPage } from './pages/Risks'
 import { ProjectFileControls } from './components/ProjectFileControls'
+import { HelpPanel } from './components/HelpPanel'
 
 type PageKey = 'dashboard' | 'tasks' | 'gantt' | 'milestones' | 'budget' | 'risks'
 
@@ -23,6 +24,7 @@ const TABS: { key: PageKey; label: TKey }[] = [
 export default function App() {
   const { tr, lang, setLang, theme, toggleTheme, projectInfo } = useApp()
   const [page, setPage] = useState<PageKey>('dashboard')
+  const [helpOpen, setHelpOpen] = useState(false)
 
   return (
     <div className="min-h-full bg-gray-50 dark:bg-[#14141c]">
@@ -61,6 +63,14 @@ export default function App() {
           <div className="flex items-center gap-2">
             <ProjectFileControls />
             <div className="h-5 w-px bg-gray-200 dark:bg-white/10" />
+            <button
+              onClick={() => setHelpOpen(true)}
+              aria-label={tr('help_button')}
+              title={tr('help_button')}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/10"
+            >
+              ❓
+            </button>
             <button
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? tr('theme_light') : tr('theme_dark')}
@@ -102,6 +112,8 @@ export default function App() {
         {page === 'budget' && <BudgetPage />}
         {page === 'risks' && <RisksPage />}
       </main>
+
+      {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
     </div>
   )
 }

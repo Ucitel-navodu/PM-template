@@ -125,6 +125,10 @@ const dict = {
   project_exported_minutes_ago: { CZ: 'Export: před {n} min', EN: 'Exported: {n} min ago' },
   project_exported_hours_ago: { CZ: 'Export: před {n} h', EN: 'Exported: {n}h ago' },
   project_unsaved_changes: { CZ: 'Neuložené změny', EN: 'Unsaved changes' },
+
+  help_button: { CZ: 'Nápověda', EN: 'Help' },
+  help_title: { CZ: 'Nápověda a časté dotazy', EN: 'Help & FAQ' },
+  help_close: { CZ: 'Zavřít', EN: 'Close' },
 } as const
 
 export type TKey = keyof typeof dict
