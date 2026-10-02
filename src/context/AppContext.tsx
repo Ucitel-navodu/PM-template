@@ -3,6 +3,7 @@ import type { BudgetItem, Lang, Milestone, ProjectInfo, Risk, Task, Theme } from
 import { projectInfo as seedProjectInfo, seedBudget, seedMilestones, seedRisks, seedTasks } from '../data/seed'
 import { loadState, saveState } from '../lib/storage'
 import { t, type TKey } from '../i18n'
+import { buildProjectBundle, downloadProjectFile, type ProjectBundle } from '../lib/projectFile'
 
 interface AppState {
   lang: Lang
@@ -36,6 +37,9 @@ interface AppState {
   deleteRisk: (id: string) => void
 
   resetToSeed: () => void
+
+  exportProject: () => void
+  importProject: (bundle: ProjectBundle) => void
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -102,6 +106,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMilestones(seedMilestones)
         setBudget(seedBudget)
         setRisks(seedRisks)
+      },
+
+      exportProject: () => {
+        downloadProjectFile(buildProjectBundle({ projectInfo, tasks, milestones, budget, risks }))
+      },
+      importProject: (bundle) => {
+        setProjectInfo(bundle.projectInfo)
+        setTasks(bundle.tasks)
+        setMilestones(bundle.milestones)
+        setBudget(bundle.budget)
+        setRisks(bundle.risks)
       },
     }),
     [lang, theme, projectInfo, tasks, milestones, budget, risks],

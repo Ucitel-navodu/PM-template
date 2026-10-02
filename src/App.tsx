@@ -7,6 +7,7 @@ import { GanttPage } from './pages/Gantt'
 import { MilestonesPage } from './pages/Milestones'
 import { BudgetPage } from './pages/Budget'
 import { RisksPage } from './pages/Risks'
+import { ProjectFileControls } from './components/ProjectFileControls'
 
 type PageKey = 'dashboard' | 'tasks' | 'gantt' | 'milestones' | 'budget' | 'risks'
 
@@ -58,6 +59,8 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <ProjectFileControls />
+            <div className="h-5 w-px bg-gray-200 dark:bg-white/10" />
             <button
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? tr('theme_light') : tr('theme_dark')}

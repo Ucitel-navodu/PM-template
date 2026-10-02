@@ -110,6 +110,15 @@ const dict = {
   weekday_fri: { CZ: 'pá', EN: 'Fr' },
   weekday_sat: { CZ: 'so', EN: 'Sa' },
   weekday_sun: { CZ: 'ne', EN: 'Su' },
+
+  project_export: { CZ: 'Export projektu', EN: 'Export project' },
+  project_import: { CZ: 'Import projektu', EN: 'Import project' },
+  project_import_confirm: {
+    CZ: 'Načtením souboru se přepíší aktuální data v této appce (tento projekt na tomto počítači). Pokračovat?',
+    EN: 'Loading this file will overwrite the current data in this app (this project, on this computer). Continue?',
+  },
+  project_import_success: { CZ: 'Projekt byl úspěšně načten.', EN: 'Project loaded successfully.' },
+  project_import_error: { CZ: 'Soubor se nepodařilo načíst: ', EN: 'Could not load file: ' },
 } as const
 
 export type TKey = keyof typeof dict
