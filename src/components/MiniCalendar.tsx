@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { computeHealth } from '../lib/health'
-import type { Task } from '../types'
-
-const DAY_MS = 86400000
+import { isWorkingDay, toDateKey } from '../lib/dates'
+import type { Settings, Task } from '../types'
 
 function sameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
@@ -11,9 +10,9 @@ function sameDay(a: Date, b: Date): boolean {
 
 type DotKind = 'done' | 'overdue' | 'upcoming'
 
-function dotForTask(task: Task): DotKind {
+function dotForTask(task: Task, settings: Settings): DotKind {
   if (task.status === 'Done') return 'done'
-  const health = computeHealth(task)
+  const health = computeHealth(task, settings)
   if (health === 'Red') return 'overdue'
   return 'upcoming'
 }
@@ -25,7 +24,7 @@ const DOT_CLASS: Record<DotKind, string> = {
 }
 
 export function MiniCalendar({ tasks }: { tasks: Task[] }) {
-  const { tr } = useApp()
+  const { tr, settings, absences } = useApp()
   const [viewDate, setViewDate] = useState(() => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
@@ -56,8 +55,11 @@ export function MiniCalendar({ tasks }: { tasks: Task[] }) {
   const cells = useMemo(() => {
     const firstOfMonth = viewDate
     const firstWeekday = (firstOfMonth.getDay() + 6) % 7 // Monday = 0
-    const gridStart = new Date(firstOfMonth.getTime() - firstWeekday * DAY_MS)
-    return Array.from({ length: 42 }, (_, i) => new Date(gridStart.getTime() + i * DAY_MS))
+    // Build via calendar arithmetic, not +24h in ms: the latter breaks across
+    // the DST switch (late March / late October) and repeats a day.
+    const y = firstOfMonth.getFullYear()
+    const m = firstOfMonth.getMonth()
+    return Array.from({ length: 42 }, (_, i) => new Date(y, m, 1 - firstWeekday + i))
   }, [viewDate])
 
   const today = new Date()
@@ -92,18 +94,31 @@ export function MiniCalendar({ tasks }: { tasks: Task[] }) {
         {cells.map((day, i) => {
           const inMonth = day.getMonth() === viewDate.getMonth()
           const isToday = sameDay(day, today)
-          const dayTasks = tasksByDay.get(day.toISOString().slice(0, 10)) ?? []
-          const kinds = new Set(dayTasks.map(dotForTask))
+          const key = toDateKey(day)
+          const dayTasks = tasksByDay.get(key) ?? []
+          const kinds = new Set(dayTasks.map((t) => dotForTask(t, settings)))
+          const holiday = settings.holidays.find((h) => h.date === key)
+          const dayAbsences = absences.filter((a) => a.from <= key && key <= a.to)
+          const working = isWorkingDay(day, settings)
+          const tooltip = [
+            ...(holiday ? [`🎉 ${holiday.name}`] : []),
+            ...dayAbsences.map((a) => `✈️ ${a.person}`),
+            ...dayTasks.map((t) => t.name),
+          ].join('\n')
           return (
             <div key={i} className="flex flex-col items-center gap-0.5 py-0.5">
               <div
-                title={dayTasks.map((t) => t.name).join('\n') || undefined}
+                title={tooltip || undefined}
                 className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
                   isToday
                     ? 'bg-brand-600 font-semibold text-white'
-                    : inMonth
-                      ? 'text-gray-700 dark:text-gray-300'
-                      : 'text-gray-300 dark:text-gray-600'
+                    : holiday && inMonth
+                      ? 'bg-rose-100 font-semibold text-rose-700 dark:bg-rose-500/20 dark:text-rose-300'
+                      : !inMonth
+                        ? 'text-gray-300 dark:text-gray-600'
+                        : working
+                          ? 'text-gray-700 dark:text-gray-300'
+                          : 'text-gray-400 dark:text-gray-500'
                 }`}
               >
                 {day.getDate()}
@@ -114,6 +129,7 @@ export function MiniCalendar({ tasks }: { tasks: Task[] }) {
                   .map((k) => (
                     <span key={k} className={`h-1.5 w-1.5 rounded-full ${DOT_CLASS[k]}`} />
                   ))}
+                {dayAbsences.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
               </div>
             </div>
           )
@@ -129,6 +145,12 @@ export function MiniCalendar({ tasks }: { tasks: Task[] }) {
         </span>
         <span className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> {tr('dash_calendar_legend_overdue')}
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-500" /> {tr('dash_calendar_legend_absence')}
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-2.5 w-2.5 rounded-full bg-rose-100 dark:bg-rose-500/30" /> {tr('dash_calendar_legend_holiday')}
         </span>
       </div>
     </div>

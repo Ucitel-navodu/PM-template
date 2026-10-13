@@ -1,8 +1,11 @@
-import type { BudgetItem, Milestone, ProjectInfo, Risk, Task } from '../types'
+import type { Absence, BudgetItem, Milestone, ProjectInfo, Risk, Settings, Task } from '../types'
+import { withSettingsDefaults } from '../data/settings'
 
 // Portable project snapshot: lets a PM carry their data between PCs/browsers,
 // since the app itself only persists to localStorage on the device it runs on.
-const PROJECT_FILE_VERSION = 1
+// v2 adds settings (phases, holidays, ...) and team absences. v1 files still
+// import fine - missing parts fall back to defaults.
+const PROJECT_FILE_VERSION = 2
 
 export interface ProjectBundle {
   fileType: 'pm-web-project'
@@ -13,6 +16,8 @@ export interface ProjectBundle {
   milestones: Milestone[]
   budget: BudgetItem[]
   risks: Risk[]
+  settings: Settings
+  absences: Absence[]
 }
 
 export function buildProjectBundle(data: {
@@ -21,6 +26,8 @@ export function buildProjectBundle(data: {
   milestones: Milestone[]
   budget: BudgetItem[]
   risks: Risk[]
+  settings: Settings
+  absences: Absence[]
 }): ProjectBundle {
   return {
     fileType: 'pm-web-project',
@@ -75,6 +82,8 @@ export function parseProjectFile(text: string): ProjectBundle {
     milestones: Array.isArray(bundle.milestones) ? bundle.milestones : [],
     budget: Array.isArray(bundle.budget) ? bundle.budget : [],
     risks: Array.isArray(bundle.risks) ? bundle.risks : [],
+    settings: withSettingsDefaults(bundle.settings),
+    absences: Array.isArray(bundle.absences) ? bundle.absences : [],
   }
 }
 

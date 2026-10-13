@@ -1,8 +1,10 @@
 import { useApp } from '../context/AppContext'
-import { formatMoney, formatPercent } from '../lib/format'
+import { formatMoney } from '../lib/format'
 import { PAYMENT_STATUSES } from '../data/config'
+import { nextSequentialId } from '../lib/ids'
+import { milestoneAmount, milestoneVarianceDays } from '../lib/milestones'
 import { btnPrimary, deleteBtn, inputGhost, selectGhost, tableWrap, tbodyRow, tfootRow, theadRow } from '../lib/ui'
-import type { Milestone, PaymentStatus } from '../types'
+import type { PaymentStatus } from '../types'
 
 const STATUS_COLOR: Record<PaymentStatus, string> = {
   'Not due': 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',
@@ -12,70 +14,95 @@ const STATUS_COLOR: Record<PaymentStatus, string> = {
   Cancelled: 'bg-gray-100 text-gray-400 line-through dark:bg-white/5 dark:text-gray-500',
 }
 
-let nextId = 100
-
-function blankMilestone(): Milestone {
-  nextId += 1
-  return { id: `M${nextId}`, name: '', paymentTriggerPct: 0, paymentAmount: 0, paymentStatus: 'Not due' }
-}
-
 export function MilestonesPage() {
   const { tr, milestones, updateMilestone, deleteMilestone, addMilestone, tasks, projectInfo } = useApp()
+
+  const add = () =>
+    addMilestone({
+      id: nextSequentialId(
+        milestones.map((m) => m.id),
+        'M',
+        2,
+      ),
+      name: '',
+      paymentTriggerPct: 0,
+      paymentStatus: 'Not due',
+    })
+
+  const totalPct = milestones.reduce((s, m) => s + (m.paymentTriggerPct || 0), 0)
+  const th = 'px-3 py-2 whitespace-nowrap'
+  const td = 'px-3 py-1.5'
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => addMilestone(blankMilestone())} className={btnPrimary}>
+        <button onClick={add} className={btnPrimary}>
           + {tr('nav_milestones')}
         </button>
       </div>
 
       <div className={tableWrap}>
-        <table className="w-full min-w-[900px] text-sm">
+        <table className="w-full min-w-[1500px] text-sm">
           <thead>
             <tr className={theadRow}>
-              <th className="px-3 py-2">ID</th>
-              <th className="px-3 py-2">{tr('milestones_name')}</th>
-              <th className="px-3 py-2">{tr('milestones_linked_task')}</th>
-              <th className="px-3 py-2">{tr('milestones_planned_date')}</th>
-              <th className="px-3 py-2">{tr('milestones_trigger')}</th>
-              <th className="px-3 py-2">{tr('milestones_amount')}</th>
-              <th className="px-3 py-2">{tr('milestones_payment_status')}</th>
-              <th className="px-3 py-2" />
+              <th className={th}>ID</th>
+              <th className={th}>{tr('milestones_name')}</th>
+              <th className={th}>{tr('milestones_linked_task')}</th>
+              <th className={th}>{tr('milestones_trigger')}</th>
+              <th className={`${th} text-right`}>{tr('milestones_amount')}</th>
+              <th className={th}>{tr('milestones_payment_status')}</th>
+              <th className={th}>{tr('milestones_planned_date')}</th>
+              <th className={th}>{tr('milestones_baseline_date')}</th>
+              <th className={th}>{tr('milestones_actual_date')}</th>
+              <th className={th}>{tr('milestones_variance')}</th>
+              <th className={th}>{tr('common_invoice_no')}</th>
+              <th className={th}>{tr('common_notes')}</th>
+              <th className={th} />
             </tr>
           </thead>
           <tbody>
             {milestones.map((m) => {
-              const linkedTask = tasks.find((t) => t.id === m.linkedTaskId)
+              const variance = milestoneVarianceDays(m)
               return (
                 <tr key={m.id} className={tbodyRow}>
-                  <td className="px-3 py-1.5 font-medium text-gray-500 dark:text-gray-400">{m.id}</td>
-                  <td className="px-3 py-1.5">
+                  <td className={`${td} font-medium text-gray-500 dark:text-gray-400`}>{m.id}</td>
+                  <td className={td}>
                     <input
                       value={m.name}
                       onChange={(e) => updateMilestone(m.id, { name: e.target.value })}
-                      className={`w-56 ${inputGhost}`}
+                      className={`w-44 ${inputGhost}`}
                     />
                   </td>
-                  <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400">{linkedTask?.name ?? '—'}</td>
-                  <td className="px-3 py-1.5">
-                    <input
-                      type="date"
-                      value={m.plannedDate ?? ''}
-                      onChange={(e) => updateMilestone(m.id, { plannedDate: e.target.value || undefined })}
-                      className={selectGhost}
-                    />
+                  <td className={td}>
+                    <select
+                      value={m.linkedTaskId ?? ''}
+                      onChange={(e) => updateMilestone(m.id, { linkedTaskId: e.target.value || undefined })}
+                      className={`max-w-[170px] ${selectGhost}`}
+                    >
+                      <option value="">—</option>
+                      {tasks.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.wbs ? `${t.wbs} · ` : ''}
+                          {t.name || t.id}
+                        </option>
+                      ))}
+                    </select>
                   </td>
-                  <td className="px-3 py-1.5 text-gray-600 dark:text-gray-300">{formatPercent(m.paymentTriggerPct)}</td>
-                  <td className="px-3 py-1.5">
+                  <td className={td}>
                     <input
                       type="number"
-                      value={m.paymentAmount}
-                      onChange={(e) => updateMilestone(m.id, { paymentAmount: Number(e.target.value) })}
-                      className={`w-28 text-right ${inputGhost}`}
+                      min={0}
+                      max={100}
+                      value={Math.round((m.paymentTriggerPct || 0) * 1000) / 10}
+                      onChange={(e) => updateMilestone(m.id, { paymentTriggerPct: Number(e.target.value) / 100 })}
+                      className={`w-16 text-right ${inputGhost}`}
                     />
+                    <span className="text-xs text-gray-400">%</span>
                   </td>
-                  <td className="px-3 py-1.5">
+                  <td className={`${td} text-right text-gray-700 dark:text-gray-200`}>
+                    {formatMoney(milestoneAmount(m, projectInfo.budget), projectInfo.currency)}
+                  </td>
+                  <td className={td}>
                     <select
                       value={m.paymentStatus}
                       onChange={(e) => updateMilestone(m.id, { paymentStatus: e.target.value as PaymentStatus })}
@@ -88,7 +115,36 @@ export function MilestonesPage() {
                       ))}
                     </select>
                   </td>
-                  <td className="px-3 py-1.5 text-right">
+                  {(['plannedDate', 'baselineDate', 'actualDate'] as const).map((k) => (
+                    <td key={k} className={td}>
+                      <input
+                        type="date"
+                        value={m[k] ?? ''}
+                        onChange={(e) => updateMilestone(m.id, { [k]: e.target.value || undefined })}
+                        className={selectGhost}
+                      />
+                    </td>
+                  ))}
+                  <td
+                    className={`${td} ${variance && variance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-500 dark:text-gray-400'}`}
+                  >
+                    {variance === null ? '' : `${variance > 0 ? '+' : ''}${variance} d`}
+                  </td>
+                  <td className={td}>
+                    <input
+                      value={m.invoiceNo ?? ''}
+                      onChange={(e) => updateMilestone(m.id, { invoiceNo: e.target.value || undefined })}
+                      className={`w-24 ${inputGhost}`}
+                    />
+                  </td>
+                  <td className={td}>
+                    <input
+                      value={m.notes ?? ''}
+                      onChange={(e) => updateMilestone(m.id, { notes: e.target.value || undefined })}
+                      className={`w-48 ${inputGhost}`}
+                    />
+                  </td>
+                  <td className={`${td} text-right`}>
                     <button onClick={() => deleteMilestone(m.id)} className={deleteBtn}>
                       ✕
                     </button>
@@ -99,16 +155,19 @@ export function MilestonesPage() {
           </tbody>
           <tfoot>
             <tr className={tfootRow}>
-              <td className="px-3 py-2" colSpan={5}>
+              <td className="px-3 py-2" colSpan={3}>
                 {tr('common_total')}
               </td>
-              <td className="px-3 py-2">
+              <td className={`px-3 py-2 ${Math.abs(totalPct - 1) > 0.0001 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                {Math.round(totalPct * 1000) / 10} %
+              </td>
+              <td className="px-3 py-2 text-right">
                 {formatMoney(
-                  milestones.reduce((s, m) => s + m.paymentAmount, 0),
+                  milestones.reduce((s, m) => s + milestoneAmount(m, projectInfo.budget), 0),
                   projectInfo.currency,
                 )}
               </td>
-              <td colSpan={2} />
+              <td colSpan={8} />
             </tr>
           </tfoot>
         </table>

@@ -1,4 +1,4 @@
-import type { BudgetCategory, Health, ImpactLevel, PaymentStatus, Phase, Priority, RiskStatus, Status } from '../types'
+import type { Health, ImpactLevel, PaymentStatus, Priority, RiskStatus, Status } from '../types'
 
 export const STATUSES: Status[] = ['Not started', 'In progress', 'On hold', 'Delayed', 'Cancelled', 'Done']
 
@@ -11,21 +11,11 @@ export const STATUS_ICON: Record<Status, string> = {
   'Done': '✔️',
 }
 
-export const PHASES: Phase[] = ['INITIATION', 'PLANNING', 'REALIZATION', 'CLOSING']
 
 export const PRIORITIES: Priority[] = ['Very High', 'High', 'Medium', 'Low', 'Very Low', 'On Hold']
 
 export const PAYMENT_STATUSES: PaymentStatus[] = ['Not due', 'Invoiced', 'Paid', 'Overdue', 'Cancelled']
 
-export const BUDGET_CATEGORIES: BudgetCategory[] = [
-  'License',
-  'HW/SW',
-  'Services',
-  'Development',
-  'Implementation',
-  'Contingency',
-  'Other',
-]
 
 export const RISK_STATUSES: RiskStatus[] = ['Open', 'Mitigated', 'Closed', 'Accepted', 'Cancelled']
 

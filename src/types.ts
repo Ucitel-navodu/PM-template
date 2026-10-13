@@ -10,11 +10,13 @@ export type Health = 'Green' | 'Orange' | 'Red' | 'Grey' | 'Blue'
 
 export type Priority = 'Very High' | 'High' | 'Medium' | 'Low' | 'Very Low' | 'On Hold'
 
-export type Phase = 'INITIATION' | 'PLANNING' | 'REALIZATION' | 'CLOSING'
+// Phases are user-defined in Settings (CONFIG sheet equivalent).
+export type Phase = string
 
 export interface Task {
   id: string
   wbs: string
+  projectArea?: string
   externalId?: string
   name: string
   phase: Phase
@@ -46,21 +48,15 @@ export interface Milestone {
   plannedDate?: string
   baselineDate?: string
   actualDate?: string
+  // Share of the approved budget paid at this milestone. The amount is derived
+  // (budget x pct), as in the original MILESTONES sheet formula.
   paymentTriggerPct: number
-  paymentAmount: number
   invoiceNo?: string
   paymentStatus: PaymentStatus
   notes?: string
 }
 
-export type BudgetCategory =
-  | 'License'
-  | 'HW/SW'
-  | 'Services'
-  | 'Development'
-  | 'Implementation'
-  | 'Contingency'
-  | 'Other'
+export type BudgetCategory = string
 
 export interface BudgetItem {
   id: string
@@ -85,6 +81,7 @@ export interface Risk {
   id: string
   type: RiskType
   area: string
+  linkedTaskId?: string
   description: string
   probability: ImpactLevel
   impact: ImpactLevel
@@ -111,3 +108,30 @@ export interface ProjectInfo {
 export type Lang = 'CZ' | 'EN'
 
 export type Theme = 'light' | 'dark'
+
+export interface Holiday {
+  date: string
+  name: string
+}
+
+export interface Settings {
+  phases: string[]
+  projectAreas: string[]
+  budgetCategories: string[]
+  holidays: Holiday[]
+  // 0 = Sunday ... 6 = Saturday (JS Date.getDay convention)
+  workingDays: number[]
+  orangeTolerance: number
+  redTolerance: number
+}
+
+export type AbsenceType = 'Vacation' | 'Business trip' | 'Other'
+
+export interface Absence {
+  id: string
+  person: string
+  type: AbsenceType
+  from: string
+  to: string
+  note?: string
+}

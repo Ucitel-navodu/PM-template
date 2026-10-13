@@ -10,7 +10,7 @@ const MS_DAY = 86400000
 const ROW_H = 32
 
 export function GanttPage() {
-  const { tr, tasks, theme } = useApp()
+  const { tr, tasks, theme, settings } = useApp()
   const healthColor = theme === 'dark' ? HEALTH_COLOR_DARK : HEALTH_COLOR
   const [mode, setMode] = useState<AxisMode>('month')
 
@@ -139,7 +139,7 @@ export function GanttPage() {
                 />
               )}
               {scheduled.map((task) => {
-                const health = computeHealth(task)
+                const health = computeHealth(task, settings)
                 const start = new Date(task.currentStart!)
                 const finish = new Date(task.currentFinish!)
                 const left = pos(start)

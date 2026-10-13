@@ -13,6 +13,12 @@ zachovává klíčové koncepty originálu:
 - **Risks** registr (pravděpodobnost/dopad/vlastník/opatření).
 - **Dashboard** — souhrn stavů, health, milníků, rozpočtu a top rizik.
 - Přepínač jazyka **CZ/EN** (`src/i18n.ts`, obdoba listu `LANGUAGE`).
+- **Editovatelné informace o projektu** na Dashboardu (název, ID, vlastníci, termíny, rozpočet, měna — obdoba ✏️ buněk listu DASHBOARD).
+- **Nastavení** (⚙️, obdoba listu `CONFIG`, `src/components/SettingsPanel.tsx`): fáze projektu, oblasti projektu,
+  kategorie rozpočtu, pracovní dny, svátky a tolerance Health. Přejmenování položky se propíše do všech úkolů/rizik/rozpočtu.
+- **Tým** (obdoba listu `TEAM`): plán dovolených a cest, počet pracovních dnů bez víkendů a svátků, upozornění na kolize
+  s rozpracovanými úkoly dané osoby; absence a svátky jsou vidět i v kalendáři na Dashboardu.
+- Částka milníku se počítá jako v Excelu: schválený rozpočet × platební spouštěč %.
 
 ## Rozsah MVP vs. originál
 
@@ -29,7 +35,6 @@ vazba k Excelu, kterou dostal zadavatel v chatu):
 - **Import z MS Project** (`Import_MSProject_Export.bas`) není implementován; místo něj je
   k dispozici CSV export úkolů. Import lze doplnit jako další krok (parsování CSV/XML
   exportu z MS Project).
-- **Tým / kalendář dovolených** (list TEAM) není součástí MVP.
 - **ChangeLog / audit trail** není zatím implementován (v localStorage verzi nedává velký
   smysl — dává smysl až s backendem a víc uživateli).
 

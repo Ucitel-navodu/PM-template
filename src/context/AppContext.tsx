@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { BudgetItem, Lang, Milestone, ProjectInfo, Risk, Task, Theme } from '../types'
-import { projectInfo as seedProjectInfo, seedBudget, seedMilestones, seedRisks, seedTasks } from '../data/seed'
+import type { Absence, BudgetItem, Lang, Milestone, ProjectInfo, Risk, Settings, Task, Theme } from '../types'
+import { projectInfo as seedProjectInfo, seedAbsences, seedBudget, seedMilestones, seedRisks, seedTasks } from '../data/seed'
+import { defaultSettings, withSettingsDefaults } from '../data/settings'
 import { loadState, saveState } from '../lib/storage'
 import { t, type TKey } from '../i18n'
 import { buildProjectBundle, downloadProjectFile, type ProjectBundle } from '../lib/projectFile'
@@ -36,6 +37,18 @@ interface AppState {
   updateRisk: (id: string, patch: Partial<Risk>) => void
   deleteRisk: (id: string) => void
 
+  settings: Settings
+  updateSettings: (patch: Partial<Settings>) => void
+  // Rename an item in one of the editable lists and carry the new name over
+  // to every task/risk/budget line that uses it.
+  renameListItem: (list: ListKey, oldName: string, newName: string) => void
+  listItemUsage: (list: ListKey, name: string) => number
+
+  absences: Absence[]
+  addAbsence: (a: Absence) => void
+  updateAbsence: (id: string, patch: Partial<Absence>) => void
+  deleteAbsence: (id: string) => void
+
   resetToSeed: () => void
 
   exportProject: () => void
@@ -43,6 +56,8 @@ interface AppState {
   hasUnsavedChanges: boolean
   lastExportedAt: string | null
 }
+
+export type ListKey = 'phases' | 'projectAreas' | 'budgetCategories'
 
 const AppContext = createContext<AppState | null>(null)
 
@@ -58,6 +73,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [milestones, setMilestones] = useState<Milestone[]>(() => loadState('milestones', seedMilestones))
   const [budget, setBudget] = useState<BudgetItem[]>(() => loadState('budget', seedBudget))
   const [risks, setRisks] = useState<Risk[]>(() => loadState('risks', seedRisks))
+  const [settings, setSettings] = useState<Settings>(() => withSettingsDefaults(loadState('settings', defaultSettings)))
+  const [absences, setAbsences] = useState<Absence[]>(() => loadState('absences', seedAbsences))
 
   const [lastExportedAt, setLastExportedAt] = useState<string | null>(() => loadState('lastExportedAt', null))
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -72,7 +89,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return
     }
     setHasUnsavedChanges(true)
-  }, [projectInfo, tasks, milestones, budget, risks])
+  }, [projectInfo, tasks, milestones, budget, risks, settings, absences])
 
   // Warn on tab close/refresh if there's anything not yet exported. This
   // catches a normal close, reload, or a graceful "restart to update" -
@@ -100,6 +117,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => saveState('milestones', milestones), [milestones])
   useEffect(() => saveState('budget', budget), [budget])
   useEffect(() => saveState('risks', risks), [risks])
+  useEffect(() => saveState('settings', settings), [settings])
+  useEffect(() => saveState('absences', absences), [absences])
 
   const value = useMemo<AppState>(
     () => ({
@@ -133,16 +152,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateRisk: (id, patch) => setRisks((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
       deleteRisk: (id) => setRisks((prev) => prev.filter((x) => x.id !== id)),
 
+      settings,
+      updateSettings: (patch) => setSettings((prev) => ({ ...prev, ...patch })),
+      renameListItem: (list, oldName, newName) => {
+        if (!newName || oldName === newName) return
+        setSettings((prev) => ({ ...prev, [list]: prev[list].map((x) => (x === oldName ? newName : x)) }))
+        if (list === 'phases') {
+          setTasks((prev) => prev.map((x) => (x.phase === oldName ? { ...x, phase: newName } : x)))
+        } else if (list === 'projectAreas') {
+          setTasks((prev) => prev.map((x) => (x.projectArea === oldName ? { ...x, projectArea: newName } : x)))
+          setRisks((prev) => prev.map((x) => (x.area === oldName ? { ...x, area: newName } : x)))
+        } else {
+          setBudget((prev) => prev.map((x) => (x.category === oldName ? { ...x, category: newName } : x)))
+        }
+      },
+      listItemUsage: (list, name) => {
+        if (list === 'phases') return tasks.filter((x) => x.phase === name).length
+        if (list === 'projectAreas')
+          return tasks.filter((x) => x.projectArea === name).length + risks.filter((x) => x.area === name).length
+        return budget.filter((x) => x.category === name).length
+      },
+
+      absences,
+      addAbsence: (a) => setAbsences((prev) => [...prev, a]),
+      updateAbsence: (id, patch) => setAbsences((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
+      deleteAbsence: (id) => setAbsences((prev) => prev.filter((x) => x.id !== id)),
+
       resetToSeed: () => {
         setProjectInfo(seedProjectInfo)
         setTasks(seedTasks)
         setMilestones(seedMilestones)
         setBudget(seedBudget)
         setRisks(seedRisks)
+        setSettings(defaultSettings)
+        setAbsences(seedAbsences)
       },
 
       exportProject: () => {
-        downloadProjectFile(buildProjectBundle({ projectInfo, tasks, milestones, budget, risks }))
+        downloadProjectFile(buildProjectBundle({ projectInfo, tasks, milestones, budget, risks, settings, absences }))
         setHasUnsavedChanges(false)
         setLastExportedAt(new Date().toISOString())
       },
@@ -152,12 +199,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMilestones(bundle.milestones)
         setBudget(bundle.budget)
         setRisks(bundle.risks)
+        setSettings(bundle.settings)
+        setAbsences(bundle.absences)
         setHasUnsavedChanges(false)
       },
       hasUnsavedChanges,
       lastExportedAt,
     }),
-    [lang, theme, projectInfo, tasks, milestones, budget, risks, hasUnsavedChanges, lastExportedAt],
+    [lang, theme, projectInfo, tasks, milestones, budget, risks, settings, absences, hasUnsavedChanges, lastExportedAt],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

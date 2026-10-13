@@ -1,4 +1,4 @@
-import type { Health, Task } from '../types'
+import type { Health, Settings, Task } from '../types'
 
 /**
  * Port of the original TASKS!V health formula (an Excel LET() expression).
@@ -6,8 +6,9 @@ import type { Health, Task } from '../types'
  * a task can be "In progress" and still be Red if it is behind plan.
  */
 
-const ORANGE_TOLERANCE = 0.1
-const RED_TOLERANCE = 0.25
+type Tolerances = Pick<Settings, 'orangeTolerance' | 'redTolerance'>
+
+const DEFAULT_TOLERANCES: Tolerances = { orangeTolerance: 0.1, redTolerance: 0.25 }
 
 function daysBetween(a: Date, b: Date): number {
   return (b.getTime() - a.getTime()) / 86400000
@@ -24,7 +25,7 @@ export function expectedProgress(currentStart?: string, currentFinish?: string):
   return Math.min(1, Math.max(0, elapsed / span))
 }
 
-export function computeHealth(task: Task): Health | '' {
+export function computeHealth(task: Task, tolerances: Tolerances = DEFAULT_TOLERANCES): Health | '' {
   if (!task.name) return ''
 
   const today = new Date()
@@ -47,11 +48,11 @@ export function computeHealth(task: Task): Health | '' {
   if (task.status === 'Cancelled' || task.status === 'On hold') return 'Grey'
   if (!start || !finish) return 'Grey'
   if (finish.getTime() < today.getTime()) return 'Red'
-  if (task.status === 'In progress' && progressGap > RED_TOLERANCE) return 'Red'
+  if (task.status === 'In progress' && progressGap > tolerances.redTolerance) return 'Red'
   if (task.status === 'Not started' && start.getTime() < today.getTime()) return 'Orange'
   if (
     (baselineFinish && finish.getTime() > baselineFinish.getTime()) ||
-    (task.status === 'In progress' && progressGap > ORANGE_TOLERANCE)
+    (task.status === 'In progress' && progressGap > tolerances.orangeTolerance)
   ) {
     return 'Orange'
   }

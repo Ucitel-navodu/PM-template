@@ -21,7 +21,11 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'Jak začnu svůj vlastní projekt?',
-          a: 'Appka se spouští s ukázkovými daty. Smaž/přepiš je přímo v tabulkách (Úkoly, Milníky, Rozpočet, Rizika), uprav Informace o projektu na Dashboardu — a je to tvůj projekt. Žádné speciální "nový projekt" tlačítko není potřeba, prostě přepiš data.',
+          a: 'Appka se spouští s ukázkovými daty. Na Dashboardu klikni u "Informace o projektu" na ✏️ Upravit a vyplň název projektu, ID, vlastníky, termíny a rozpočet. Pak v ⚙️ Nastavení uprav fáze a oblasti projektu a přepiš ukázkové úkoly, milníky, rozpočet a rizika svými.',
+        },
+        {
+          q: 'Kde změním název projektu a další základní údaje?',
+          a: 'Dashboard → karta "Informace o projektu" → ✏️ Upravit. Název se pak zobrazuje i v hlavičce appky a použije se jako název souboru při exportu. Uložíš tlačítkem Uložit nebo klávesou Enter, Esc změny zahodí.',
         },
         {
           q: 'Jak appku dostanu ke kolegovi?',
@@ -103,6 +107,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: 'Rozpočtová položka může odkazovat na konkrétní milník (sloupec "Navázaný milník") — užitečné, když je platba dodavateli vázaná na dosažení milníku v harmonogramu.',
         },
         {
+          q: 'K čemu je stránka Tým?',
+          a: 'Plán dovolených a pracovních cest (obdoba listu TEAM). U každé absence appka spočítá pracovní dny (bez víkendů a svátků) a upozorní ⚠️, pokud osoba má v tu dobu rozpracované úkoly, kde je vlastníkem. Absence se zobrazují i v kalendáři na Dashboardu (fialová tečka).',
+        },
+        {
+          q: 'Jak se počítá částka u milníku?',
+          a: 'Stejně jako v Excelu: schválený rozpočet projektu × platební spouštěč v %. Součet procent je dole v tabulce — pokud nedává 100 %, zvýrazní se oranžově.',
+        },
+        {
           q: 'Jak exportuju úkoly do CSV?',
           a: 'Na stránce Úkoly tlačítko "Export do CSV" — vyexportuje aktuálně vyfiltrovaný seznam úkolů (respektuje filtry Fáze/Stav).',
         },
@@ -111,6 +123,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
     {
       title: '⚙️ Nastavení appky',
       items: [
+        {
+          q: 'Jak přidám nebo přejmenuji fázi projektu?',
+          a: 'Buď v ⚙️ Nastavení → Fáze projektu, nebo přímo v Úkolech: v rozbalovacím seznamu Fáze zvol "+ Nová fáze…" (fáze se vytvoří a rovnou přiřadí úkolu). Přejmenování v Nastavení se automaticky propíše do všech úkolů. Pořadí fází změníš šipkami ↑↓.',
+        },
+        {
+          q: 'Co ještě jde v Nastavení upravit?',
+          a: 'Oblasti projektu (u úkolů a rizik), kategorie rozpočtu, pracovní dny v týdnu, svátky a volné dny (zvýrazní se v kalendáři a nepočítají se do pracovních dnů absencí) a tolerance Health — o kolik % smí progress zaostat, než úkol zoranžoví/zčervená (výchozí 10 % a 25 %, stejně jako v Excelu). Nastavení je součástí exportu projektu.',
+        },
         {
           q: 'Jak přepnu jazyk CZ/EN?',
           a: 'Tlačítko "EN"/"CZ" vpravo nahoře v hlavičce.',
@@ -166,7 +186,11 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'How do I start my own project?',
-          a: 'The app starts with sample data. Clear/overwrite it directly in the tables (Tasks, Milestones, Budget, Risks), update Project Information on the Dashboard — and it is your project. There is no special "new project" button, just overwrite the data.',
+          a: 'The app starts with sample data. On the Dashboard click ✏️ Edit on "Project Information" and fill in the project name, ID, owners, dates and budget. Then adjust phases and project areas in ⚙️ Settings and overwrite the sample tasks, milestones, budget and risks with yours.',
+        },
+        {
+          q: 'Where do I change the project name and other basic details?',
+          a: 'Dashboard → "Project Information" card → ✏️ Edit. The name also shows in the app header and is used as the file name on export. Save with the Save button or Enter; Esc discards changes.',
         },
         {
           q: 'How do I give this app to a colleague?',
@@ -236,6 +260,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: "A budget line can reference a specific milestone (the \"Linked milestone\" column) - useful when a supplier payment is tied to hitting a milestone in the schedule.",
         },
         {
+          q: 'What is the Team page for?',
+          a: 'A vacation & business trip plan (the TEAM sheet equivalent). For each absence the app counts workdays (excluding weekends and holidays) and flags ⚠️ when the person owns open tasks running during that time. Absences also show in the Dashboard calendar (violet dot).',
+        },
+        {
+          q: 'How is a milestone amount calculated?',
+          a: 'Same as in the Excel: approved project budget × payment trigger %. The percentage total is shown at the bottom of the table and turns amber if it is not 100 %.',
+        },
+        {
           q: 'How do I export tasks to CSV?',
           a: 'On the Tasks page, the "Export to CSV" button - exports the currently filtered task list (respects the Phase/Status filters).',
         },
@@ -244,6 +276,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
     {
       title: '⚙️ App settings',
       items: [
+        {
+          q: 'How do I add or rename a project phase?',
+          a: 'Either in ⚙️ Settings → Project phases, or right in Tasks: pick "+ New phase…" in the Phase dropdown (the phase is created and assigned to the task at once). Renaming in Settings updates every task automatically. Reorder phases with the ↑↓ arrows.',
+        },
+        {
+          q: 'What else can be changed in Settings?',
+          a: 'Project areas (used by tasks and risks), budget categories, working days, holidays & days off (highlighted in the calendar and excluded from absence workday counts) and Health tolerances - how far progress may lag before a task turns amber/red (default 10 % and 25 %, same as the Excel). Settings are part of the project export.',
+        },
         { q: 'How do I switch CZ/EN?', a: 'The "EN"/"CZ" button in the top-right of the header.' },
         {
           q: 'How do I turn on dark mode?',

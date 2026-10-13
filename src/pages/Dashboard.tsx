@@ -2,13 +2,15 @@ import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { Card, Stat } from '../components/Card'
 import { MiniCalendar } from '../components/MiniCalendar'
+import { ProjectInfoCard } from '../components/ProjectInfoCard'
 import { computeHealth } from '../lib/health'
 import { formatDate, formatMoney } from '../lib/format'
 import { HEALTH_COLOR } from '../data/config'
+import { milestoneAmount } from '../lib/milestones'
 import type { Health, Status } from '../types'
 
 export function Dashboard() {
-  const { tr, projectInfo, tasks, milestones, budget, risks } = useApp()
+  const { tr, projectInfo, tasks, milestones, budget, risks, settings } = useApp()
 
   const statusCounts = useMemo(() => {
     const counts: Record<Status, number> = {
@@ -26,11 +28,11 @@ export function Dashboard() {
   const healthCounts = useMemo(() => {
     const counts: Record<Health, number> = { Green: 0, Orange: 0, Red: 0, Grey: 0, Blue: 0 }
     tasks.forEach((task) => {
-      const h = computeHealth(task)
+      const h = computeHealth(task, settings)
       if (h) counts[h]++
     })
     return counts
-  }, [tasks])
+  }, [tasks, settings])
 
   const overdueTasks = useMemo(
     () =>
@@ -65,27 +67,20 @@ export function Dashboard() {
   }, [budget, projectInfo.budget])
 
   const milestonePayments = useMemo(() => {
-    const total = milestones.reduce((s, m) => s + m.paymentAmount, 0)
-    const paid = milestones.filter((m) => m.paymentStatus === 'Paid').reduce((s, m) => s + m.paymentAmount, 0)
-    const invoiced = milestones.filter((m) => m.paymentStatus === 'Invoiced').reduce((s, m) => s + m.paymentAmount, 0)
-    const overdue = milestones.filter((m) => m.paymentStatus === 'Overdue').reduce((s, m) => s + m.paymentAmount, 0)
-    return { total, paid, invoiced, overdue }
-  }, [milestones])
+    const sum = (list: typeof milestones) => list.reduce((s, m) => s + milestoneAmount(m, projectInfo.budget), 0)
+    return {
+      total: sum(milestones),
+      paid: sum(milestones.filter((m) => m.paymentStatus === 'Paid')),
+      invoiced: sum(milestones.filter((m) => m.paymentStatus === 'Invoiced')),
+      overdue: sum(milestones.filter((m) => m.paymentStatus === 'Overdue')),
+    }
+  }, [milestones, projectInfo.budget])
 
   const topRisks = risks.filter((r) => r.status === 'Open').slice(0, 5)
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <Card title={tr('dash_project_info')} icon="📌" accent="indigo">
-        <div className="grid grid-cols-2 gap-3">
-          <Stat label={tr('dash_business_owner')} value={projectInfo.businessOwner} />
-          <Stat label="BPM" value={projectInfo.bpm} />
-          <Stat label="ITPM" value={projectInfo.itpm} />
-          <Stat label={tr('dash_start')} value={formatDate(projectInfo.start)} />
-          <Stat label={tr('dash_planned_finish')} value={formatDate(projectInfo.plannedFinish)} />
-          <Stat label={tr('dash_budget_label')} value={formatMoney(projectInfo.budget, projectInfo.currency)} />
-        </div>
-      </Card>
+      <ProjectInfoCard />
 
       <Card title={tr('dash_calendar')} icon="📅" accent="sky">
         <MiniCalendar tasks={tasks} />
@@ -116,7 +111,7 @@ export function Dashboard() {
         ) : (
           <ul className="space-y-2">
             {upcomingTasks.map((task) => {
-              const health = computeHealth(task)
+              const health = computeHealth(task, settings)
               return (
                 <li key={task.id} className="flex items-center justify-between gap-2 text-sm">
                   <span className="truncate text-gray-700 dark:text-gray-200" title={task.name}>

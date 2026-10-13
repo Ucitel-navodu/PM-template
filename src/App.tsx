@@ -7,10 +7,12 @@ import { GanttPage } from './pages/Gantt'
 import { MilestonesPage } from './pages/Milestones'
 import { BudgetPage } from './pages/Budget'
 import { RisksPage } from './pages/Risks'
+import { TeamPage } from './pages/Team'
 import { ProjectFileControls } from './components/ProjectFileControls'
 import { HelpPanel } from './components/HelpPanel'
+import { SettingsPanel } from './components/SettingsPanel'
 
-type PageKey = 'dashboard' | 'tasks' | 'gantt' | 'milestones' | 'budget' | 'risks'
+type PageKey = 'dashboard' | 'tasks' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'team'
 
 const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'dashboard', label: 'nav_dashboard' },
@@ -19,26 +21,31 @@ const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'milestones', label: 'nav_milestones' },
   { key: 'budget', label: 'nav_budget' },
   { key: 'risks', label: 'nav_risks' },
+  { key: 'team', label: 'nav_team' },
 ]
 
 export default function App() {
   const { tr, lang, setLang, theme, toggleTheme, projectInfo } = useApp()
   const [page, setPage] = useState<PageKey>('dashboard')
   const [helpOpen, setHelpOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
     <div className="min-h-full bg-gray-50 dark:bg-[#14141c]">
       <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#1a1a24]/90">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-fuchsia-500 text-sm font-bold text-white shadow-sm shadow-brand-500/30">
+        <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-fuchsia-500 text-sm font-bold text-white shadow-sm shadow-brand-500/30">
               PM
             </div>
             <div>
               <div className="text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
                 {tr('app_title')}
               </div>
-              <div className="text-lg font-semibold leading-tight text-gray-900 dark:text-gray-50">
+              <div
+                className="max-w-[16rem] truncate text-lg font-semibold leading-tight text-gray-900 dark:text-gray-50"
+                title={projectInfo.projectName}
+              >
                 {projectInfo.projectName}
               </div>
             </div>
@@ -49,7 +56,7 @@ export default function App() {
               <button
                 key={tab.key}
                 onClick={() => setPage(tab.key)}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   page === tab.key
                     ? 'bg-brand-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100'
@@ -63,6 +70,14 @@ export default function App() {
           <div className="flex items-center gap-2">
             <ProjectFileControls />
             <div className="h-5 w-px bg-gray-200 dark:bg-white/10" />
+            <button
+              onClick={() => setSettingsOpen(true)}
+              aria-label={tr('settings_button')}
+              title={tr('settings_button')}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/10"
+            >
+              ⚙️
+            </button>
             <button
               onClick={() => setHelpOpen(true)}
               aria-label={tr('help_button')}
@@ -104,16 +119,18 @@ export default function App() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-[90rem] px-4 py-6 sm:px-6">
         {page === 'dashboard' && <Dashboard />}
-        {page === 'tasks' && <TasksPage />}
+        {page === 'tasks' && <TasksPage onOpenSettings={() => setSettingsOpen(true)} />}
         {page === 'gantt' && <GanttPage />}
         {page === 'milestones' && <MilestonesPage />}
         {page === 'budget' && <BudgetPage />}
         {page === 'risks' && <RisksPage />}
+        {page === 'team' && <TeamPage />}
       </main>
 
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

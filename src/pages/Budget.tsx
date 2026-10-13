@@ -1,16 +1,18 @@
 import { useApp } from '../context/AppContext'
 import { formatMoney } from '../lib/format'
-import { BUDGET_CATEGORIES, PAYMENT_STATUSES } from '../data/config'
+import { PAYMENT_STATUSES } from '../data/config'
+import { nextSequentialId } from '../lib/ids'
 import { btnPrimary, deleteBtn, inputGhost, selectGhost, tableWrap, tbodyRow, tfootRow, theadRow } from '../lib/ui'
-import type { BudgetCategory, BudgetItem, PaymentStatus } from '../types'
+import type { BudgetItem, PaymentStatus } from '../types'
 
-let nextId = 100
-
-function blankItem(): BudgetItem {
-  nextId += 1
+function blankItem(existing: BudgetItem[], category: string): BudgetItem {
   return {
-    id: `B${nextId}`,
-    category: 'Other',
+    id: nextSequentialId(
+      existing.map((b) => b.id),
+      'B',
+      3,
+    ),
+    category,
     supplier: '',
     description: '',
     planned: 0,
@@ -25,7 +27,7 @@ function forecast(item: BudgetItem): number {
 }
 
 export function BudgetPage() {
-  const { tr, budget, updateBudgetItem, deleteBudgetItem, addBudgetItem, projectInfo, milestones } = useApp()
+  const { tr, budget, updateBudgetItem, deleteBudgetItem, addBudgetItem, projectInfo, milestones, settings } = useApp()
 
   const totals = budget.reduce(
     (acc, b) => ({
@@ -40,13 +42,13 @@ export function BudgetPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => addBudgetItem(blankItem())} className={btnPrimary}>
+        <button onClick={() => addBudgetItem(blankItem(budget, settings.budgetCategories[settings.budgetCategories.length - 1] ?? ''))} className={btnPrimary}>
           + {tr('nav_budget')}
         </button>
       </div>
 
       <div className={tableWrap}>
-        <table className="w-full min-w-[1100px] text-sm">
+        <table className="w-full min-w-[1600px] text-sm">
           <thead>
             <tr className={theadRow}>
               <th className="px-3 py-2">ID</th>
@@ -59,7 +61,10 @@ export function BudgetPage() {
               <th className="px-3 py-2 text-right">{tr('budget_actual')}</th>
               <th className="px-3 py-2 text-right">{tr('budget_forecast')}</th>
               <th className="px-3 py-2 text-right">{tr('budget_variance')}</th>
+              <th className="px-3 py-2">{tr('budget_due_date')}</th>
               <th className="px-3 py-2">{tr('milestones_payment_status')}</th>
+              <th className="px-3 py-2">{tr('common_invoice_no')}</th>
+              <th className="px-3 py-2">{tr('common_notes')}</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -73,10 +78,10 @@ export function BudgetPage() {
                   <td className="px-3 py-1.5">
                     <select
                       value={b.category}
-                      onChange={(e) => updateBudgetItem(b.id, { category: e.target.value as BudgetCategory })}
+                      onChange={(e) => updateBudgetItem(b.id, { category: e.target.value })}
                       className={selectGhost}
                     >
-                      {BUDGET_CATEGORIES.map((c) => (
+                      {(settings.budgetCategories.includes(b.category) ? settings.budgetCategories : [...settings.budgetCategories, b.category]).map((c) => (
                         <option key={c} value={c}>
                           {c}
                         </option>
@@ -144,6 +149,14 @@ export function BudgetPage() {
                     {formatMoney(variance, projectInfo.currency)}
                   </td>
                   <td className="px-3 py-1.5">
+                    <input
+                      type="date"
+                      value={b.dueDate ?? ''}
+                      onChange={(e) => updateBudgetItem(b.id, { dueDate: e.target.value || undefined })}
+                      className={selectGhost}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5">
                     <select
                       value={b.paymentStatus}
                       onChange={(e) => updateBudgetItem(b.id, { paymentStatus: e.target.value as PaymentStatus })}
@@ -155,6 +168,20 @@ export function BudgetPage() {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input
+                      value={b.invoiceNo ?? ''}
+                      onChange={(e) => updateBudgetItem(b.id, { invoiceNo: e.target.value || undefined })}
+                      className={`w-24 ${inputGhost}`}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input
+                      value={b.notes ?? ''}
+                      onChange={(e) => updateBudgetItem(b.id, { notes: e.target.value || undefined })}
+                      className={`w-48 ${inputGhost}`}
+                    />
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <button onClick={() => deleteBudgetItem(b.id)} className={deleteBtn}>
@@ -177,7 +204,7 @@ export function BudgetPage() {
               <td className="px-3 py-2 text-right">
                 {formatMoney(projectInfo.budget - totals.forecast, projectInfo.currency)}
               </td>
-              <td colSpan={2} />
+              <td colSpan={5} />
             </tr>
           </tfoot>
         </table>

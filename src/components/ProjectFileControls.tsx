@@ -38,7 +38,7 @@ function ExportStatusBadge() {
 
   return (
     <span
-      className={`hidden items-center gap-1.5 text-xs font-medium lg:flex ${colorClass}`}
+      className={`hidden items-center gap-1.5 whitespace-nowrap text-xs font-medium xl:flex ${colorClass}`}
       title={hasUnsavedChanges ? tr('project_unsaved_changes') : undefined}
     >
       {hasUnsavedChanges && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />}
@@ -85,18 +85,18 @@ export function ProjectFileControls() {
         <button
           onClick={exportProject}
           title={tr('project_export')}
-          className="flex h-8 items-center gap-1.5 rounded-md border border-gray-300 px-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/10"
+          className="flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-gray-300 px-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/10"
         >
           <span aria-hidden>⬇️</span>
-          <span className="hidden sm:inline">{tr('project_export')}</span>
+          <span className="hidden 2xl:inline">{tr('project_export')}</span>
         </button>
         <button
           onClick={handleImportClick}
           title={tr('project_import')}
-          className="flex h-8 items-center gap-1.5 rounded-md border border-gray-300 px-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/10"
+          className="flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-gray-300 px-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/10"
         >
           <span aria-hidden>⬆️</span>
-          <span className="hidden sm:inline">{tr('project_import')}</span>
+          <span className="hidden 2xl:inline">{tr('project_import')}</span>
         </button>
         <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleFileSelected} />
       </div>
