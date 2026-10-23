@@ -91,3 +91,45 @@ describe('workspaceFromLegacySnapshot', () => {
     expect(ws.calendar.workingDays).toEqual([1, 2, 3, 4, 5, 6])
   })
 })
+
+describe('schema 4 migration (scheduling)', () => {
+  it('turns legacy tasks into manual tasks with unchanged dates and real links', () => {
+    const parsed = parseAnyFile(JSON.stringify(legacyV1))
+    if (parsed.kind !== 'legacy-project') throw new Error('expected legacy')
+    const [t1, t2] = parsed.project.tasks
+    expect(t1).toMatchObject({ no: 1, outlineLevel: 1, schedulingMode: 'manual', currentStart: seedTasks[0].currentStart, currentFinish: seedTasks[0].currentFinish })
+    expect(t2.dependencies).toEqual([{ predId: t1.id, type: 'FS', lag: 0 }])
+    expect(t2).not.toHaveProperty('predecessors')
+    expect(t2.currentStart).toBe(seedTasks[1].currentStart)
+  })
+
+  it('migrates a schema 3 workspace file without moving any date', () => {
+    const v3 = {
+      fileType: 'pm-web-workspace',
+      schemaVersion: 3,
+      id: 'w',
+      projects: [{ id: 'p', info: { ...projectInfo }, tasks: seedTasks }],
+    }
+    const parsed = parseAnyFile(JSON.stringify(v3))
+    if (parsed.kind !== 'workspace') throw new Error('expected workspace')
+    const tasks = parsed.workspace.projects[0].tasks
+    expect(parsed.workspace.schemaVersion).toBe(4)
+    expect(tasks.map((t) => [t.currentStart, t.currentFinish])).toEqual(seedTasks.map((t) => [t.currentStart, t.currentFinish]))
+    expect(new Set(tasks.map((t) => t.no)).size).toBe(tasks.length)
+  })
+
+  it('is idempotent', () => {
+    const ws = createSampleWorkspace()
+    const again = parseAnyFile(serializeWorkspace(ws))
+    if (again.kind !== 'workspace') throw new Error('expected workspace')
+    expect(again.workspace.projects[0].tasks).toEqual(ws.projects[0].tasks)
+  })
+
+  it('groups the sample tasks under summary tasks', () => {
+    const tasks = createSampleWorkspace().projects[0].tasks
+    const rfi = tasks.find((t) => t.name === 'RFI')!
+    expect(rfi.wbs).toBe('1')
+    expect(rfi.currentStart).toBe(seedTasks[0].currentStart)
+    expect(tasks.find((t) => t.id === 't1')!.wbs).toBe('1.1')
+  })
+})

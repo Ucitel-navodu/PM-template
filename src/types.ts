@@ -13,8 +13,33 @@ export type Priority = 'Very High' | 'High' | 'Medium' | 'Low' | 'Very Low' | 'O
 // Phases are user-defined in Settings (CONFIG sheet equivalent).
 export type Phase = string
 
+export type LinkType = 'FS' | 'SS' | 'FF' | 'SF'
+
+/** Predecessor link as in MS Project: type + lag in working days (negative = lead). */
+export interface Dependency {
+  predId: string
+  type: LinkType
+  lag: number
+}
+
+/** SNET = start no earlier than, MSO = must start on (MS Project constraint types). */
+export interface TaskConstraint {
+  type: 'SNET' | 'MSO'
+  date: string
+}
+
+export type SchedulingMode = 'auto' | 'manual'
+
 export interface Task {
   id: string
+  // Stable task number within the project (like the ID/UID in MS Project);
+  // predecessors are written using it, e.g. "3FS+2d".
+  no: number
+  // Outline level (1 = top). The task list is kept in outline order, so the
+  // parent of a task is the nearest previous task with a lower level - the
+  // same model MS Project uses.
+  outlineLevel: number
+  // Outline number (1, 1.2, 1.2.1); derived from the hierarchy.
   wbs: string
   projectArea?: string
   externalId?: string
@@ -29,7 +54,11 @@ export interface Task {
   currentStart?: string
   currentFinish?: string
   percentComplete: number | null
-  predecessors?: string
+  schedulingMode: SchedulingMode
+  // Working days; 0 = milestone. Derived from the dates for manual tasks.
+  duration?: number
+  dependencies: Dependency[]
+  constraint?: TaskConstraint
   milestone: boolean
   priority: Priority
   lastImported?: string
@@ -144,11 +173,28 @@ export interface Absence {
   note?: string
 }
 
+export interface Baseline {
+  id: string
+  name: string
+  createdAt: string
+  tasks: Record<string, { start?: string; finish?: string }>
+}
+
+export interface TaskView {
+  id: string
+  name: string
+  filters: Record<string, string>
+  hiddenColumns: string[]
+  sort?: { id: string; desc: boolean }
+}
+
 export interface Project {
   id: string
   info: ProjectInfo
   lists: ProjectLists
   tasks: Task[]
+  baselines: Baseline[]
+  views: TaskView[]
   milestones: Milestone[]
   budget: BudgetItem[]
   risks: Risk[]
@@ -157,7 +203,7 @@ export interface Project {
   updatedAt: string
 }
 
-export const WORKSPACE_SCHEMA_VERSION = 3
+export const WORKSPACE_SCHEMA_VERSION = 4
 
 export interface Workspace {
   fileType: 'pm-web-workspace'

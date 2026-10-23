@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
-import type { Absence, BudgetItem, CalendarSettings, Milestone, Project, ProjectInfo, ProjectLists, Risk, Task, Workspace } from '../types'
-import { createBlankProject, newId } from '../domain/workspace'
+import type { Absence, BudgetItem, CalendarSettings, Milestone, Project, ProjectInfo, ProjectLists, Risk, Task, TaskView, Workspace } from '../types'
+import { createBlankProject, migrateWorkspace, newId } from '../domain/workspace'
+import { applySchedule } from '../lib/schedule/cpm'
+import { WorkCalendar } from '../lib/schedule/calendar'
+import { subtreeIds } from '../lib/schedule/tree'
 
 export type ListKey = keyof ProjectLists
 
@@ -30,6 +33,21 @@ interface WorkspaceState {
   addItem: <K extends CollectionKey>(coll: K, item: CollectionMap[K]) => void
   updateItem: <K extends CollectionKey>(coll: K, id: string, patch: Partial<CollectionMap[K]>) => void
   deleteItem: (coll: CollectionKey, id: string) => void
+
+  /** New task after `afterId` (same outline level) or at the end; returns its id. */
+  addTask: (init?: Partial<Task>, afterId?: string) => string
+  /** Edit a task the way MS Project does: moving an auto task's start sets a
+   *  "start no earlier than" constraint, changing its finish changes the duration. */
+  updateTask: (id: string, patch: Partial<Task>) => void
+  /** Delete a task with its subtask and remove links pointing to them. */
+  deleteTask: (id: string) => void
+  /** Structural edits (indent/outdent/move) on the ordered task list. */
+  setTasks: (fn: (tasks: Task[]) => Task[]) => void
+  saveBaseline: (name: string, primary: boolean) => void
+  setPrimaryBaseline: (id: string) => void
+  deleteBaseline: (id: string) => void
+  saveView: (view: TaskView) => void
+  deleteView: (id: string) => void
 
   updateLists: (patch: Partial<ProjectLists>) => void
   renameListItem: (list: ListKey, oldName: string, newName: string) => void
@@ -64,11 +82,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         if (get().readOnly) return
         set((s) => ({ workspace: fn(s.workspace) }))
       }
+      // Every project edit re-runs the scheduler, so dates are always consistent
+      // (one undo step for the edit and its knock-on effects).
       const setProject = (fn: (p: Project) => Project) =>
         setWs((ws) => ({
           ...ws,
-          projects: ws.projects.map((p) => (p.id === get().activeProjectId ? touch(fn(p)) : p)),
+          projects: ws.projects.map((p) => (p.id === get().activeProjectId ? touch(applySchedule(fn(p), ws.calendar)) : p)),
         }))
+      const setTaskList = (fn: (tasks: Task[]) => Task[]) => setProject((p) => ({ ...p, tasks: fn(p.tasks) }))
 
       return {
         workspace: { fileType: 'pm-web-workspace', schemaVersion: 3, id: '', revision: 0, calendar: { holidays: [], workingDays: [], orangeTolerance: 0.1, redTolerance: 0.25 }, absences: [], projects: [] },
@@ -84,7 +105,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               : (ws.projects.find((p) => !p.archived) ?? ws.projects[0])?.id ?? ''
           const temporalApi = useWorkspaceStore.temporal.getState()
           temporalApi.pause()
-          set({ workspace: ws, activeProjectId: active })
+          set({ workspace: migrateWorkspace(ws), activeProjectId: active })
           temporalApi.resume()
           temporalApi.clear()
           lastTrackedAt = 0
@@ -133,6 +154,94 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         deleteItem: (coll, id) =>
           setProject((p) => ({ ...p, [coll]: (p[coll] as { id: string }[]).filter((x) => x.id !== id) })),
 
+        addTask: (init = {}, afterId) => {
+          const id = newId('t')
+          setTaskList((tasks) => {
+            const after = afterId ? tasks.findIndex((t) => t.id === afterId) : -1
+            let insertAt = tasks.length
+            let level = 1
+            if (after >= 0) {
+              level = tasks[after].outlineLevel
+              insertAt = after + subtreeIds(tasks, afterId!).length
+            }
+            const task: Task = {
+              id,
+              no: Math.max(0, ...tasks.map((t) => t.no)) + 1,
+              outlineLevel: level,
+              wbs: '',
+              name: '',
+              phase: tasks[after]?.phase ?? '',
+              status: 'Not started',
+              owner: '',
+              percentComplete: 0,
+              schedulingMode: 'auto',
+              duration: 1,
+              dependencies: [],
+              milestone: false,
+              priority: 'Medium',
+              mgmtExport: false,
+              ...init,
+            }
+            return [...tasks.slice(0, insertAt), task, ...tasks.slice(insertAt)]
+          })
+          return id
+        },
+        updateTask: (id, patch) =>
+          setTaskList((tasks) =>
+            tasks.map((t) => {
+              if (t.id !== id) return t
+              const next: Task = { ...t, ...patch }
+              if ('milestone' in patch) next.duration = patch.milestone ? 0 : Math.max(1, t.duration ?? 1)
+              if ('duration' in patch && patch.duration !== undefined) next.milestone = patch.duration === 0
+              if (patch.status === 'Done') next.percentComplete = 1
+              if (t.schedulingMode === 'auto') {
+                if (patch.currentStart && patch.currentStart !== t.currentStart) {
+                  next.constraint = { type: 'SNET', date: patch.currentStart }
+                }
+                if (patch.currentFinish && patch.currentFinish !== t.currentFinish) {
+                  const cal = new WorkCalendar(get().workspace.calendar, '2000-01-01')
+                  const start = next.currentStart ?? patch.currentFinish
+                  next.duration = next.milestone ? 0 : Math.max(1, cal.workdaysBetween(start, patch.currentFinish))
+                }
+              }
+              return next
+            }),
+          ),
+        deleteTask: (id) =>
+          setTaskList((tasks) => {
+            const gone = new Set(subtreeIds(tasks, id))
+            return tasks
+              .filter((t) => !gone.has(t.id))
+              .map((t) =>
+                t.dependencies.some((d) => gone.has(d.predId))
+                  ? { ...t, dependencies: t.dependencies.filter((d) => !gone.has(d.predId)) }
+                  : t,
+              )
+          }),
+        setTasks: (fn) => setTaskList(fn),
+        saveBaseline: (name, primary) =>
+          setProject((p) => {
+            const snapshot = Object.fromEntries(p.tasks.map((t) => [t.id, { start: t.currentStart, finish: t.currentFinish }]))
+            const baselines = [...p.baselines, { id: newId('b'), name, createdAt: new Date().toISOString(), tasks: snapshot }]
+            const tasks = primary
+              ? p.tasks.map((t) => ({ ...t, baselineStart: t.currentStart, baselineFinish: t.currentFinish }))
+              : p.tasks
+            return { ...p, baselines, tasks }
+          }),
+        setPrimaryBaseline: (id) =>
+          setProject((p) => {
+            const b = p.baselines.find((x) => x.id === id)
+            if (!b) return p
+            return {
+              ...p,
+              tasks: p.tasks.map((t) => ({ ...t, baselineStart: b.tasks[t.id]?.start, baselineFinish: b.tasks[t.id]?.finish })),
+            }
+          }),
+        deleteBaseline: (id) => setProject((p) => ({ ...p, baselines: p.baselines.filter((b) => b.id !== id) })),
+        saveView: (view) =>
+          setProject((p) => ({ ...p, views: [...p.views.filter((v) => v.id !== view.id), view] })),
+        deleteView: (id) => setProject((p) => ({ ...p, views: p.views.filter((v) => v.id !== id) })),
+
         updateLists: (patch) => setProject((p) => ({ ...p, lists: { ...p.lists, ...patch } })),
         renameListItem: (list, oldName, newName) => {
           if (!newName || oldName === newName) return
@@ -152,7 +261,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             return { ...p, lists, budget: p.budget.map((b) => (b.category === oldName ? { ...b, category: newName } : b)) }
           })
         },
-        updateCalendar: (patch) => setWs((ws) => ({ ...ws, calendar: { ...ws.calendar, ...patch } })),
+        updateCalendar: (patch) =>
+          setWs((ws) => {
+            const calendar = { ...ws.calendar, ...patch }
+            // Holidays / working days move auto-scheduled tasks in every project.
+            return { ...ws, calendar, projects: ws.projects.map((p) => applySchedule(p, calendar)) }
+          }),
 
         addAbsence: (a) => setWs((ws) => ({ ...ws, absences: [...ws.absences, a] })),
         updateAbsence: (id, patch) =>

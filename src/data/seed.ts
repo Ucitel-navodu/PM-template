@@ -1,5 +1,9 @@
 import type { Absence, BudgetItem, Milestone, ProjectInfo, Risk, Task } from '../types'
 
+// Task records in the pre-scheduler shape (as exported from the workbook);
+// migrateTasks() in src/domain/workspace.ts turns them into scheduled tasks.
+export type LegacyTask = Omit<Task, 'no' | 'outlineLevel' | 'schedulingMode' | 'dependencies'> & { predecessors?: string }
+
 // Seed data adapted from "Project_Manager_Template_VBA_v18.xlsm" (sheets TASKS,
 // MILESTONES, BUDGET, RISKS, DASHBOARD). Dates and amounts follow the original
 // sample project; a few milestones/budget links were filled in for the demo
@@ -17,7 +21,7 @@ export const projectInfo: ProjectInfo = {
   currency: 'CZK',
 }
 
-export const seedTasks: Task[] = [
+export const seedTasks: LegacyTask[] = [
   { id: 't1', wbs: '1', projectArea: 'RFI', externalId: 'MSP-ID-65', name: 'Preparation of RFI documents', phase: 'INITIATION', status: 'Done', owner: 'S. Glabinski', currentStart: '2025-08-29', currentFinish: '2025-10-03', baselineFinish: '2025-10-03', percentComplete: 1, predecessors: '', milestone: false, priority: 'Medium', mgmtExport: true, mgmtOrder: 1 },
   { id: 't2', wbs: '2', projectArea: 'RFI', externalId: 'MSP-ID-66', name: 'RFI launch', phase: 'INITIATION', status: 'Done', owner: 'S. Glabinski', currentStart: '2025-10-03', currentFinish: '2025-10-10', baselineFinish: '2025-10-10', percentComplete: 1, predecessors: 't1', milestone: false, priority: 'Medium', mgmtExport: true, mgmtOrder: 2 },
   { id: 't3', wbs: '3', projectArea: 'RFI', externalId: 'MSP-ID-67', name: 'RFI bids submission period', phase: 'INITIATION', status: 'Done', owner: 'S. Glabinski', currentStart: '2025-10-10', currentFinish: '2025-10-31', baselineFinish: '2025-10-31', percentComplete: 1, predecessors: 't2', milestone: false, priority: 'Medium', mgmtExport: true, mgmtOrder: 3 },

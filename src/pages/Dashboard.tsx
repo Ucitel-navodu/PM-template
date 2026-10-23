@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
+import { leafTasks } from '../lib/schedule/tree'
 import { Card, Stat } from '../components/Card'
 import { MiniCalendar } from '../components/MiniCalendar'
 import { ProjectInfoCard } from '../components/ProjectInfoCard'
@@ -10,7 +11,8 @@ import { milestoneAmount } from '../lib/milestones'
 import type { Health, Status } from '../types'
 
 export function Dashboard() {
-  const { tr, projectInfo, tasks, milestones, budget, risks, settings } = useApp()
+  const { tr, projectInfo, tasks: allTasks, milestones, budget, risks, settings } = useApp()
+  const tasks = useMemo(() => leafTasks(allTasks), [allTasks])
 
   const statusCounts = useMemo(() => {
     const counts: Record<Status, number> = {

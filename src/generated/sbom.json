@@ -17,12 +17,12 @@
       }
     ],
     "component": {
-      "bom-ref": "pm-web@0.3.0",
+      "bom-ref": "pm-web@0.4.0",
       "type": "library",
       "name": "PM-template",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "scope": "required",
-      "purl": "pkg:npm/pm-web@0.3.0",
+      "purl": "pkg:npm/pm-web@0.4.0",
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -37,6 +37,241 @@
     }
   },
   "components": [
+    {
+      "bom-ref": "@dnd-kit/accessibility@3.1.1",
+      "type": "library",
+      "name": "@dnd-kit/accessibility",
+      "version": "3.1.1",
+      "scope": "required",
+      "author": "Claudéric Demers",
+      "description": "A generic toolkit to help with accessibility",
+      "purl": "pkg:npm/%40dnd-kit/accessibility@3.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@dnd-kit/accessibility"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@dnd-kit/accessibility/-/accessibility-3.1.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/clauderic/dnd-kit.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/clauderic/dnd-kit#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/clauderic/dnd-kit/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d8ff9881a5c5fa046c222870c18d600ac412627bbd6728f6a72f246397c5bd4335aa6d96036bbadfd47a60d55f538196afe64ce66a84b1f1d964ba1138d6de9b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@dnd-kit/core@6.3.1",
+      "type": "library",
+      "name": "@dnd-kit/core",
+      "version": "6.3.1",
+      "scope": "required",
+      "author": "Claudéric Demers",
+      "description": "dnd kit – a lightweight React library for building performant and accessible drag and drop experiences",
+      "purl": "pkg:npm/%40dnd-kit/core@6.3.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@dnd-kit/core"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/clauderic/dnd-kit.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/clauderic/dnd-kit#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/clauderic/dnd-kit/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c6418145041a6f844bc205f1a2a113202afa4b9265a2069f6e136c89d9ab915bf6611b3930bc298e8176aa98868d0b7c4bd028c6d215eb4decd06214a58e5e61"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@dnd-kit/utilities@3.2.2",
+      "type": "library",
+      "name": "@dnd-kit/utilities",
+      "version": "3.2.2",
+      "scope": "required",
+      "author": "Claudéric Demers",
+      "description": "Internal utilities to bee shared between `@dnd-kit` packages",
+      "purl": "pkg:npm/%40dnd-kit/utilities@3.2.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@dnd-kit/utilities"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/clauderic/dnd-kit.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/clauderic/dnd-kit#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/clauderic/dnd-kit/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f8c28024439f6817b94a657ab77e29f3430c2a18ef533d2f46bbd525b3d3d16125cda389ff5c6cf83f8a0effad0ff344e6e8dfac284472c85de1f2e7d30a62aa"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@tanstack/react-table@8.21.3",
+      "type": "library",
+      "name": "@tanstack/react-table",
+      "version": "8.21.3",
+      "scope": "required",
+      "author": "Tanner Linsley",
+      "description": "Headless UI for building powerful tables & datagrids for React.",
+      "purl": "pkg:npm/%40tanstack/react-table@8.21.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@tanstack/react-table"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tanstack/react-table/-/react-table-8.21.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/TanStack/table.git"
+        },
+        {
+          "type": "website",
+          "url": "https://tanstack.com/table"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/TanStack/table/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e6734c4d21133f8ca419e826564863712f2d4cb5ba565e1ac5f10640ddefd3374761b2b851fa2a7cf0a17254eb2781282bd4329ea02ef6851ff15126ae96795b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@tanstack/table-core@8.21.3",
+      "type": "library",
+      "name": "@tanstack/table-core",
+      "version": "8.21.3",
+      "scope": "required",
+      "author": "Tanner Linsley",
+      "description": "Headless UI for building powerful tables & datagrids for TS/JS.",
+      "purl": "pkg:npm/%40tanstack/table-core@8.21.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@tanstack/table-core"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tanstack/table-core/-/table-core-8.21.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/TanStack/table.git"
+        },
+        {
+          "type": "website",
+          "url": "https://tanstack.com/table"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/TanStack/table/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "95d6571213816fc22cef12ecd357d1dd811cdc31118b3e6c8a58fcb671a4159cadb7569b12f97f1a1526084d0f30b68c3d36b7264e076ca9919479aefa009fb6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
     {
       "bom-ref": "browser-fs-access@0.38.0",
       "type": "library",
@@ -80,6 +315,53 @@
         {
           "license": {
             "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "frappe-gantt@1.2.2",
+      "type": "library",
+      "name": "frappe-gantt",
+      "version": "1.2.2",
+      "scope": "required",
+      "author": "Faris Ansari",
+      "description": "A simple, modern, interactive gantt library for the web",
+      "purl": "pkg:npm/frappe-gantt@1.2.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/frappe-gantt"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/frappe-gantt/-/frappe-gantt-1.2.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/frappe/gantt.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/frappe/gantt"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/frappe/gantt/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d7eb8f3516bdd8b04878a89909584932218889f264e4e35aa1ead723c7814445d6459186a13251e404e9329b27010732040e869eae70221b7878bf9ee1e1cc04"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
           }
         }
       ]
@@ -317,6 +599,53 @@
       ]
     },
     {
+      "bom-ref": "tslib@2.8.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "scope": "required",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/tslib"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Microsoft/tslib.git"
+        },
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Microsoft/TypeScript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "zod@4.6.7",
       "type": "library",
       "name": "zod",
@@ -460,9 +789,12 @@
   ],
   "dependencies": [
     {
-      "ref": "pm-web@0.3.0",
+      "ref": "pm-web@0.4.0",
       "dependsOn": [
+        "@dnd-kit/core@6.3.1",
+        "@tanstack/react-table@8.21.3",
         "browser-fs-access@0.38.0",
+        "frappe-gantt@1.2.2",
         "idb-keyval@6.3.0",
         "react@18.3.1",
         "react-dom@18.3.1",
@@ -472,7 +804,47 @@
       ]
     },
     {
+      "ref": "@dnd-kit/accessibility@3.1.1",
+      "dependsOn": [
+        "react@18.3.1",
+        "tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "@dnd-kit/core@6.3.1",
+      "dependsOn": [
+        "react@18.3.1",
+        "react-dom@18.3.1",
+        "tslib@2.8.1",
+        "@dnd-kit/accessibility@3.1.1",
+        "@dnd-kit/utilities@3.2.2"
+      ]
+    },
+    {
+      "ref": "@dnd-kit/utilities@3.2.2",
+      "dependsOn": [
+        "react@18.3.1",
+        "tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "@tanstack/react-table@8.21.3",
+      "dependsOn": [
+        "react@18.3.1",
+        "react-dom@18.3.1",
+        "@tanstack/table-core@8.21.3"
+      ]
+    },
+    {
+      "ref": "@tanstack/table-core@8.21.3",
+      "dependsOn": []
+    },
+    {
       "ref": "browser-fs-access@0.38.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "frappe-gantt@1.2.2",
       "dependsOn": []
     },
     {
@@ -502,6 +874,10 @@
       "dependsOn": [
         "loose-envify@1.4.0"
       ]
+    },
+    {
+      "ref": "tslib@2.8.1",
+      "dependsOn": []
     },
     {
       "ref": "zod@4.6.7",

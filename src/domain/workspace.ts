@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Absence, CalendarSettings, Project, ProjectInfo, ProjectLists, Workspace } from '../types'
+import type { Absence, CalendarSettings, Dependency, LinkType, Project, ProjectInfo, ProjectLists, Task, Workspace } from '../types'
 import { WORKSPACE_SCHEMA_VERSION } from '../types'
 import { defaultCalendar, defaultLists } from '../data/settings'
 import {
@@ -10,6 +10,7 @@ import {
   seedRisks,
   seedTasks,
 } from '../data/seed'
+import { applySchedule } from '../lib/schedule/cpm'
 
 // ---------------------------------------------------------------------------
 // Validation. Loose objects: unknown extra fields are kept (forward
@@ -56,6 +57,8 @@ const projectSchema = z.looseObject({
   milestones: z.array(idObject).catch([]),
   budget: z.array(idObject).catch([]),
   risks: z.array(idObject).catch([]),
+  baselines: z.array(idObject).catch([]),
+  views: z.array(idObject).catch([]),
   archived: z.boolean().optional(),
   createdAt: z.string().catch(() => new Date().toISOString()),
   updatedAt: z.string().catch(() => new Date().toISOString()),
@@ -87,6 +90,81 @@ const legacyBundleSchema = z.looseObject({
 })
 
 export class WorkspaceFileError extends Error {}
+
+// ---------------------------------------------------------------------------
+// Task model migration (schema 3 -> 4: scheduling). Idempotent: safe to run on
+// every load, also on data that is already current.
+// ---------------------------------------------------------------------------
+
+const LINK_TYPES = new Set(['FS', 'SS', 'FF', 'SF'])
+const LEGACY_PRED = /^(\d+)\s*(FS|SS|FF|SF)?\s*(?:([+-])\s*(\d+)\s*\w*)?$/i
+
+function legacyPredecessors(text: string, ids: Set<string>, idByNo: Map<number, string>): Dependency[] {
+  const deps: Dependency[] = []
+  for (const raw of text.split(/[;,]/)) {
+    const token = raw.trim()
+    if (!token) continue
+    if (ids.has(token)) {
+      deps.push({ predId: token, type: 'FS', lag: 0 })
+      continue
+    }
+    const m = LEGACY_PRED.exec(token)
+    const predId = m && idByNo.get(Number(m[1]))
+    if (m && predId) {
+      deps.push({ predId, type: (m[2]?.toUpperCase() ?? 'FS') as LinkType, lag: m[3] ? (m[3] === '-' ? -1 : 1) * Number(m[4]) : 0 })
+    }
+  }
+  return deps
+}
+
+export function migrateTasks(raw: unknown[]): Task[] {
+  const items = raw.filter((t): t is Record<string, unknown> => Boolean(t) && typeof t === 'object')
+  // Stable task numbers: keep valid unique ones, number the rest after them.
+  const used = new Set<number>()
+  for (const t of items) {
+    const no = t.no
+    if (typeof no === 'number' && Number.isInteger(no) && no > 0 && !used.has(no)) used.add(no)
+    else t.no = undefined
+  }
+  let next = Math.max(0, ...used) + 1
+  const numbered: Record<string, unknown>[] & { no: number }[] = items.map((t) => ({ ...t, no: (t.no as number | undefined) ?? next++ }))
+  const ids = new Set(numbered.map((t) => String(t.id)))
+  const idByNo = new Map(numbered.map((t) => [t.no as number, String(t.id)]))
+
+  return numbered.map((t) => {
+    const { predecessors, ...rest } = t as Record<string, unknown> & { predecessors?: unknown }
+    const deps = Array.isArray(t.dependencies)
+      ? (t.dependencies as Dependency[]).filter(
+          (d) => d && ids.has(d.predId) && d.predId !== t.id && LINK_TYPES.has(d.type) && Number.isFinite(d.lag),
+        )
+      : typeof predecessors === 'string'
+        ? legacyPredecessors(predecessors, ids, idByNo).filter((d) => d.predId !== t.id)
+        : []
+    const level = Number(t.outlineLevel)
+    return {
+      ...rest,
+      outlineLevel: Number.isInteger(level) && level >= 1 ? level : 1,
+      // Existing tasks keep their dates exactly: they become manually scheduled.
+      schedulingMode: t.schedulingMode === 'auto' ? 'auto' : 'manual',
+      dependencies: deps,
+      milestone: Boolean(t.milestone),
+    } as unknown as Task
+  })
+}
+
+export function migrateProject(p: Project, calendar: CalendarSettings): Project {
+  const migrated: Project = {
+    ...p,
+    tasks: migrateTasks(p.tasks as unknown[]),
+    baselines: Array.isArray(p.baselines) ? p.baselines : [],
+    views: Array.isArray(p.views) ? p.views : [],
+  }
+  return applySchedule(migrated, calendar)
+}
+
+export function migrateWorkspace(ws: Workspace): Workspace {
+  return { ...ws, schemaVersion: WORKSPACE_SCHEMA_VERSION, projects: ws.projects.map((p) => migrateProject(p, ws.calendar)) }
+}
 
 // ---------------------------------------------------------------------------
 // Factories
@@ -121,24 +199,63 @@ export function createBlankProject(name: string, lists: ProjectLists = defaultLi
     milestones: [],
     budget: [],
     risks: [],
+    baselines: [],
+    views: [],
     createdAt: now,
     updatedAt: now,
   }
 }
 
-export function createSampleProject(): Project {
-  const now = new Date().toISOString()
-  return {
-    id: newId('p'),
-    info: structuredClone(seedInfo),
-    lists: structuredClone(defaultLists),
-    tasks: structuredClone(seedTasks),
-    milestones: structuredClone(seedMilestones),
-    budget: structuredClone(seedBudget),
-    risks: structuredClone(seedRisks),
-    createdAt: now,
-    updatedAt: now,
+/** Sample tasks grouped under one summary task per project area, to show the outline. */
+function sampleTasks(): Task[] {
+  const tasks = migrateTasks(structuredClone(seedTasks))
+  const out: Task[] = []
+  let area: string | undefined
+  let no = Math.max(...tasks.map((t) => t.no)) + 1
+  for (const t of tasks) {
+    if (t.projectArea && t.projectArea !== area) {
+      area = t.projectArea
+      out.push({
+        id: `s-${area}`,
+        no: no++,
+        outlineLevel: 1,
+        wbs: '',
+        name: area,
+        phase: t.phase,
+        projectArea: area,
+        status: 'In progress',
+        owner: '',
+        percentComplete: null,
+        schedulingMode: 'auto',
+        dependencies: [],
+        milestone: false,
+        priority: 'Medium',
+        mgmtExport: false,
+      })
+    }
+    out.push({ ...t, outlineLevel: 2 })
   }
+  return out
+}
+
+export function createSampleProject(calendar: CalendarSettings = defaultCalendar): Project {
+  const now = new Date().toISOString()
+  return applySchedule(
+    {
+      id: newId('p'),
+      info: structuredClone(seedInfo),
+      lists: structuredClone(defaultLists),
+      tasks: sampleTasks(),
+      milestones: structuredClone(seedMilestones),
+      budget: structuredClone(seedBudget),
+      risks: structuredClone(seedRisks),
+      baselines: [],
+      views: [],
+      createdAt: now,
+      updatedAt: now,
+    },
+    calendar,
+  )
 }
 
 export function createWorkspace(projects: Project[], calendar: CalendarSettings = defaultCalendar, absences: Absence[] = []): Workspace {
@@ -191,9 +308,9 @@ function stripLegacyMilestoneFields(milestones: unknown[]): unknown[] {
   })
 }
 
-function projectFromLegacy(data: LegacySnapshot, lists: ProjectLists): Project {
+function projectFromLegacy(data: LegacySnapshot, lists: ProjectLists, calendar: CalendarSettings): Project {
   const now = new Date().toISOString()
-  return projectSchema.parse({
+  const project = projectSchema.parse({
     id: newId('p'),
     info: data.projectInfo,
     lists,
@@ -204,6 +321,7 @@ function projectFromLegacy(data: LegacySnapshot, lists: ProjectLists): Project {
     createdAt: now,
     updatedAt: now,
   }) as unknown as Project
+  return migrateProject(project, calendar)
 }
 
 /** A legacy single-project export (v1/v2) turned into a project + its calendar/absences. */
@@ -211,7 +329,7 @@ export function projectFromLegacyBundle(raw: unknown): { project: Project; calen
   const bundle = legacyBundleSchema.parse(raw)
   const { lists, calendar } = splitLegacySettings(bundle.settings)
   return {
-    project: projectFromLegacy(bundle as LegacySnapshot, lists),
+    project: projectFromLegacy(bundle as LegacySnapshot, lists, calendar),
     calendar,
     absences: bundle.absences as unknown as Absence[],
   }
@@ -226,6 +344,7 @@ export function workspaceFromLegacySnapshot(snap: LegacySnapshot): Workspace {
       projectInfo: snap.projectInfo ?? seedInfo,
     },
     lists,
+    calendar,
   )
   return createWorkspace([project], calendar, (snap.absences as Absence[]) ?? [])
 }
@@ -251,7 +370,7 @@ export function parseAnyFile(text: string): ParsedFile {
           'Soubor byl uložen novější verzí aplikace. Otevři ho v aktuální verzi, aby se nepřepsala data, kterým tato verze nerozumí.',
         )
       }
-      return { kind: 'workspace', workspace: { ...ws, schemaVersion: WORKSPACE_SCHEMA_VERSION } }
+      return { kind: 'workspace', workspace: migrateWorkspace(ws) }
     }
     if (type === 'pm-web-project') {
       return { kind: 'legacy-project', ...projectFromLegacyBundle(raw) }

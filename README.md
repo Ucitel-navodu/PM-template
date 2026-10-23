@@ -32,8 +32,19 @@ Nově (etapa E0 – základ):
   kontrola licencí (jen MIT/Apache-2.0/BSD/ISC) a CycloneDX SBOM při každém buildu
   (`scripts/licenses.mjs`); seznam knihoven, licence a SBOM jsou v appce v ❓ → ℹ️ O aplikaci.
 
-Plán dalších etap (plánování s CPM a interaktivním Ganttem, RAID + change requesty + audit log,
-reporting PDF/PPTX, import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
+Etapa E1 – plánování (jako MS Project):
+
+- **Hierarchie WBS** se souhrnnými úkoly (odsazení Alt+Shift+→/←, posun Alt+Shift+↑/↓).
+- **Automatické plánování** v pracovních dnech (víkendy + svátky z Nastavení), vazby FS/SS/FF/SF
+  s posunem, ručně plánované úkoly, omezení „nezačít dříve než“, **kritická cesta** a rezervy
+  (`src/lib/schedule/`, vlastní CPM s unit testy).
+- **Tabulka úkolů** na [TanStack Table](https://tanstack.com/table) – řazení, filtry, volba sloupců,
+  uložené pohledy; **baseline** (více snímků, odchylka v pracovních dnech).
+- **Interaktivní Gantt** ([frappe-gantt](https://github.com/frappe/gantt)) – tažení, změna délky a %,
+  šipky vazeb, svátky, zvýraznění kritické cesty.
+- **Kanban** ([dnd-kit](https://dndkit.com)) – změna stavu přetažením, i klávesnicí.
+
+Další etapy (RAID + change requesty + audit log, reporting PDF/PPTX, import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
 [`docs/research.md`](docs/research.md).
 
 ## Vývoj
@@ -44,7 +55,7 @@ npm run dev              # http://localhost:5173
 npm test                 # Vitest (unit testy, TZ Europe/Prague)
 npm run build            # licence/SBOM + typecheck + build do dist/ + CSP
 npm run build:portable   # totéž, ale JEDEN self-contained dist-portable/index.html
-npm run e2e              # Playwright: smoke test portable buildu přes file:// + autosave/konflikty
+npm run e2e              # Playwright: smoke test, plánování (file://) + autosave/konflikty
 ```
 
 E2E testy potřebují Chromium (`npx playwright install chromium`, nebo `CHROMIUM_PATH=/cesta/k/chromium`).

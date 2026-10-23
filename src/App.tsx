@@ -5,6 +5,7 @@ import { useWorkspaceStore } from './store/workspaceStore'
 import { Dashboard } from './pages/Dashboard'
 import { TasksPage } from './pages/Tasks'
 import { GanttPage } from './pages/Gantt'
+import { BoardPage } from './pages/Board'
 import { MilestonesPage } from './pages/Milestones'
 import { BudgetPage } from './pages/Budget'
 import { RisksPage } from './pages/Risks'
@@ -15,13 +16,14 @@ import { SyncBanner } from './components/SyncBanner'
 import { HelpPanel } from './components/HelpPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 
-type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'team'
+type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'team'
 
 const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'portfolio', label: 'nav_portfolio' },
   { key: 'dashboard', label: 'nav_dashboard' },
   { key: 'tasks', label: 'nav_tasks' },
   { key: 'gantt', label: 'nav_gantt' },
+  { key: 'board', label: 'nav_board' },
   { key: 'milestones', label: 'nav_milestones' },
   { key: 'budget', label: 'nav_budget' },
   { key: 'risks', label: 'nav_risks' },
@@ -138,6 +140,7 @@ export default function App() {
         {page === 'dashboard' && <Dashboard />}
         {page === 'tasks' && <TasksPage onOpenSettings={() => setSettingsOpen(true)} />}
         {page === 'gantt' && <GanttPage />}
+        {page === 'board' && <BoardPage />}
         {page === 'milestones' && <MilestonesPage />}
         {page === 'budget' && <BudgetPage />}
         {page === 'risks' && <RisksPage />}

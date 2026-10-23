@@ -17,6 +17,10 @@ const policy = [
   "default-src 'none'",
   `script-src 'self' ${hashes('script').join(' ')}`,
   `style-src 'self' ${hashes('style').join(' ')}`,
+  // Inline style *attributes* only (frappe-gantt colours holiday columns with
+  // setAttribute('style')). They cannot run code, and with connect-src/img-src
+  // closed they cannot send data anywhere; <style> blocks stay hash-locked.
+  "style-src-attr 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "connect-src 'none'",

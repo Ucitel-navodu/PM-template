@@ -1,3 +1,4 @@
+import { leafTasks } from './schedule/tree'
 import type { CalendarSettings, Health, Milestone, Project } from '../types'
 import { computeHealth } from './health'
 import { toDateKey } from './dates'
@@ -29,11 +30,12 @@ function durationDays(start?: string, finish?: string): number {
 
 export function summarizeProject(p: Project, calendar: CalendarSettings, today = new Date()): ProjectSummary {
   const todayKey = toDateKey(today)
+  const leaves = leafTasks(p.tasks)
   const health: Record<Health, number> = { Green: 0, Orange: 0, Red: 0, Grey: 0, Blue: 0 }
   let weighted = 0
   let weights = 0
   let overdueTasks = 0
-  for (const t of p.tasks) {
+  for (const t of leaves) {
     const h = computeHealth(t, calendar)
     if (h) health[h]++
     if (t.status === 'Cancelled') continue
@@ -56,7 +58,7 @@ export function summarizeProject(p: Project, calendar: CalendarSettings, today =
   const actual = p.budget.reduce((s, b) => s + b.actual, 0)
   const approved = p.info.budget
 
-  let rag: Rag = p.tasks.length ? 'Green' : 'Grey'
+  let rag: Rag = leaves.length ? 'Green' : 'Grey'
   const ragReasons: string[] = []
   if (health.Red) {
     rag = worse(rag, 'Red')

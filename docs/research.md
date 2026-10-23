@@ -21,6 +21,8 @@ change requests, status report export.
 | State + undo/redo | zustand 5 + zundo 2 | MIT | |
 | Schema validation / migration | zod 4 | MIT | |
 | Gantt rendering | frappe-gantt 1.2 | MIT | 0 deps. Deps = array of task ids, `custom_class`, events on_click/on_date_change/on_progress_change/on_double_click, `holidays`, `ignore: ['weekend', dates]`, `move_dependencies`, `readonly`. Draws all links as FS arrows (link type semantics handled by our scheduler). |
+| Task table | @tanstack/react-table 8 | MIT | headless: sorting, column visibility; filtering/outline done by us |
+| Kanban drag & drop | @dnd-kit/core 6 | MIT | pointer + keyboard sensors (accessible) |
 | Unit tests | vitest 3.2 | MIT | v5 needs Vite 6+ |
 
 Rejected: SVAR React Gantt (MIT core, but 17 transitive deps incl. its own grid/store/editor duplicating ours; auto-scheduling is PRO); gantt-task-react (unmaintained since 2022); DHTMLX Gantt (GPL); SheetJS `xlsx` from npm (stuck at 0.18.5, CVE-2023-30533) -> ExcelJS (MIT) for Excel import.
@@ -36,3 +38,28 @@ covers calendar-aware CPM with FS/SS/FF/SF + lag.
 Note: the reference sites (learn.microsoft.com, ganttproject.biz, ...) are not
 reachable from the build sandbox; notes above are from the published schema and
 will be validated with a real MSP XML sample.
+
+## E1 design notes
+
+- **Outline model = MS Project's**: tasks are a flat list in outline order with an
+  `outlineLevel`; the parent is the nearest previous task with a lower level, WBS
+  numbers are derived. Indent/outdent/move operate on subtrees
+  (`src/lib/schedule/tree.ts`). It maps 1:1 to MSP XML `OutlineLevel` for E4.
+- **Scheduler** (`src/lib/schedule/cpm.ts`): dates are mapped to working-day
+  ordinals (`calendar.ts`), then a textbook forward/backward pass (Kahn topological
+  order, cycle detection). Milestones sit at the end of the day, like MSP. Links
+  to/from summary tasks are expanded to their leaf tasks. Manual tasks and tasks
+  with an actual start keep their dates but drive successors. Dragging or editing
+  the start of an auto task creates a "start no earlier than" constraint (MSP
+  behaviour). Every edit re-runs `applySchedule` inside the store, so one undo
+  step covers the edit and its knock-on effects.
+- **Migration** (schema 4): existing tasks become *manual* so no stored date
+  changes; text predecessors (`t1`, `3FS+2d`) become typed links.
+- **frappe-gantt limitations**: all links are drawn as FS arrows (the type is in
+  the popup), no baseline bars (variance is a table column and in the popup),
+  names/popups use `innerHTML`, so everything passed in is HTML-escaped (an e2e
+  test checks a task named `<img onerror=…>`).
+- **CSP**: frappe-gantt colours holiday columns with `setAttribute('style', …)`.
+  The policy therefore adds `style-src-attr 'unsafe-inline'` - style *attributes*
+  only; `<style>` blocks stay hash-locked, scripts stay hash-locked, and with
+  `connect-src`/`img-src` closed a style attribute cannot send data anywhere.

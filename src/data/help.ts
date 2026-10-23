@@ -108,6 +108,47 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       ],
     },
     {
+      title: "🗓️ Plánování (harmonogram)",
+      items: [
+        {
+          q: "Jak funguje automatické plánování?",
+          a: "Jako v MS Projectu: u automaticky plánovaného úkolu (⚙) zadáš dobu trvání v pracovních dnech a předchůdce, termíny dopočítá appka. Počítá jen s pracovními dny a svátky z ⚙️ Nastavení. Když se předchůdce posune, posunou se i následníci. Ručně plánovaný úkol (✋) drží data, která zadáš, ale následníky posouvá. Úkoly převedené ze starší verze jsou ruční, aby se nic samo nepřeplánovalo – tlačítkem „Všechny úkoly plánovat automaticky“ je převedeš.",
+        },
+        {
+          q: "Jak zadám předchůdce?",
+          a: "Do sloupce Předchůdci napiš čísla úkolů ze sloupce # oddělená středníkem. Výchozí vazba je FS (konec–začátek). Další typy: SS (začátek–začátek), FF (konec–konec), SF (začátek–konec). Posun v pracovních dnech: +2d = počkat 2 dny, -1d = začít o den dřív. Příklad: 3; 5SS+2d; 7FF-1d. Neplatný zápis se zvýrazní červeně.",
+        },
+        {
+          q: "Co je kritická cesta a rezerva?",
+          a: "Rezerva říká, o kolik pracovních dnů se úkol může zpozdit, aniž by se posunul konec projektu. Úkoly s nulovou rezervou tvoří kritickou cestu – v tabulce mají červený proužek, v Ganttu červený obrys, na Kanbanu štítek CP. Hotové úkoly kritické nejsou. Filtr „Jen kritická cesta“ ukáže jen je.",
+        },
+        {
+          q: "Proč se u úkolu objevil 📌?",
+          a: "Ručně jsi posunul začátek automatického úkolu (v tabulce nebo tažením v Ganttu). Appka si to pamatuje jako omezení „nezačít dříve než“, stejně jako MS Project. Kliknutím na 📌 omezení zrušíš a úkol se vrátí za předchůdce.",
+        },
+        {
+          q: "Jak vytvořím souhrnný úkol (fázi, balík prací)?",
+          a: "Úkoly pod ním odsaď tlačítkem ⇥ nebo klávesami Alt+Shift+→ (⇤ / Alt+Shift+← předsadí zpět, Alt+Shift+↑/↓ posune). Souhrnný úkol bere termíny a % dokončení ze svých podúkolů a vazba na něj platí pro všechny jeho podúkoly. WBS čísla (1, 1.1, …) se počítají sama.",
+        },
+        {
+          q: "Co je baseline a jak sleduji zpoždění?",
+          a: "Baseline je uložený snímek termínů (📏 Baseline… v Úkolech). Hlavní baseline se zapíše do sloupců Baseline start/konec a používá ji Health. Sloupec Odchylka ukazuje posun konce proti baseline v pracovních dnech (+ = zpoždění). Uložit můžeš víc baseline (např. po schválení změny) a kteroukoli nastavit jako hlavní.",
+        },
+        {
+          q: "Jak pracuji s Ganttem?",
+          a: "Tažením pruhu posuneš úkol, tažením okraje změníš délku, spodním úchytem nastavíš % dokončení. Klik ukáže detail. Přepínač Den/Týden/Měsíc/Rok mění měřítko, Dnes posune na dnešek. Šipky ukazují vazby (typ vazby je v detailu úkolu). Barva pruhu = Health, tmavé pruhy jsou souhrnné úkoly, fialové milníky.",
+        },
+        {
+          q: "K čemu je Kanban?",
+          a: "Rychlá změna stavu úkolů přetažením karty do jiného sloupce – myší, nebo klávesnicí (Tab na kartu, Mezerník, šipky, Mezerník). Při přesunu do „Not started“ se % vynuluje a do „Done“ nastaví na 100 %, aby nevznikla chyba dat (Blue).",
+        },
+        {
+          q: "Můžu si uložit vlastní pohled na tabulku?",
+          a: "Ano: nastav filtry, řazení (klik na záhlaví) a sloupce (Sloupce ▾) a dej „Uložit pohled…“. Pohledy se ukládají do projektu, takže je uvidí i kolegové, kteří soubor otevřou.",
+        },
+      ],
+    },
+    {
       title: '📋 Práce s listy appky',
       items: [
         {
@@ -115,8 +156,8 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: 'Na stránce Úkoly klikni na "+ Přidat úkol" — přidá se nový prázdný řádek, který rovnou vyplníš.',
         },
         {
-          q: 'Jak funguje Gantt a přepínač Week/Month/Quarter?',
-          a: 'Pruhy se barví podle Health, přerušovaná čára ukazuje dnešní datum. Přepínač mění granularitu časové osy nahoře — Week pro detailní pohled na pár týdnů, Month/Quarter pro dlouhodobý přehled.',
+          q: 'Co znamenají barvy v Ganttu?',
+          a: 'Barva pruhu odpovídá Health úkolu (plná část = hotové %), tmavé pruhy jsou souhrnné úkoly, fialové milníky, červený obrys kritická cesta. Růžové sloupce jsou svátky, šedé víkendy.',
         },
         {
           q: 'K čemu je navázání milníku na rozpočet?',
@@ -277,6 +318,47 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       ],
     },
     {
+      title: "🗓️ Scheduling",
+      items: [
+        {
+          q: "How does automatic scheduling work?",
+          a: "Like MS Project: for an auto-scheduled task (⚙) you enter the duration in working days and its predecessors; the app calculates the dates. It counts working days only, using the holidays from ⚙️ Settings. When a predecessor moves, its successors move too. A manually scheduled task (✋) keeps the dates you enter but still moves its successors. Tasks migrated from the older version are manual so nothing gets rescheduled by itself - use \"Auto-schedule all tasks\" to switch them.",
+        },
+        {
+          q: "How do I enter predecessors?",
+          a: "In the Predecessors column type task numbers from the # column separated by semicolons. The default link is FS (finish-to-start). Other types: SS, FF, SF. Lag in working days: +2d = wait 2 days, -1d = start one day earlier. Example: 3; 5SS+2d; 7FF-1d. Invalid input is highlighted in red.",
+        },
+        {
+          q: "What are the critical path and slack?",
+          a: "Slack is how many working days a task can slip without moving the project finish. Tasks with zero slack form the critical path - a red stripe in the table, a red outline in the Gantt, a CP tag on the board. Finished tasks are never critical. The \"Critical path only\" filter shows just them.",
+        },
+        {
+          q: "Why does a task show 📌?",
+          a: "You moved the start of an auto-scheduled task by hand (in the table or by dragging in the Gantt). The app keeps it as a \"start no earlier than\" constraint, like MS Project. Click 📌 to remove it and the task goes back right after its predecessors.",
+        },
+        {
+          q: "How do I create a summary task (phase, work package)?",
+          a: "Indent the tasks below it with ⇥ or Alt+Shift+→ (⇤ / Alt+Shift+← outdents, Alt+Shift+↑/↓ moves). A summary takes its dates and % complete from its subtasks, and a link to it applies to all its subtasks. WBS numbers (1, 1.1, …) are calculated automatically.",
+        },
+        {
+          q: "What is a baseline and how do I track slippage?",
+          a: "A baseline is a saved snapshot of the dates (📏 Baselines… on Tasks). The primary baseline fills the Baseline start/finish columns and is used by Health. The Variance column shows the finish slip in working days (+ = late). You can keep several baselines (e.g. after an approved change) and make any of them primary.",
+        },
+        {
+          q: "How do I work with the Gantt?",
+          a: "Drag a bar to move a task, drag its edge to change the duration, drag the bottom handle to set % complete. Click for details. Day/Week/Month/Year changes the scale, Today jumps to today. Arrows show the links (the link type is in the task detail). Bar colour = Health, dark bars are summaries, purple ones milestones.",
+        },
+        {
+          q: "What is the board for?",
+          a: "Changing task status quickly by dragging a card to another column - with the mouse, or the keyboard (Tab to a card, Space, arrows, Space). Moving to \"Not started\" resets % to 0 and \"Done\" sets 100 %, so no data issue (Blue) appears.",
+        },
+        {
+          q: "Can I save my own table view?",
+          a: "Yes: set filters, sorting (click a header) and columns (Columns ▾) and choose \"Save view…\". Views are stored in the project, so colleagues opening the file see them too.",
+        },
+      ],
+    },
+    {
       title: '📋 Working with the app pages',
       items: [
         {
@@ -284,8 +366,8 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: 'On the Tasks page, click "+ Add task" - a new empty row is added for you to fill in right away.',
         },
         {
-          q: 'How does the Gantt and the Week/Month/Quarter switch work?',
-          a: 'Bars are colored by Health, the dashed line marks today. The switch changes the timeline granularity above - Week for a detailed view of a few weeks, Month/Quarter for a longer-term overview.',
+          q: 'What do the Gantt colours mean?',
+          a: 'Bar colour is the task Health (the solid part = % complete), dark bars are summaries, purple ones milestones, a red outline marks the critical path. Pink columns are holidays, grey ones weekends.',
         },
         {
           q: 'What is linking a milestone to the budget for?',

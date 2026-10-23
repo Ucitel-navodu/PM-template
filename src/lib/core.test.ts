@@ -43,7 +43,7 @@ describe('dates (Europe/Prague)', () => {
 })
 
 describe('health (port of the Excel LET formula)', () => {
-  const base: Task = { id: 't', wbs: '1', name: 'T', phase: 'P', status: 'In progress', owner: '', percentComplete: 0.5, milestone: false, priority: 'Medium', mgmtExport: false }
+  const base: Task = { id: 't', wbs: '1', name: 'T', phase: 'P', status: 'In progress', owner: '', percentComplete: 0.5, milestone: false, priority: 'Medium', mgmtExport: false, no: 1, outlineLevel: 1, schedulingMode: 'manual', dependencies: [] }
   const today = new Date()
   const iso = (d: number) => toDateKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + d))
 

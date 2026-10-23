@@ -20,7 +20,7 @@ interface AppState {
   setProjectInfo: (p: ProjectInfo) => void
 
   tasks: Task[]
-  addTask: (task: Task) => void
+  addTask: (init?: Partial<Task>, afterId?: string) => string
   updateTask: (id: string, patch: Partial<Task>) => void
   deleteTask: (id: string) => void
 
@@ -84,9 +84,9 @@ export function useApp(): AppState {
     setProjectInfo: a.updateProjectInfo,
 
     tasks: project.tasks,
-    addTask: (x) => a.addItem('tasks', x),
-    updateTask: (id, patch) => a.updateItem('tasks', id, patch),
-    deleteTask: (id) => a.deleteItem('tasks', id),
+    addTask: (init, afterId) => a.addTask(init, afterId),
+    updateTask: (id, patch) => a.updateTask(id, patch),
+    deleteTask: (id) => a.deleteTask(id),
 
     milestones: project.milestones,
     addMilestone: (x) => a.addItem('milestones', x),

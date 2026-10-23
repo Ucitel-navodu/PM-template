@@ -21,3 +21,9 @@ html.dark body {
 table {
   border-collapse: collapse;
 }
+
+/* Native date pickers and selects follow the app theme */
+html.dark input,
+html.dark select {
+  color-scheme: dark;
+}
