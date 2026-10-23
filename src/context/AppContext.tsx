@@ -1,18 +1,20 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Absence, BudgetItem, Lang, Milestone, ProjectInfo, Risk, Settings, Task, Theme } from '../types'
-import { projectInfo as seedProjectInfo, seedAbsences, seedBudget, seedMilestones, seedRisks, seedTasks } from '../data/seed'
-import { defaultSettings, withSettingsDefaults } from '../data/settings'
-import { loadState, saveState } from '../lib/storage'
 import { t, type TKey } from '../i18n'
-import { buildProjectBundle, downloadProjectFile, type ProjectBundle } from '../lib/projectFile'
+import { useActiveProject, useWorkspaceStore, type ListKey } from '../store/workspaceStore'
+import { usePrefsStore } from '../store/prefsStore'
+import { bootstrapWorkspace } from '../lib/persistence/bootstrap'
+import { hasUnsavedWork } from '../lib/persistence/fileSync'
+
+export type { ListKey }
 
 interface AppState {
   lang: Lang
   setLang: (l: Lang) => void
   tr: (key: TKey) => string
-
   theme: Theme
   toggleTheme: () => void
+  readOnly: boolean
 
   projectInfo: ProjectInfo
   setProjectInfo: (p: ProjectInfo) => void
@@ -37,10 +39,9 @@ interface AppState {
   updateRisk: (id: string, patch: Partial<Risk>) => void
   deleteRisk: (id: string) => void
 
+  /** Workspace calendar + active project's lists. */
   settings: Settings
   updateSettings: (patch: Partial<Settings>) => void
-  // Rename an item in one of the editable lists and carry the new name over
-  // to every task/risk/budget line that uses it.
   renameListItem: (list: ListKey, oldName: string, newName: string) => void
   listItemUsage: (list: ListKey, name: string) => number
 
@@ -48,172 +49,108 @@ interface AppState {
   addAbsence: (a: Absence) => void
   updateAbsence: (id: string, patch: Partial<Absence>) => void
   deleteAbsence: (id: string) => void
-
-  resetToSeed: () => void
-
-  exportProject: () => void
-  importProject: (bundle: ProjectBundle) => void
-  hasUnsavedChanges: boolean
-  lastExportedAt: string | null
 }
 
-export type ListKey = 'phases' | 'projectAreas' | 'budgetCategories'
+const LIST_KEYS: ListKey[] = ['phases', 'projectAreas', 'budgetCategories']
 
-const AppContext = createContext<AppState | null>(null)
+/**
+ * Facade over the workspace store for the active project. Pages keep a simple
+ * API; the store does the actual work (undo/redo, read-only guard, autosave).
+ */
+export function useApp(): AppState {
+  const lang = usePrefsStore((s) => s.lang)
+  const theme = usePrefsStore((s) => s.theme)
+  const setLang = usePrefsStore((s) => s.setLang)
+  const toggleTheme = usePrefsStore((s) => s.toggleTheme)
+  const project = useActiveProject()
+  const calendar = useWorkspaceStore((s) => s.workspace.calendar)
+  const absences = useWorkspaceStore((s) => s.workspace.absences)
+  const readOnly = useWorkspaceStore((s) => s.readOnly)
+  const a = useWorkspaceStore.getState()
 
-function prefersDarkSystem(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+  if (!project) throw new Error('No active project')
+
+  const settings = useMemo<Settings>(() => ({ ...calendar, ...project.lists }), [calendar, project.lists])
+
+  return {
+    lang,
+    setLang,
+    tr: (key) => t(key, lang),
+    theme,
+    toggleTheme,
+    readOnly,
+
+    projectInfo: project.info,
+    setProjectInfo: a.updateProjectInfo,
+
+    tasks: project.tasks,
+    addTask: (x) => a.addItem('tasks', x),
+    updateTask: (id, patch) => a.updateItem('tasks', id, patch),
+    deleteTask: (id) => a.deleteItem('tasks', id),
+
+    milestones: project.milestones,
+    addMilestone: (x) => a.addItem('milestones', x),
+    updateMilestone: (id, patch) => a.updateItem('milestones', id, patch),
+    deleteMilestone: (id) => a.deleteItem('milestones', id),
+
+    budget: project.budget,
+    addBudgetItem: (x) => a.addItem('budget', x),
+    updateBudgetItem: (id, patch) => a.updateItem('budget', id, patch),
+    deleteBudgetItem: (id) => a.deleteItem('budget', id),
+
+    risks: project.risks,
+    addRisk: (x) => a.addItem('risks', x),
+    updateRisk: (id, patch) => a.updateItem('risks', id, patch),
+    deleteRisk: (id) => a.deleteItem('risks', id),
+
+    settings,
+    updateSettings: (patch) => {
+      const lists: Partial<Settings> = {}
+      const cal: Partial<Settings> = {}
+      for (const [k, v] of Object.entries(patch)) {
+        if ((LIST_KEYS as string[]).includes(k)) Object.assign(lists, { [k]: v })
+        else Object.assign(cal, { [k]: v })
+      }
+      if (Object.keys(lists).length) a.updateLists(lists)
+      if (Object.keys(cal).length) a.updateCalendar(cal)
+    },
+    renameListItem: a.renameListItem,
+    listItemUsage: (list, name) => {
+      if (list === 'phases') return project.tasks.filter((x) => x.phase === name).length
+      if (list === 'projectAreas')
+        return project.tasks.filter((x) => x.projectArea === name).length + project.risks.filter((x) => x.area === name).length
+      return project.budget.filter((x) => x.category === name).length
+    },
+
+    absences,
+    addAbsence: a.addAbsence,
+    updateAbsence: a.updateAbsence,
+    deleteAbsence: a.deleteAbsence,
+  }
 }
 
+/** Loads the workspace (cache / migration / sample) before rendering the app. */
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>(() => loadState('lang', 'CZ' as Lang))
-  const [theme, setTheme] = useState<Theme>(() => loadState<Theme>('theme', prefersDarkSystem() ? 'dark' : 'light'))
-  const [projectInfo, setProjectInfo] = useState<ProjectInfo>(() => loadState('projectInfo', seedProjectInfo))
-  const [tasks, setTasks] = useState<Task[]>(() => loadState('tasks', seedTasks))
-  const [milestones, setMilestones] = useState<Milestone[]>(() => loadState('milestones', seedMilestones))
-  const [budget, setBudget] = useState<BudgetItem[]>(() => loadState('budget', seedBudget))
-  const [risks, setRisks] = useState<Risk[]>(() => loadState('risks', seedRisks))
-  const [settings, setSettings] = useState<Settings>(() => withSettingsDefaults(loadState('settings', defaultSettings)))
-  const [absences, setAbsences] = useState<Absence[]>(() => loadState('absences', seedAbsences))
+  const [ready, setReady] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const [lastExportedAt, setLastExportedAt] = useState<string | null>(() => loadState('lastExportedAt', null))
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const isFirstDataRun = useRef(true)
-
-  // Mark "unsaved" whenever project data changes - but not on the very first
-  // render, where this is just the initial load from storage/seed, not a
-  // real edit. Only resets to false via an explicit export or import.
   useEffect(() => {
-    if (isFirstDataRun.current) {
-      isFirstDataRun.current = false
-      return
-    }
-    setHasUnsavedChanges(true)
-  }, [projectInfo, tasks, milestones, budget, risks, settings, absences])
+    document.documentElement.classList.toggle('dark', usePrefsStore.getState().theme === 'dark')
+    bootstrapWorkspace()
+      .then(() => setReady(true))
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
 
-  // Warn on tab close/refresh if there's anything not yet exported. This
-  // catches a normal close, reload, or a graceful "restart to update" -
-  // it cannot catch a hard crash or a forced process kill, since no JS
-  // runs in that case (localStorage itself is already safe from those:
-  // every write is persisted to disk immediately, not just on clean exit).
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (!hasUnsavedChanges) return
+    // Warn on close only when edits exist that are not yet in a file.
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!hasUnsavedWork()) return
       e.preventDefault()
       e.returnValue = ''
     }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [hasUnsavedChanges])
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
 
-  useEffect(() => saveState('lastExportedAt', lastExportedAt), [lastExportedAt])
-  useEffect(() => saveState('lang', lang), [lang])
-  useEffect(() => {
-    saveState('theme', theme)
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-  }, [theme])
-  useEffect(() => saveState('projectInfo', projectInfo), [projectInfo])
-  useEffect(() => saveState('tasks', tasks), [tasks])
-  useEffect(() => saveState('milestones', milestones), [milestones])
-  useEffect(() => saveState('budget', budget), [budget])
-  useEffect(() => saveState('risks', risks), [risks])
-  useEffect(() => saveState('settings', settings), [settings])
-  useEffect(() => saveState('absences', absences), [absences])
-
-  const value = useMemo<AppState>(
-    () => ({
-      lang,
-      setLang,
-      tr: (key: TKey) => t(key, lang),
-
-      theme,
-      toggleTheme: () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light')),
-
-      projectInfo,
-      setProjectInfo,
-
-      tasks,
-      addTask: (task) => setTasks((prev) => [...prev, task]),
-      updateTask: (id, patch) => setTasks((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
-      deleteTask: (id) => setTasks((prev) => prev.filter((x) => x.id !== id)),
-
-      milestones,
-      addMilestone: (m) => setMilestones((prev) => [...prev, m]),
-      updateMilestone: (id, patch) => setMilestones((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
-      deleteMilestone: (id) => setMilestones((prev) => prev.filter((x) => x.id !== id)),
-
-      budget,
-      addBudgetItem: (b) => setBudget((prev) => [...prev, b]),
-      updateBudgetItem: (id, patch) => setBudget((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
-      deleteBudgetItem: (id) => setBudget((prev) => prev.filter((x) => x.id !== id)),
-
-      risks,
-      addRisk: (r) => setRisks((prev) => [...prev, r]),
-      updateRisk: (id, patch) => setRisks((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
-      deleteRisk: (id) => setRisks((prev) => prev.filter((x) => x.id !== id)),
-
-      settings,
-      updateSettings: (patch) => setSettings((prev) => ({ ...prev, ...patch })),
-      renameListItem: (list, oldName, newName) => {
-        if (!newName || oldName === newName) return
-        setSettings((prev) => ({ ...prev, [list]: prev[list].map((x) => (x === oldName ? newName : x)) }))
-        if (list === 'phases') {
-          setTasks((prev) => prev.map((x) => (x.phase === oldName ? { ...x, phase: newName } : x)))
-        } else if (list === 'projectAreas') {
-          setTasks((prev) => prev.map((x) => (x.projectArea === oldName ? { ...x, projectArea: newName } : x)))
-          setRisks((prev) => prev.map((x) => (x.area === oldName ? { ...x, area: newName } : x)))
-        } else {
-          setBudget((prev) => prev.map((x) => (x.category === oldName ? { ...x, category: newName } : x)))
-        }
-      },
-      listItemUsage: (list, name) => {
-        if (list === 'phases') return tasks.filter((x) => x.phase === name).length
-        if (list === 'projectAreas')
-          return tasks.filter((x) => x.projectArea === name).length + risks.filter((x) => x.area === name).length
-        return budget.filter((x) => x.category === name).length
-      },
-
-      absences,
-      addAbsence: (a) => setAbsences((prev) => [...prev, a]),
-      updateAbsence: (id, patch) => setAbsences((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
-      deleteAbsence: (id) => setAbsences((prev) => prev.filter((x) => x.id !== id)),
-
-      resetToSeed: () => {
-        setProjectInfo(seedProjectInfo)
-        setTasks(seedTasks)
-        setMilestones(seedMilestones)
-        setBudget(seedBudget)
-        setRisks(seedRisks)
-        setSettings(defaultSettings)
-        setAbsences(seedAbsences)
-      },
-
-      exportProject: () => {
-        downloadProjectFile(buildProjectBundle({ projectInfo, tasks, milestones, budget, risks, settings, absences }))
-        setHasUnsavedChanges(false)
-        setLastExportedAt(new Date().toISOString())
-      },
-      importProject: (bundle) => {
-        setProjectInfo(bundle.projectInfo)
-        setTasks(bundle.tasks)
-        setMilestones(bundle.milestones)
-        setBudget(bundle.budget)
-        setRisks(bundle.risks)
-        setSettings(bundle.settings)
-        setAbsences(bundle.absences)
-        setHasUnsavedChanges(false)
-      },
-      hasUnsavedChanges,
-      lastExportedAt,
-    }),
-    [lang, theme, projectInfo, tasks, milestones, budget, risks, settings, absences, hasUnsavedChanges, lastExportedAt],
-  )
-
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
-}
-
-export function useApp(): AppState {
-  const ctx = useContext(AppContext)
-  if (!ctx) throw new Error('useApp must be used within AppProvider')
-  return ctx
+  if (error) return <div className="p-8 text-sm text-rose-700">Chyba při načítání dat: {error}</div>
+  if (!ready) return <div className="p-8 text-sm text-gray-500">Načítám…</div>
+  return <>{children}</>
 }

@@ -3,6 +3,7 @@ import { useApp, type ListKey } from '../context/AppContext'
 import { defaultSettings } from '../data/settings'
 import type { TKey } from '../i18n'
 import { btnPrimary, btnSecondary, inputGhost } from '../lib/ui'
+import { usePrefsStore } from '../store/prefsStore'
 
 const inputBox =
   'rounded-md border border-gray-300 bg-white px-2 py-1 text-sm dark:border-white/15 dark:bg-[#14141c] dark:text-gray-100'
@@ -121,6 +122,52 @@ const WEEKDAYS: { day: number; key: TKey }[] = [
   { day: 0, key: 'weekday_sun' },
 ]
 
+// Per-user, per-device preferences (not stored in the shared workspace file).
+function PersonalSection() {
+  const { tr } = useApp()
+  const prefs = usePrefsStore()
+  const label = 'flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400'
+  return (
+    <Section title={tr('settings_personal')} help={tr('settings_personal_help')}>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className={label}>
+          {tr('settings_user_name')}
+          <input
+            className={inputBox}
+            value={prefs.userName}
+            placeholder={tr('settings_user_name_ph')}
+            onChange={(e) => prefs.setUserName(e.target.value)}
+          />
+        </label>
+        <label className={label}>
+          {tr('settings_autosave')}
+          <select className={inputBox} value={prefs.autosaveDelayMs} onChange={(e) => prefs.setAutosaveDelayMs(Number(e.target.value))}>
+            {[1000, 2000, 5000, 10000, 30000, 60000].map((ms) => (
+              <option key={ms} value={ms}>
+                {ms / 1000} s
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={label}>
+          {tr('settings_max_backups')}
+          <input
+            type="number"
+            min={1}
+            max={100}
+            className={inputBox}
+            value={prefs.maxBackups}
+            onChange={(e) => {
+              const n = Math.round(Number(e.target.value))
+              if (n >= 1 && n <= 100) prefs.setMaxBackups(n)
+            }}
+          />
+        </label>
+      </div>
+    </Section>
+  )
+}
+
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { tr, settings, updateSettings } = useApp()
   const [newHoliday, setNewHoliday] = useState({ date: '', name: '' })
@@ -181,6 +228,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="max-h-[72vh] overflow-y-auto px-5">
+          <PersonalSection />
+
           <Section title={tr('settings_phases')} help={tr('settings_phases_help')}>
             <ListEditor list="phases" />
           </Section>

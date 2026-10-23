@@ -1,4 +1,5 @@
 import type { Health, Settings, Task } from '../types'
+import { parseDateKey } from './dates'
 
 /**
  * Port of the original TASKS!V health formula (an Excel LET() expression).
@@ -10,36 +11,44 @@ type Tolerances = Pick<Settings, 'orangeTolerance' | 'redTolerance'>
 
 const DEFAULT_TOLERANCES: Tolerances = { orangeTolerance: 0.1, redTolerance: 0.25 }
 
+// Whole calendar days, DST-safe (a 23/25-hour day still counts as one).
 function daysBetween(a: Date, b: Date): number {
-  return (b.getTime() - a.getTime()) / 86400000
+  return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
+
+// Excel's TODAY(): local midnight, no time of day.
+function today(): Date {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+const toDate = (key?: string) => (key ? parseDateKey(key) : null)
 
 export function expectedProgress(currentStart?: string, currentFinish?: string): number | null {
   if (!currentStart || !currentFinish) return null
-  const start = new Date(currentStart)
-  const finish = new Date(currentFinish)
-  const today = new Date()
+  const start = parseDateKey(currentStart)
+  const finish = parseDateKey(currentFinish)
   const span = daysBetween(start, finish) + 1
   if (span <= 0) return null
-  const elapsed = daysBetween(start, today) + 1
+  const elapsed = daysBetween(start, today()) + 1
   return Math.min(1, Math.max(0, elapsed / span))
 }
 
 export function computeHealth(task: Task, tolerances: Tolerances = DEFAULT_TOLERANCES): Health | '' {
   if (!task.name) return ''
 
-  const today = new Date()
-  const start = task.currentStart ? new Date(task.currentStart) : null
-  const finish = task.currentFinish ? new Date(task.currentFinish) : null
-  const baselineFinish = task.baselineFinish ? new Date(task.baselineFinish) : null
+  const now = today()
+  const start = toDate(task.currentStart)
+  const finish = toDate(task.currentFinish)
+  const baselineFinish = toDate(task.baselineFinish)
   const actual = task.percentComplete
   const expected = expectedProgress(task.currentStart, task.currentFinish)
   const progressGap = actual == null || expected == null ? 0 : expected - actual
 
   const isDataIssue =
     (start && finish && start.getTime() > finish.getTime()) ||
-    (task.status === 'In progress' && start && start.getTime() > today.getTime()) ||
-    (task.status === 'Done' && (!finish || finish.getTime() > today.getTime())) ||
+    (task.status === 'In progress' && start && start.getTime() > now.getTime()) ||
+    (task.status === 'Done' && (!finish || finish.getTime() > now.getTime())) ||
     (task.status === 'Done' && (actual == null || actual < 1)) ||
     (task.status === 'Not started' && actual != null && actual > 0)
 
@@ -47,9 +56,9 @@ export function computeHealth(task: Task, tolerances: Tolerances = DEFAULT_TOLER
   if (task.status === 'Done') return 'Green'
   if (task.status === 'Cancelled' || task.status === 'On hold') return 'Grey'
   if (!start || !finish) return 'Grey'
-  if (finish.getTime() < today.getTime()) return 'Red'
+  if (finish.getTime() < now.getTime()) return 'Red'
   if (task.status === 'In progress' && progressGap > tolerances.redTolerance) return 'Red'
-  if (task.status === 'Not started' && start.getTime() < today.getTime()) return 'Orange'
+  if (task.status === 'Not started' && start.getTime() < now.getTime()) return 'Orange'
   if (
     (baselineFinish && finish.getTime() > baselineFinish.getTime()) ||
     (task.status === 'In progress' && progressGap > tolerances.orangeTolerance)

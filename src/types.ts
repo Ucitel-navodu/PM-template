@@ -114,16 +114,24 @@ export interface Holiday {
   name: string
 }
 
-export interface Settings {
+// Lists are per project (each project has its own phases etc.).
+export interface ProjectLists {
   phases: string[]
   projectAreas: string[]
   budgetCategories: string[]
+}
+
+// Calendar and Health tolerances are shared by the whole workspace (portfolio).
+export interface CalendarSettings {
   holidays: Holiday[]
   // 0 = Sunday ... 6 = Saturday (JS Date.getDay convention)
   workingDays: number[]
   orangeTolerance: number
   redTolerance: number
 }
+
+// Merged view used by pages: workspace calendar + active project's lists.
+export type Settings = ProjectLists & CalendarSettings
 
 export type AbsenceType = 'Vacation' | 'Business trip' | 'Other'
 
@@ -134,4 +142,33 @@ export interface Absence {
   from: string
   to: string
   note?: string
+}
+
+export interface Project {
+  id: string
+  info: ProjectInfo
+  lists: ProjectLists
+  tasks: Task[]
+  milestones: Milestone[]
+  budget: BudgetItem[]
+  risks: Risk[]
+  archived?: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export const WORKSPACE_SCHEMA_VERSION = 3
+
+export interface Workspace {
+  fileType: 'pm-web-workspace'
+  schemaVersion: number
+  id: string
+  // Incremented on every save to the workspace file; used to detect that
+  // somebody else saved the same file in the meantime.
+  revision: number
+  savedAt?: string
+  savedBy?: string
+  calendar: CalendarSettings
+  absences: Absence[]
+  projects: Project[]
 }

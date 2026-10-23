@@ -1,10 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { helpContent } from '../data/help'
+import { AboutDialog } from './AboutDialog'
 
 export function HelpPanel({ onClose }: { onClose: () => void }) {
   const { tr, lang } = useApp()
   const sections = helpContent[lang]
+  const [aboutOpen, setAboutOpen] = useState(false)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -25,6 +27,12 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
       >
         <div className="sticky top-0 flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-white px-5 py-3 dark:border-white/10 dark:bg-[#1d1d29]">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">{tr('help_title')}</h2>
+          <button
+            onClick={() => setAboutOpen(true)}
+            className="ml-auto mr-2 rounded-md px-2 py-1 text-sm text-brand-600 hover:bg-gray-100 dark:text-brand-300 dark:hover:bg-white/10"
+          >
+            ℹ️ {tr('about_title')}
+          </button>
           <button
             onClick={onClose}
             aria-label={tr('help_close')}
@@ -58,6 +66,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       </div>
+      {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
     </div>
   )
 }

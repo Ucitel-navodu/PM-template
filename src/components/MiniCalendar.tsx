@@ -24,7 +24,7 @@ const DOT_CLASS: Record<DotKind, string> = {
 }
 
 export function MiniCalendar({ tasks }: { tasks: Task[] }) {
-  const { tr, settings, absences } = useApp()
+  const { tr, lang, settings, absences } = useApp()
   const [viewDate, setViewDate] = useState(() => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
@@ -63,7 +63,7 @@ export function MiniCalendar({ tasks }: { tasks: Task[] }) {
   }, [viewDate])
 
   const today = new Date()
-  const monthLabel = viewDate.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })
+  const monthLabel = viewDate.toLocaleDateString(lang === 'CZ' ? 'cs-CZ' : 'en-GB', { month: 'long', year: 'numeric' })
 
   return (
     <div>

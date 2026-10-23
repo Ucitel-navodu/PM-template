@@ -21,44 +21,60 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'Jak začnu svůj vlastní projekt?',
-          a: 'Appka se spouští s ukázkovými daty. Na Dashboardu klikni u "Informace o projektu" na ✏️ Upravit a vyplň název projektu, ID, vlastníky, termíny a rozpočet. Pak v ⚙️ Nastavení uprav fáze a oblasti projektu a přepiš ukázkové úkoly, milníky, rozpočet a rizika svými.',
+          a: 'Na stránce Portfolio klikni na + Nový projekt (lze převzít fáze a oblasti z aktuálního projektu). Appka se při prvním spuštění otevře s ukázkovým projektem, který můžeš archivovat nebo smazat. Na Dashboardu klikni u "Informace o projektu" na ✏️ Upravit a vyplň název projektu, ID, vlastníky, termíny a rozpočet. Pak v ⚙️ Nastavení uprav fáze a oblasti projektu a přepiš ukázkové úkoly, milníky, rozpočet a rizika svými.',
+        },
+        {
+          q: 'Můžu mít víc projektů?',
+          a: 'Ano. Stránka Portfolio ukazuje všechny projekty s RAG stavem (Red/Amber/Green podle Health úkolů, rozpočtu, milníků po termínu a vysokých rizik), postupem, dalším milníkem a čerpáním. Mezi projekty přepínáš vlevo nahoře; hotové projekty archivuj. Kalendář svátků a absence týmu jsou společné pro všechny projekty.',
         },
         {
           q: 'Kde změním název projektu a další základní údaje?',
-          a: 'Dashboard → karta "Informace o projektu" → ✏️ Upravit. Název se pak zobrazuje i v hlavičce appky a použije se jako název souboru při exportu. Uložíš tlačítkem Uložit nebo klávesou Enter, Esc změny zahodí.',
+          a: 'Dashboard → karta "Informace o projektu" → ✏️ Upravit. Název se pak zobrazuje i v hlavičce appky a použije se jako výchozí název pracovního souboru. Uložíš tlačítkem Uložit nebo klávesou Enter, Esc změny zahodí.',
         },
         {
           q: 'Jak appku dostanu ke kolegovi?',
-          a: 'Pošli mu jeden .html soubor (mail, Teams, USB). Dvojklikem se otevře v prohlížeči — žádná instalace, žádná admin práva. Každý má svou vlastní nezávislou kopii s vlastními daty.',
+          a: 'Pošli mu jeden .html soubor (mail, Teams, USB). Dvojklikem se otevře v prohlížeči — žádná instalace, žádná admin práva. Data má každý ve svém pracovním souboru; tvůj soubor mu můžeš nasdílet k prohlížení (Otevřít jen pro čtení).',
         },
       ],
     },
     {
-      title: '💾 Ukládání dat a bezpečnost',
+      title: "💾 Ukládání, soubor a bezpečnost",
       items: [
         {
-          q: 'Kde appka ukládá moje data?',
-          a: 'V prohlížeči na tomto počítači (tzv. localStorage), navázané na tenhle konkrétní soubor appky. Data se nikam neposílají na internet — appka po otevření nedělá žádné síťové požadavky.',
+          q: "Kde jsou moje data?",
+          a: "Primárně v pracovním souboru .pmw.json, který si jednou uložíš přes 💾 Soubor → Uložit do souboru… (ideálně na OneDrive nebo síťový disk – soubor pak zálohuje IT). Appka do něj od té doby ukládá automaticky pár sekund po každé změně. Prohlížeč drží jen pracovní kopii a zálohy. Nic se neposílá na internet – appka má zakázané veškeré síťové spojení.",
         },
         {
-          q: 'Co se stane, když mi spadne nebo se násilně zavře prohlížeč?',
-          a: 'Data se zapisují na disk okamžitě při každé změně, ne až při vypnutí — takže samotný pád nebo vynucené zavření (např. aktualizací) data nezničí.',
+          q: "Co znamená stav v hlavičce (Uloženo / Neuloženo / Jen v prohlížeči…)?",
+          a: "Uloženo = soubor je aktuální. Ukládám… / Neuloženo = změna čeká na automatické uložení. Jen v prohlížeči = ještě nemáš propojený soubor (žlutý pruh nabídne uložení). Konflikt = soubor mezitím změnil někdo jiný. Jen pro čtení = prohlížíš cizí soubor. Ctrl+S uloží hned.",
         },
         {
-          q: 'Tak proč appka hlídá "neuložené změny" a nutí mě exportovat?',
-          a: 'Protože existují jiná rizika, která localStorage opravdu smažou: ruční "Vymazat data prohlížení", soukromé/inkognito okno, nebo firemní politika mazající data při zavření prohlížeče. Proti tomu pomůže jen pravidelný export (.json soubor) jako záloha.',
+          q: "Co se stane, když spadne prohlížeč nebo se zavře aktualizací?",
+          a: "Nic se neztratí: každá změna se okamžitě zapíše do pracovní kopie v prohlížeči a do pár sekund i do souboru. Po restartu prohlížeč z bezpečnostních důvodů může chtít jedno kliknutí „Povolit a pokračovat“, než appka znovu smí zapisovat do souboru.",
         },
         {
-          q: 'Co znamená barva/text "Export: ..." v hlavičce?',
-          a: 'Šedá = žádné neuložené změny. Oranžová = máš neexportované změny, ale nedávno. Červená = déle než hodinu beze změn. Je to připomínka, ne blokace — appka navíc varuje i při zavírání záložky, pokud máš neexportováno.',
+          q: "Jak sdílím projekt s kolegy? Můžeme pracovat společně?",
+          a: "Do souboru zapisuje vždy jeden (vlastník), ostatní ho otevřou přes 💾 Soubor → Otevřít jen pro čtení… Když soubor uložil někdo jiný, než ty, appka tvoje změny nepřepíše přes jeho: ukáže konflikt a nabídne načíst verzi ze souboru, uložit tvoje změny jako kopii, nebo (vědomě) soubor přepsat. Živá spolupráce více lidí naráz bez serveru možná není.",
         },
         {
-          q: 'Mám appku otevřenou ve dvou kopiích/souborech (dva projekty) — ovlivní se navzájem?',
-          a: 'Ne. Appka si data klíčuje podle cesty/názvu konkrétního souboru, takže každá uložená nebo přejmenovaná kopie má svůj vlastní izolovaný prostor. Je to vyřešené i pro situaci, kdy dvě různé kopie otevřeš ve stejném prohlížeči.',
+          q: "Co jsou Zálohy v prohlížeči?",
+          a: "Appka si průběžně (max. 1× za 10 minut a vždy před riskantní akcí, např. otevřením jiného souboru nebo vyřešením konfliktu) ukládá snímky celého portfolia. Obnovíš je v 💾 Soubor → Zálohy v prohlížeči… Počet záloh nastavíš v ⚙️ Nastavení → Já a ukládání.",
         },
         {
-          q: 'Co přesně dělá Export/Import projektu?',
-          a: 'Export uloží celý projekt (info, úkoly, milníky, rozpočet, rizika) do jednoho .json souboru — tím si "vezmeš projekt s sebou" na jiný počítač nebo pošleš kolegovi. Import ten soubor načte zpět a PŘEPÍŠE aktuální data v appce (appka se před tím vždy zeptá, aby ses nespletl).',
+          q: "Jde vrátit omylem provedená změna?",
+          a: "Ano – tlačítka ↶ ↷ v hlavičce nebo Ctrl+Z / Ctrl+Y (mimo textová pole). Pamatuje se posledních 100 kroků od otevření appky.",
+        },
+        {
+          q: "Mám starší export projektu (.json) z dřívější verze appky. Jde načíst?",
+          a: "Ano: 💾 Soubor → Otevřít soubor… a vyber ho. Starší export jednoho projektu se přidá jako nový projekt do aktuálního portfolia (fáze, oblasti, svátky i absence se převezmou). Data ze starší verze uložená jen v prohlížeči appka převede automaticky při prvním spuštění.",
+        },
+        {
+          q: "Firefox mi nenabízí ukládání do souboru",
+          a: "Přímé ukládání do souboru (File System Access API) umí Edge a Chrome. Ve Firefoxu appka funguje, ale ukládá jen do prohlížeče – pravidelně používej 💾 Soubor → Stáhnout kopii a soubor pak otevři přes Otevřít soubor….",
+        },
+        {
+          q: "Je appka bezpečná pro firemní prostředí?",
+          a: "Je to jeden HTML soubor bez instalace a bez serveru. Content-Security-Policy zakazuje jakékoli síťové spojení, všechny knihovny jsou uvnitř souboru a mají permisivní licence (MIT/Apache-2.0). Seznam knihoven, licence a SBOM (CycloneDX) najdeš v ❓ → ℹ️ O aplikaci.",
         },
       ],
     },
@@ -129,7 +145,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'Co ještě jde v Nastavení upravit?',
-          a: 'Oblasti projektu (u úkolů a rizik), kategorie rozpočtu, pracovní dny v týdnu, svátky a volné dny (zvýrazní se v kalendáři a nepočítají se do pracovních dnů absencí) a tolerance Health — o kolik % smí progress zaostat, než úkol zoranžoví/zčervená (výchozí 10 % a 25 %, stejně jako v Excelu). Nastavení je součástí exportu projektu.',
+          a: 'Oblasti projektu (u úkolů a rizik), kategorie rozpočtu, pracovní dny v týdnu, svátky a volné dny (zvýrazní se v kalendáři a nepočítají se do pracovních dnů absencí) a tolerance Health — o kolik % smí progress zaostat, než úkol zoranžoví/zčervená (výchozí 10 % a 25 %, stejně jako v Excelu). Fáze, oblasti a kategorie jsou pro každý projekt zvlášť, kalendář a tolerance společné. Jméno, autosave a počet záloh jsou v sekci Já a ukládání.',
         },
         {
           q: 'Jak přepnu jazyk CZ/EN?',
@@ -154,11 +170,11 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'Po otevření appky nevidím svá data (vidím ukázkový projekt "TMS program")',
-          a: 'Buď otevíráš appku poprvé (pak je to v pořádku, ukázková data přepiš svými), nebo otevíráš jinou/novou kopii souboru, než ve které jsi naposledy pracoval(a) — každá kopie má svá vlastní data. Zkus Import a načti svůj poslední exportovaný .json.',
+          a: 'Buď otevíráš appku poprvé, nebo jinou kopii HTML souboru než obvykle (každá kopie má svou pracovní kopii v prohlížeči). Otevři svůj pracovní soubor přes 💾 Soubor → Otevřít soubor…',
         },
         {
           q: 'Prohlížeč mě při zavírání varuje, že mám neuložené změny',
-          a: 'To je žádoucí chování — máš změny, které jsi ještě neexportoval(a). Klikni "Export projektu" a varování zmizí.',
+          a: 'Máš změny, které ještě nejsou v souboru (nemáš propojený soubor, čeká se na autosave, nebo je konflikt). Ulož přes Ctrl+S / 💾 Soubor.',
         },
       ],
     },
@@ -167,11 +183,11 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       items: [
         {
           q: 'Jde v appce pracovat víc lidí najednou na stejném projektu?',
-          a: 'Ne — appka nemá backend, data jsou lokální v prohlížeči. Spolupráce funguje přes Export/Import souboru (podobně jako dřív kopírování .xlsm), ne jako živé sdílení.',
+          a: 'Živě ne — appka nemá server. Jeden zapisuje do sdíleného souboru, ostatní ho čtou; souběžné uložení appka pozná a nic nepřepíše.',
         },
         {
           q: 'Umí appka import z MS Project?',
-          a: 'Zatím ne — je k dispozici aspoň CSV export úkolů.',
+          a: 'Připravuje se import MS Project XML (Uložit jako → XML), původní Excel šablony a CSV. Zatím je k dispozici CSV export úkolů.',
         },
       ],
     },
@@ -186,44 +202,60 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'How do I start my own project?',
-          a: 'The app starts with sample data. On the Dashboard click ✏️ Edit on "Project Information" and fill in the project name, ID, owners, dates and budget. Then adjust phases and project areas in ⚙️ Settings and overwrite the sample tasks, milestones, budget and risks with yours.',
+          a: 'On the Portfolio page click + New project (phases and areas can be copied from the current project). On first start the app opens a sample project, which you can archive or delete.',
+        },
+        {
+          q: 'Can I have several projects?',
+          a: 'Yes. The Portfolio page shows all projects with a RAG status (Red/Amber/Green from task Health, budget, overdue milestones and high risks), progress, next milestone and budget use. Switch projects in the top-left; archive finished ones. The holiday calendar and team absences are shared by all projects.',
         },
         {
           q: 'Where do I change the project name and other basic details?',
-          a: 'Dashboard → "Project Information" card → ✏️ Edit. The name also shows in the app header and is used as the file name on export. Save with the Save button or Enter; Esc discards changes.',
+          a: 'Dashboard → "Project Information" card → ✏️ Edit. The name also shows in the app header and is the default name of the working file. Save with the Save button or Enter; Esc discards changes.',
         },
         {
           q: 'How do I give this app to a colleague?',
-          a: 'Send them the single .html file (email, Teams, USB). Double-clicking opens it in a browser — no install, no admin rights. Everyone gets their own independent copy with their own data.',
+          a: 'Send them the single .html file (email, Teams, USB). Double-clicking opens it in a browser — no install, no admin rights. Everyone keeps data in their own working file; you can share your file for viewing (Open read-only).',
         },
       ],
     },
     {
-      title: '💾 Data storage and safety',
+      title: "💾 Saving, the working file and security",
       items: [
         {
-          q: 'Where does the app store my data?',
-          a: 'In the browser on this computer (so-called localStorage), tied to this specific app file. Data is never sent anywhere - the app makes no network requests after opening.',
+          q: "Where is my data?",
+          a: "Primarily in a working file (.pmw.json) you save once via 💾 File → Save to file… (ideally on OneDrive or a network drive, so IT backs it up). From then on the app saves into it automatically a few seconds after each change. The browser only keeps a working copy and backups. Nothing is sent to the internet - all network access is blocked.",
         },
         {
-          q: 'What happens if my browser crashes or gets force-closed?',
-          a: 'Data is written to disk immediately on every change, not only on a clean shutdown - so a crash or a forced close (e.g. by an update) does not by itself destroy data.',
+          q: "What does the status in the header mean (Saved / Unsaved / Browser only…)?",
+          a: "Saved = the file is up to date. Saving… / Unsaved = a change is waiting for autosave. Browser only = no file linked yet (the yellow bar offers to save). Conflict = someone else changed the file meanwhile. Read-only = you are viewing someone else's file. Ctrl+S saves immediately.",
         },
         {
-          q: 'Then why does the app nag me about "unsaved changes" and exporting?',
-          a: 'Because other things genuinely do wipe localStorage: manually clearing browsing data, a private/incognito window, or a corporate policy that clears data on browser close. A regular export (.json file) is the only real safeguard against those.',
+          q: "What if the browser crashes or is closed by an update?",
+          a: "Nothing is lost: each change is written to the browser working copy immediately and to the file within seconds. After a restart the browser may ask for one click on \"Allow and continue\" before the app may write to the file again.",
         },
         {
-          q: 'What does the "Exported: ..." color/text in the header mean?',
-          a: 'Grey = no unsaved changes. Amber = you have unexported changes, but recently. Red = more than an hour without exporting. It is a reminder, not a block - the app also warns when closing the tab if you have unexported changes.',
+          q: "How do I share a project with colleagues? Can we work together?",
+          a: "One person (the owner) writes to the file, others open it via 💾 File → Open read-only… If someone else saved the file, the app never overwrites their version with yours: it shows a conflict and offers to load the file version, save your changes as a copy, or (deliberately) overwrite. Real-time co-editing is not possible without a server.",
         },
         {
-          q: 'I have the app open in two copies/files (two projects) - do they affect each other?',
-          a: "No. The app keys its data by this specific file's path/name, so every saved or renamed copy gets its own isolated storage slot - this is handled even when two different copies are opened in the same browser.",
+          q: "What are browser backups?",
+          a: "The app keeps snapshots of the whole portfolio (at most every 10 minutes and always before risky actions, e.g. opening another file or resolving a conflict). Restore them via 💾 File → Browser backups… The number kept is set in ⚙️ Settings → Me & saving.",
         },
         {
-          q: 'What exactly do Export/Import project do?',
-          a: 'Export saves the whole project (info, tasks, milestones, budget, risks) into one .json file - that is how you "take the project with you" to another computer or send it to a colleague. Import loads that file back and OVERWRITES the current data in the app (it always asks for confirmation first).',
+          q: "Can I undo a mistake?",
+          a: "Yes - the ↶ ↷ buttons in the header or Ctrl+Z / Ctrl+Y (outside text fields). The last 100 steps since opening the app are kept.",
+        },
+        {
+          q: "I have an older project export (.json). Can I load it?",
+          a: "Yes: 💾 File → Open file… and pick it. An older single-project export is added as a new project to the current portfolio (phases, areas, holidays and absences included). Data from the older version kept only in the browser is migrated automatically on first start.",
+        },
+        {
+          q: "Firefox does not offer saving to a file",
+          a: "Direct saving to a file (File System Access API) works in Edge and Chrome. In Firefox the app works but saves to the browser only - use 💾 File → Download a copy regularly and open it again via Open file….",
+        },
+        {
+          q: "Is the app safe for a corporate environment?",
+          a: "It is a single HTML file, no install, no server. The Content-Security-Policy blocks all network connections, all libraries are inside the file and use permissive licenses (MIT/Apache-2.0). The library list, licenses and SBOM (CycloneDX) are in ❓ → ℹ️ About.",
         },
       ],
     },
@@ -282,7 +314,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'What else can be changed in Settings?',
-          a: 'Project areas (used by tasks and risks), budget categories, working days, holidays & days off (highlighted in the calendar and excluded from absence workday counts) and Health tolerances - how far progress may lag before a task turns amber/red (default 10 % and 25 %, same as the Excel). Settings are part of the project export.',
+          a: 'Project areas (used by tasks and risks), budget categories, working days, holidays & days off (highlighted in the calendar and excluded from absence workday counts) and Health tolerances - how far progress may lag before a task turns amber/red (default 10 % and 25 %, same as the Excel). Phases, areas and categories are per project, the calendar and tolerances are shared. Your name, autosave and backups are under Me & saving.',
         },
         { q: 'How do I switch CZ/EN?', a: 'The "EN"/"CZ" button in the top-right of the header.' },
         {
@@ -304,11 +336,11 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'After opening the app I don\'t see my data (I see the sample "TMS program" project)',
-          a: "Either you're opening the app for the first time (that's expected - overwrite the sample data with yours), or you're opening a different/new copy of the file than the one you last worked in - each copy has its own data. Try Import and load your last exported .json.",
+          a: 'Either this is the first start, or you opened a different copy of the HTML file than usual (each copy has its own browser working copy). Open your working file via 💾 File → Open file….',
         },
         {
           q: 'The browser warns me about unsaved changes when closing',
-          a: 'That is expected - you have changes you have not exported yet. Click "Export project" and the warning goes away.',
+          a: 'Some changes are not in the file yet (no file linked, autosave pending, or a conflict). Save with Ctrl+S / 💾 File.',
         },
       ],
     },
@@ -317,11 +349,11 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       items: [
         {
           q: 'Can several people work on the same project at once?',
-          a: 'No - the app has no backend, data is local to the browser. Collaboration works via Export/Import of a file (similar to how .xlsm used to be copied around), not live sharing.',
+          a: 'Not live - there is no server. One person writes to the shared file, others read it; the app detects concurrent saves and never overwrites them.',
         },
         {
           q: 'Does it import from MS Project?',
-          a: 'Not yet - a CSV export of tasks is available instead.',
+          a: 'Import of MS Project XML (Save as → XML), the original Excel template and CSV is coming. For now a CSV export of tasks is available.',
         },
       ],
     },
