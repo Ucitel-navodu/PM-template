@@ -15,6 +15,6 @@ export function useSchedule(): ProjectSchedule {
   const calendar = useWorkspaceStore((s) => s.workspace.calendar)
   return useMemo(() => {
     if (!project) return EMPTY
-    return { ...schedule(project.tasks, calendar, project.info.start || undefined), outline: outline(project.tasks) }
-  }, [project?.tasks, project?.info.start, calendar]) // eslint-disable-line react-hooks/exhaustive-deps
+    return { ...schedule(project.tasks, calendar, project.info.start || undefined, project.lists.statuses), outline: outline(project.tasks) }
+  }, [project?.tasks, project?.info.start, project?.lists.statuses, calendar]) // eslint-disable-line react-hooks/exhaustive-deps
 }

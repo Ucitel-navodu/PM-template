@@ -15,7 +15,8 @@ import { HealthBadge } from '../components/HealthBadge'
 import { BaselinesDialog } from '../components/BaselinesDialog'
 import { formatDate, formatPercent } from '../lib/format'
 import { downloadCsv } from '../lib/csv'
-import { PRIORITIES, STATUSES, STATUS_ICON } from '../data/config'
+import { STATUS_ICON } from '../data/config'
+import { statusKind } from '../lib/status'
 import { btnPrimary, btnSecondary, inputGhost, selectFilter, selectGhost, tableWrap, tbodyRow, theadRow } from '../lib/ui'
 import { useSchedule } from '../lib/schedule/useSchedule'
 import { formatDependencies, parseDependencies } from '../lib/schedule/predecessors'
@@ -314,9 +315,9 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         cell: ({ row: { original: t } }) =>
           isSummary(t.id) ? null : (
             <select value={t.status} onChange={(e) => updateTask(t.id, { status: e.target.value as Task['status'] })} className={selectGhost}>
-              {STATUSES.map((s) => (
+              {listOptions(settings.statuses.map((s) => s.name), t.status).map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_ICON[s]} {s}
+                  {STATUS_ICON[statusKind(s, settings.statuses)]} {s}
                 </option>
               ))}
             </select>
@@ -378,7 +379,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         header: tr('plan_priority'),
         cell: ({ row: { original: t } }) => (
           <select value={t.priority} onChange={(e) => updateTask(t.id, { priority: e.target.value as Task['priority'] })} className={selectGhost}>
-            {PRIORITIES.map((p) => (
+            {listOptions(settings.priorities, t.priority).map((p) => (
               <option key={p} value={p}>
                 {p}
               </option>
@@ -604,9 +605,9 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
             <option value="">
               {tr('tasks_filter_all')} — {tr('common_status')}
             </option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
+            {settings.statuses.map((s) => (
+              <option key={s.name} value={s.name}>
+                {s.name}
               </option>
             ))}
           </select>

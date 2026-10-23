@@ -5,7 +5,7 @@ import { computeHealth } from './health'
 import { nextSequentialId } from './ids'
 import type { Settings, Task } from '../types'
 
-const settings = { ...defaultCalendar, phases: [], projectAreas: [], budgetCategories: [], holidays: czechHolidays(2026) } as Settings
+const settings = { ...defaultCalendar, phases: [], projectAreas: [], budgetCategories: [], statuses: [], priorities: [], holidays: czechHolidays(2026) } as Settings
 
 describe('holidays', () => {
   it('computes Easter Sunday', () => {

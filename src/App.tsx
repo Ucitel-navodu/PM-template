@@ -9,6 +9,8 @@ import { BoardPage } from './pages/Board'
 import { MilestonesPage } from './pages/Milestones'
 import { BudgetPage } from './pages/Budget'
 import { RisksPage } from './pages/Risks'
+import { ChangesPage } from './pages/Changes'
+import { AuditPage } from './pages/Audit'
 import { TeamPage } from './pages/Team'
 import { PortfolioPage } from './pages/Portfolio'
 import { FileMenu } from './components/FileMenu'
@@ -16,7 +18,7 @@ import { SyncBanner } from './components/SyncBanner'
 import { HelpPanel } from './components/HelpPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 
-type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'team'
+type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'changes' | 'team' | 'audit'
 
 const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'portfolio', label: 'nav_portfolio' },
@@ -26,8 +28,10 @@ const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'board', label: 'nav_board' },
   { key: 'milestones', label: 'nav_milestones' },
   { key: 'budget', label: 'nav_budget' },
-  { key: 'risks', label: 'nav_risks' },
+  { key: 'risks', label: 'nav_raid' },
+  { key: 'changes', label: 'nav_changes' },
   { key: 'team', label: 'nav_team' },
+  { key: 'audit', label: 'nav_audit' },
 ]
 
 // Hash routing (#/tasks) works from file:// and survives reloads.
@@ -144,7 +148,9 @@ export default function App() {
         {page === 'milestones' && <MilestonesPage />}
         {page === 'budget' && <BudgetPage />}
         {page === 'risks' && <RisksPage />}
+        {page === 'changes' && <ChangesPage />}
         {page === 'team' && <TeamPage />}
+        {page === 'audit' && <AuditPage />}
       </main>
 
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}

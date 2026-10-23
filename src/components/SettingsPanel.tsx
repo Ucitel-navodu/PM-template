@@ -4,6 +4,10 @@ import { defaultSettings } from '../data/settings'
 import type { TKey } from '../i18n'
 import { btnPrimary, btnSecondary, inputGhost } from '../lib/ui'
 import { usePrefsStore } from '../store/prefsStore'
+import { useActiveProject, useWorkspaceStore } from '../store/workspaceStore'
+import { STATUS_KINDS } from '../data/settings'
+import { STATUS_ICON } from '../data/config'
+import type { Status, StatusDef } from '../types'
 
 const inputBox =
   'rounded-md border border-gray-300 bg-white px-2 py-1 text-sm dark:border-white/15 dark:bg-[#14141c] dark:text-gray-100'
@@ -105,6 +109,98 @@ function ListEditor({ list }: { list: ListKey }) {
           className={`flex-1 ${inputBox}`}
         />
         <button onClick={add} className={btnSecondary}>
+          {tr('common_add')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Task statuses: a user-visible name plus one of the fixed meanings Health and the scheduler use. */
+function StatusEditor() {
+  const { tr, readOnly } = useApp()
+  const project = useActiveProject()
+  const store = useWorkspaceStore.getState()
+  const statuses = project?.lists.statuses ?? []
+  const [newName, setNewName] = useState('')
+  const usage = (name: string) => project?.tasks.filter((t) => t.status === name).length ?? 0
+  const set = (next: StatusDef[]) => store.setStatuses(next)
+  const iconBtn =
+    'h-7 w-7 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 dark:hover:bg-white/10 dark:hover:text-gray-200'
+
+  return (
+    <div className="space-y-1">
+      {statuses.map((st, i) => (
+        <div key={st.name} className="flex items-center gap-1">
+          <input
+            defaultValue={st.name}
+            onBlur={(e) => {
+              const v = e.target.value.trim()
+              if (!v || v === st.name) return (e.target.value = st.name)
+              if (statuses.some((x) => x.name === v)) {
+                window.alert(tr('settings_duplicate'))
+                return (e.target.value = st.name)
+              }
+              store.renameStatus(st.name, v)
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            className={`flex-1 text-sm ${inputGhost}`}
+            disabled={readOnly}
+          />
+          <select
+            value={st.kind}
+            onChange={(e) => set(statuses.map((x, j) => (j === i ? { ...x, kind: e.target.value as Status } : x)))}
+            className={`${inputBox} text-xs`}
+            aria-label={tr('settings_status_kind')}
+            disabled={readOnly}
+          >
+            {STATUS_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {STATUS_ICON[k]} {k}
+              </option>
+            ))}
+          </select>
+          <span className="w-16 shrink-0 text-right text-xs text-gray-400">{usage(st.name) ? tr('settings_used').replace('{n}', String(usage(st.name))) : ''}</span>
+          <button
+            className={iconBtn}
+            disabled={i === 0 || readOnly}
+            aria-label="up"
+            onClick={() => set(statuses.map((x, j) => (j === i - 1 ? statuses[i] : j === i ? statuses[i - 1] : x)))}
+          >
+            ↑
+          </button>
+          <button
+            className={iconBtn}
+            disabled={i === statuses.length - 1 || readOnly}
+            aria-label="down"
+            onClick={() => set(statuses.map((x, j) => (j === i + 1 ? statuses[i] : j === i ? statuses[i + 1] : x)))}
+          >
+            ↓
+          </button>
+          <button
+            className={`${iconBtn} hover:text-red-600`}
+            aria-label="delete"
+            disabled={readOnly || statuses.length <= 1 || usage(st.name) > 0}
+            title={usage(st.name) > 0 ? tr('settings_status_in_use') : undefined}
+            onClick={() => set(statuses.filter((_, j) => j !== i))}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <div className="flex gap-2 pt-1">
+        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={tr('settings_new_item')} className={`flex-1 ${inputBox}`} />
+        <button
+          className={btnSecondary}
+          disabled={readOnly}
+          onClick={() => {
+            const v = newName.trim()
+            if (!v) return
+            if (statuses.some((x) => x.name === v)) return window.alert(tr('settings_duplicate'))
+            set([...statuses, { name: v, kind: 'In progress' }])
+            setNewName('')
+          }}
+        >
           {tr('common_add')}
         </button>
       </div>
@@ -236,6 +332,14 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 
           <Section title={tr('settings_project_areas')} help={tr('settings_project_areas_help')}>
             <ListEditor list="projectAreas" />
+          </Section>
+
+          <Section title={tr('settings_statuses')} help={tr('settings_statuses_help')}>
+            <StatusEditor />
+          </Section>
+
+          <Section title={tr('settings_priorities')}>
+            <ListEditor list="priorities" />
           </Section>
 
           <Section title={tr('settings_budget_categories')}>

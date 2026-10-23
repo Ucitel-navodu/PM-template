@@ -1,4 +1,5 @@
-import type { CalendarSettings, LinkType, Project, Task } from '../../types'
+import type { CalendarSettings, LinkType, Project, StatusDef, Task } from '../../types'
+import { statusKind } from '../status'
 import { WorkCalendar, calendarOrigin } from './calendar'
 import { outline } from './tree'
 
@@ -57,7 +58,13 @@ function taskDuration(t: Task, cal: WorkCalendar): number {
   return Math.max(0, Math.round(t.duration ?? 1))
 }
 
-export function schedule(tasks: Task[], calendar: Pick<CalendarSettings, 'workingDays' | 'holidays'>, projectStart?: string): ScheduleResult {
+export function schedule(
+  tasks: Task[],
+  calendar: Pick<CalendarSettings, 'workingDays' | 'holidays'>,
+  projectStart?: string,
+  statuses?: StatusDef[],
+): ScheduleResult {
+  const kind = (t: Task) => statusKind(t.status, statuses)
   const cal = new WorkCalendar(
     calendar,
     calendarOrigin([projectStart, ...tasks.flatMap((t) => [t.currentStart, t.constraint?.date])]),
@@ -80,10 +87,10 @@ export function schedule(tasks: Task[], calendar: Pick<CalendarSettings, 'workin
     dur.set(t.id, d)
     const m = d === 0 ? 1 : 0
     const pinned =
-      t.currentStart && (t.schedulingMode === 'manual' || t.status === 'Cancelled' || (STARTED.has(t.status) && (t.percentComplete ?? 0) > 0) || t.status === 'Done')
+      t.currentStart && (t.schedulingMode === 'manual' || kind(t) === 'Cancelled' || (STARTED.has(kind(t)) && (t.percentComplete ?? 0) > 0) || kind(t) === 'Done')
     if (pinned) fixedEs.set(t.id, cal.ordinal(t.currentStart!) + m)
   }
-  const inactive = (id: string) => byId.get(id)?.status === 'Cancelled'
+  const inactive = (id: string) => { const t = byId.get(id); return Boolean(t) && kind(t!) === 'Cancelled' }
 
   // --- links expanded to leaves -----------------------------------------
   const edges: Edge[] = []
@@ -200,7 +207,7 @@ export function schedule(tasks: Task[], calendar: Pick<CalendarSettings, 'workin
       ef: f,
       totalFloat,
       freeFloat: free.get(id)!,
-      critical: !inactive(id) && t.status !== 'Done' && totalFloat <= 0,
+      critical: !inactive(id) && kind(t) !== 'Done' && totalFloat <= 0,
       summary: false,
     })
   }
@@ -232,12 +239,12 @@ export function schedule(tasks: Task[], calendar: Pick<CalendarSettings, 'workin
 }
 
 /** Duration-weighted % complete of a summary's leaf tasks (milestones count as 1 day). */
-function rollupPercent(tasks: Task[], ids: string[], res: ScheduleResult): number | null {
+function rollupPercent(tasks: Task[], ids: string[], res: ScheduleResult, statuses?: StatusDef[]): number | null {
   let total = 0
   let done = 0
   for (const id of ids) {
     const t = tasks.find((x) => x.id === id)!
-    if (t.status === 'Cancelled') continue
+    if (statusKind(t.status, statuses) === 'Cancelled') continue
     const w = Math.max(1, res.tasks.get(id)?.duration ?? 1)
     total += w
     done += w * (t.percentComplete ?? 0)
@@ -251,7 +258,7 @@ function rollupPercent(tasks: Task[], ids: string[], res: ScheduleResult): numbe
  * object when nothing changed (keeps undo history and autosave quiet).
  */
 export function applySchedule(project: Project, calendar: Pick<CalendarSettings, 'workingDays' | 'holidays'>): Project {
-  const res = schedule(project.tasks, calendar, project.info.start || undefined)
+  const res = schedule(project.tasks, calendar, project.info.start || undefined, project.lists?.statuses)
   const tree = outline(project.tasks)
   const leavesUnder = (id: string): string[] => {
     const n = tree.get(id)!
@@ -269,7 +276,7 @@ export function applySchedule(project: Project, calendar: Pick<CalendarSettings,
       if (s.start !== t.currentStart) patch.currentStart = s.start
       if (s.finish !== t.currentFinish) patch.currentFinish = s.finish
       if (t.duration !== s.duration) patch.duration = s.duration
-      const pct = rollupPercent(project.tasks, leavesUnder(t.id), res)
+      const pct = rollupPercent(project.tasks, leavesUnder(t.id), res, project.lists?.statuses)
       if (pct !== t.percentComplete) patch.percentComplete = pct
       if (t.milestone) patch.milestone = false
     } else {

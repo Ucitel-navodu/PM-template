@@ -1,3 +1,4 @@
+import { statusKind } from '../lib/status'
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { Card } from '../components/Card'
@@ -32,8 +33,7 @@ export function TeamPage() {
       : tasks.filter(
           (t) =>
             t.owner === person &&
-            t.status !== 'Done' &&
-            t.status !== 'Cancelled' &&
+            !['Done', 'Cancelled'].includes(statusKind(t.status, settings.statuses)) &&
             t.currentStart &&
             t.currentFinish &&
             rangesOverlap(t.currentStart, t.currentFinish, from, to),

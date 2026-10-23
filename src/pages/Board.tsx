@@ -14,9 +14,10 @@ import { useApp } from '../context/AppContext'
 import { useSchedule } from '../lib/schedule/useSchedule'
 import { computeHealth } from '../lib/health'
 import { formatDate } from '../lib/format'
-import { HEALTH_COLOR, HEALTH_COLOR_DARK, STATUSES, STATUS_ICON } from '../data/config'
+import { HEALTH_COLOR, HEALTH_COLOR_DARK, STATUS_ICON } from '../data/config'
+import { statusKind } from '../lib/status'
 import { selectFilter } from '../lib/ui'
-import type { Status, Task } from '../types'
+import type { StatusDef, Task } from '../types'
 
 function Card({ task, dragging = false }: { task: Task; dragging?: boolean }) {
   const { theme, settings } = useApp()
@@ -54,21 +55,21 @@ function DraggableCard({ task, disabled }: { task: Task; disabled: boolean }) {
   )
 }
 
-function Column({ status, tasks, disabled }: { status: Status; tasks: Task[]; disabled: boolean }) {
+function Column({ status, tasks, disabled }: { status: StatusDef; tasks: Task[]; disabled: boolean }) {
   const { tr } = useApp()
-  const { setNodeRef, isOver } = useDroppable({ id: status })
+  const { setNodeRef, isOver } = useDroppable({ id: status.name })
   return (
     <section
       ref={setNodeRef}
-      data-status={status}
-      aria-label={status}
+      data-status={status.name}
+      aria-label={status.name}
       className={`flex min-h-[12rem] min-w-[12.5rem] flex-1 flex-col rounded-xl border p-2 transition-colors ${
         isOver ? 'border-brand-400 bg-brand-50 dark:bg-brand-500/10' : 'border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/[0.03]'
       }`}
     >
       <h3 className="mb-2 flex items-center justify-between px-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
         <span>
-          {STATUS_ICON[status]} {status}
+          {STATUS_ICON[status.kind]} {status.name}
         </span>
         <span className="rounded-full bg-gray-200 px-2 text-xs dark:bg-white/10">{tasks.length}</span>
       </h3>
@@ -99,12 +100,12 @@ export function BoardPage() {
 
   const onDragEnd = (e: DragEndEvent) => {
     setActiveId(null)
-    const status = e.over?.id as Status | undefined
+    const status = e.over?.id as string | undefined
     const task = cards.find((t) => t.id === e.active.id)
     if (!status || !task || task.status === status) return
     // Keep status and % consistent so the task does not turn Blue (data issue).
     const patch: Partial<Task> = { status }
-    if (status === 'Not started') patch.percentComplete = 0
+    if (statusKind(status, settings.statuses) === 'Not started') patch.percentComplete = 0
     updateTask(task.id, patch)
   }
 
@@ -135,8 +136,8 @@ export function BoardPage() {
       </div>
       <DndContext sensors={sensors} onDragStart={(e) => setActiveId(String(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {STATUSES.map((s) => (
-            <Column key={s} status={s} tasks={cards.filter((t) => t.status === s)} disabled={readOnly} />
+          {settings.statuses.map((s) => (
+            <Column key={s.name} status={s} tasks={cards.filter((t) => t.status === s.name)} disabled={readOnly} />
           ))}
         </div>
         <DragOverlay>{active ? <Card task={active} dragging /> : null}</DragOverlay>

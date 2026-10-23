@@ -1,13 +1,14 @@
 import { z } from 'zod'
-import type { Absence, CalendarSettings, Dependency, LinkType, Project, ProjectInfo, ProjectLists, Task, Workspace } from '../types'
+import type { Absence, CalendarSettings, Dependency, LinkType, Project, ProjectInfo, ProjectLists, Status, Task, Workspace } from '../types'
 import { WORKSPACE_SCHEMA_VERSION } from '../types'
-import { defaultCalendar, defaultLists } from '../data/settings'
+import { STATUS_KINDS, defaultCalendar, defaultLists } from '../data/settings'
 import {
   projectInfo as seedInfo,
   seedAbsences,
   seedBudget,
   seedMilestones,
   seedRisks,
+  seedChanges,
   seedTasks,
 } from '../data/seed'
 import { applySchedule } from '../lib/schedule/cpm'
@@ -35,6 +36,12 @@ const listsSchema = z.object({
   phases: strList.catch(defaultLists.phases),
   projectAreas: strList.catch(defaultLists.projectAreas),
   budgetCategories: strList.catch(defaultLists.budgetCategories),
+  // schema 5: user-defined task statuses (each with a fixed meaning) and priorities
+  statuses: z
+    .array(z.object({ name: z.string().min(1), kind: z.enum(STATUS_KINDS as [Status, ...Status[]]) }))
+    .min(1)
+    .catch(defaultLists.statuses),
+  priorities: z.array(z.string()).min(1).catch(defaultLists.priorities),
 })
 
 const projectInfoSchema = z.looseObject({
@@ -58,6 +65,8 @@ const projectSchema = z.looseObject({
   budget: z.array(idObject).catch([]),
   risks: z.array(idObject).catch([]),
   baselines: z.array(idObject).catch([]),
+  changes: z.array(idObject).catch([]),
+  auditLog: z.array(z.looseObject({ at: z.string() })).catch([]),
   views: z.array(idObject).catch([]),
   archived: z.boolean().optional(),
   createdAt: z.string().catch(() => new Date().toISOString()),
@@ -158,6 +167,9 @@ export function migrateProject(p: Project, calendar: CalendarSettings): Project 
     tasks: migrateTasks(p.tasks as unknown[]),
     baselines: Array.isArray(p.baselines) ? p.baselines : [],
     views: Array.isArray(p.views) ? p.views : [],
+    lists: listsSchema.parse(p.lists ?? {}),
+    changes: Array.isArray(p.changes) ? p.changes : [],
+    auditLog: Array.isArray(p.auditLog) ? p.auditLog : [],
   }
   return applySchedule(migrated, calendar)
 }
@@ -200,6 +212,8 @@ export function createBlankProject(name: string, lists: ProjectLists = defaultLi
     budget: [],
     risks: [],
     baselines: [],
+    changes: [],
+    auditLog: [],
     views: [],
     createdAt: now,
     updatedAt: now,
@@ -250,6 +264,8 @@ export function createSampleProject(calendar: CalendarSettings = defaultCalendar
       budget: structuredClone(seedBudget),
       risks: structuredClone(seedRisks),
       baselines: [],
+      changes: structuredClone(seedChanges),
+      auditLog: [],
       views: [],
       createdAt: now,
       updatedAt: now,

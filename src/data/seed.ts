@@ -1,4 +1,4 @@
-import type { Absence, BudgetItem, Milestone, ProjectInfo, Risk, Task } from '../types'
+import type { Absence, BudgetItem, ChangeRequest, Milestone, ProjectInfo, Risk, Task } from '../types'
 
 // Task records in the pre-scheduler shape (as exported from the workbook);
 // migrateTasks() in src/domain/workspace.ts turns them into scheduled tasks.
@@ -63,7 +63,16 @@ export const seedBudget: BudgetItem[] = [
 ]
 
 export const seedRisks: Risk[] = [
-  { id: 'R-001', type: 'Risk', area: 'Tender', linkedTaskId: 't10', description: 'Dodavatel nepotvrdí požadovaný rozsah / předplatbu.', probability: 'Medium', impact: 'High', owner: 'S. Glabinski', mitigation: 'Zapojit management a potvrdit scope na workshopu.', dueDate: '2026-06-30', status: 'Open', lastUpdate: '2026-06-15', comment: 'Vzorový záznam' },
+  { id: 'R-001', type: 'Risk', title: 'Nepotvrzený rozsah dodavatele', area: 'Tender', linkedTaskId: 't10', description: 'Dodavatel nepotvrdí požadovaný rozsah / předplatbu.', probability: 'Medium', impact: 'High', owner: 'S. Glabinski', mitigation: 'Zapojit management a potvrdit scope na workshopu.', response: 'Mitigate', contingency: 'Druhé kolo vyjednávání s náhradním dodavatelem.', trigger: 'Dodavatel do 30. 6. nepotvrdí scope písemně.', dueDate: '2026-06-30', status: 'Open', lastUpdate: '2026-06-15', comment: 'Vzorový záznam' },
+  { id: 'R-002', type: 'Issue', title: 'Zpožděné hodnocení nabídek', area: 'Tender', linkedTaskId: 't10', description: 'Hodnoticí komise nestihla termín, chybí 2 hodnotitelé.', probability: 'High', impact: 'Medium', owner: 'P. Procházka', mitigation: '', priority: 'High', resolution: 'Doplnit hodnotitele z IT architektury.', dueDate: '2026-10-30', status: 'Open', lastUpdate: '2026-10-20' },
+  { id: 'R-003', type: 'Assumption', title: 'Dostupnost klíčových uživatelů', area: 'Implementation', description: 'Klíčoví uživatelé budou v testování k dispozici 50 % času.', probability: 'Medium', impact: 'High', owner: 'V. Šitina', mitigation: '', validated: false, dueDate: '2027-03-31', status: 'Open', lastUpdate: '2026-09-01' },
+  { id: 'R-004', type: 'Dependency', title: 'Upgrade SAP rozhraní', area: 'Implementation', description: 'Integrace TMS čeká na upgrade rozhraní SAP (projekt SAP S/4).', probability: 'Medium', impact: 'Critical', owner: 'V. Šitina', mitigation: 'Měsíční synchronizace s PM projektu SAP.', dueDate: '2027-06-30', status: 'Open', lastUpdate: '2026-09-15' },
+  { id: 'R-005', type: 'Decision', title: 'Dvoukolový tendr', area: 'Tender', description: 'Tendr proběhne ve dvou kolech kvůli nejasnému rozsahu.', probability: 'Low', impact: 'Low', owner: 'M. Pniewski', mitigation: '', decidedBy: 'SteCo', decisionDate: '2026-03-06', rationale: 'Nabídky z 1. kola nebyly srovnatelné.', status: 'Closed', lastUpdate: '2026-03-06' },
+]
+
+export const seedChanges: ChangeRequest[] = [
+  { id: 'CR-001', title: 'Druhé kolo tendru', description: 'Doplnit druhé kolo RFP po nesrovnatelných nabídkách.', type: 'Time', status: 'Implemented', requestedBy: 'S. Glabinski', raised: '2026-03-02', impactDays: 75, impactCost: 0, decidedBy: 'SteCo', decisionDate: '2026-03-06', linkedTaskIds: ['t7', 't8'] },
+  { id: 'CR-002', title: 'Rozšíření o modul Yard Management', description: 'Business požaduje doplnit správu dvora do rozsahu implementace.', type: 'Scope', status: 'Open', requestedBy: 'M. Pniewski', raised: '2026-10-12', impactDays: 20, impactCost: 1800000, linkedTaskIds: ['t15'] },
 ]
 
 export const seedAbsences: Absence[] = [

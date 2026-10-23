@@ -1,3 +1,5 @@
+import { approvedImpact } from '../lib/changes'
+import { useActiveProject } from '../store/workspaceStore'
 import { useApp } from '../context/AppContext'
 import { formatMoney } from '../lib/format'
 import { PAYMENT_STATUSES } from '../data/config'
@@ -28,6 +30,8 @@ function forecast(item: BudgetItem): number {
 
 export function BudgetPage() {
   const { tr, budget, updateBudgetItem, deleteBudgetItem, addBudgetItem, projectInfo, milestones, settings } = useApp()
+  // Approved change requests raise the budget the forecast is compared with.
+  const crCost = approvedImpact(useActiveProject()?.changes).cost
 
   const totals = budget.reduce(
     (acc, b) => ({
@@ -195,14 +199,21 @@ export function BudgetPage() {
           <tfoot>
             <tr className={tfootRow}>
               <td className="px-3 py-2" colSpan={5}>
-                {tr('common_total')} ({tr('budget_approved')}: {formatMoney(projectInfo.budget, projectInfo.currency)})
+                {tr('common_total')} ({tr('budget_approved')}: {formatMoney(projectInfo.budget, projectInfo.currency)}
+                {crCost !== 0 && (
+                  <>
+                    {' '}+ {tr('budget_approved_changes')}: {formatMoney(crCost, projectInfo.currency)} = {tr('budget_current')}:{' '}
+                    {formatMoney(projectInfo.budget + crCost, projectInfo.currency)}
+                  </>
+                )}
+                )
               </td>
               <td className="px-3 py-2 text-right">{formatMoney(totals.planned, projectInfo.currency)}</td>
               <td className="px-3 py-2 text-right">{formatMoney(totals.committed, projectInfo.currency)}</td>
               <td className="px-3 py-2 text-right">{formatMoney(totals.actual, projectInfo.currency)}</td>
               <td className="px-3 py-2 text-right">{formatMoney(totals.forecast, projectInfo.currency)}</td>
               <td className="px-3 py-2 text-right">
-                {formatMoney(projectInfo.budget - totals.forecast, projectInfo.currency)}
+                {formatMoney(projectInfo.budget + crCost - totals.forecast, projectInfo.currency)}
               </td>
               <td colSpan={5} />
             </tr>

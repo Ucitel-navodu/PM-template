@@ -17,12 +17,12 @@
       }
     ],
     "component": {
-      "bom-ref": "pm-web@0.4.0",
+      "bom-ref": "pm-web@0.5.0",
       "type": "library",
       "name": "PM-template",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "scope": "required",
-      "purl": "pkg:npm/pm-web@0.4.0",
+      "purl": "pkg:npm/pm-web@0.5.0",
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -789,7 +789,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pm-web@0.4.0",
+      "ref": "pm-web@0.5.0",
       "dependsOn": [
         "@dnd-kit/core@6.3.1",
         "@tanstack/react-table@8.21.3",

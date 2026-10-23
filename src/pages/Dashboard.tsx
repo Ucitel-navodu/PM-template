@@ -1,3 +1,6 @@
+import { isScored, riskScore, scoreClass } from '../lib/raid'
+import { approvedImpact } from '../lib/changes'
+import { useActiveProject } from '../store/workspaceStore'
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { leafTasks } from '../lib/schedule/tree'
@@ -8,24 +11,22 @@ import { computeHealth } from '../lib/health'
 import { formatDate, formatMoney } from '../lib/format'
 import { HEALTH_COLOR } from '../data/config'
 import { milestoneAmount } from '../lib/milestones'
-import type { Health, Status } from '../types'
+import type { Health } from '../types'
+import { statusKind } from '../lib/status'
+import { toDateKey } from '../lib/dates'
 
 export function Dashboard() {
   const { tr, projectInfo, tasks: allTasks, milestones, budget, risks, settings } = useApp()
   const tasks = useMemo(() => leafTasks(allTasks), [allTasks])
+  const changes = useActiveProject()?.changes ?? []
+  const crImpact = approvedImpact(changes)
 
   const statusCounts = useMemo(() => {
-    const counts: Record<Status, number> = {
-      'Not started': 0,
-      'In progress': 0,
-      'On hold': 0,
-      Delayed: 0,
-      Cancelled: 0,
-      Done: 0,
-    }
-    tasks.forEach((task) => counts[task.status]++)
+    const counts: Record<string, number> = Object.fromEntries(settings.statuses.map((s) => [s.name, 0]))
+    tasks.forEach((task) => (counts[task.status] = (counts[task.status] ?? 0) + 1))
     return counts
-  }, [tasks])
+  }, [tasks, settings.statuses])
+  const isDone = (status: string) => statusKind(status, settings.statuses) === 'Done'
 
   const healthCounts = useMemo(() => {
     const counts: Record<Health, number> = { Green: 0, Orange: 0, Red: 0, Grey: 0, Blue: 0 }
@@ -38,15 +39,15 @@ export function Dashboard() {
 
   const overdueTasks = useMemo(
     () =>
-      tasks.filter((task) => task.status !== 'Done' && task.currentFinish && new Date(task.currentFinish) < new Date())
+      tasks.filter((task) => !isDone(task.status) && task.currentFinish && task.currentFinish < toDateKey(new Date()))
         .length,
-    [tasks],
+    [tasks, settings.statuses], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   const upcomingTasks = useMemo(() => {
     const now = new Date()
     return tasks
-      .filter((task) => task.status !== 'Done' && task.currentFinish && new Date(task.currentFinish) >= now)
+      .filter((task) => !isDone(task.status) && task.currentFinish && task.currentFinish >= toDateKey(now))
       .sort((a, b) => new Date(a.currentFinish!).getTime() - new Date(b.currentFinish!).getTime())
       .slice(0, 5)
   }, [tasks])
@@ -54,7 +55,7 @@ export function Dashboard() {
   const recentlyDone = useMemo(
     () =>
       tasks
-        .filter((task) => task.status === 'Done' && task.currentFinish)
+        .filter((task) => isDone(task.status) && task.currentFinish)
         .sort((a, b) => new Date(b.currentFinish!).getTime() - new Date(a.currentFinish!).getTime())
         .slice(0, 5),
     [tasks],
@@ -65,8 +66,8 @@ export function Dashboard() {
     const committed = budget.reduce((s, b) => s + b.committed, 0)
     const actual = budget.reduce((s, b) => s + b.actual, 0)
     const forecast = budget.reduce((s, b) => s + Math.max(b.actual, b.committed, b.planned), 0)
-    return { planned, committed, actual, forecast, variance: projectInfo.budget - forecast }
-  }, [budget, projectInfo.budget])
+    return { planned, committed, actual, forecast, variance: projectInfo.budget + crImpact.cost - forecast }
+  }, [budget, projectInfo.budget, crImpact.cost])
 
   const milestonePayments = useMemo(() => {
     const sum = (list: typeof milestones) => list.reduce((s, m) => s + milestoneAmount(m, projectInfo.budget), 0)
@@ -78,7 +79,14 @@ export function Dashboard() {
     }
   }, [milestones, projectInfo.budget])
 
-  const topRisks = risks.filter((r) => r.status === 'Open').slice(0, 5)
+  // Top exposure first: open risks and issues by P x I.
+  const topRisks = risks
+    .filter((r) => r.status === 'Open' && isScored(r))
+    .sort((a, b) => riskScore(b) - riskScore(a))
+    .slice(0, 5)
+  const openIssues = risks.filter((r) => r.status === 'Open' && r.type === 'Issue').length
+  const openAssumptions = risks.filter((r) => r.status === 'Open' && r.type === 'Assumption' && !r.validated).length
+  const pendingChanges = changes.filter((c) => c.status === 'Open')
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -179,16 +187,28 @@ export function Dashboard() {
         ) : (
           <ul className="space-y-2">
             {topRisks.map((r) => (
-              <li key={r.id} className="text-sm">
-                <span className="font-medium text-gray-800 dark:text-gray-100">{r.id}</span>{' '}
-                <span className="text-gray-600 dark:text-gray-300">{r.description}</span>
-                <span className="ml-2 rounded bg-rose-50 px-1.5 py-0.5 text-xs text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
-                  {r.impact}
+              <li key={r.id} className="flex items-start gap-2 text-sm">
+                <span className={`mt-0.5 inline-block min-w-[1.75rem] rounded px-1 text-center text-xs font-semibold ${scoreClass(riskScore(r))}`}>{riskScore(r)}</span>
+                <span>
+                  <span className="font-medium text-gray-800 dark:text-gray-100">{r.id}</span>{' '}
+                  <span className="text-gray-600 dark:text-gray-300">{r.title || r.description}</span>
+                  {r.type === 'Issue' && <span className="ml-1 text-xs text-rose-500">(issue)</span>}
                 </span>
               </li>
             ))}
           </ul>
         )}
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-gray-100 pt-2 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400">
+          <span>
+            {tr('raid_Issue')}: <b className="text-gray-800 dark:text-gray-100">{openIssues}</b>
+          </span>
+          <span>
+            {tr('raid_Assumption')} ({tr('raid_validated').toLowerCase()} ✗): <b className="text-gray-800 dark:text-gray-100">{openAssumptions}</b>
+          </span>
+          <span>
+            {tr('cr_open')}: <b className="text-gray-800 dark:text-gray-100">{pendingChanges.length}</b>
+          </span>
+        </div>
       </Card>
 
       <Card className="lg:col-span-3">

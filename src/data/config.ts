@@ -1,6 +1,5 @@
-import type { Health, ImpactLevel, PaymentStatus, Priority, RiskStatus, Status } from '../types'
+import type { ChangeStatus, ChangeType, Health, ImpactLevel, PaymentStatus, RiskResponse, RiskStatus, RiskType, Status } from '../types'
 
-export const STATUSES: Status[] = ['Not started', 'In progress', 'On hold', 'Delayed', 'Cancelled', 'Done']
 
 export const STATUS_ICON: Record<Status, string> = {
   'Not started': '🚩',
@@ -12,10 +11,15 @@ export const STATUS_ICON: Record<Status, string> = {
 }
 
 
-export const PRIORITIES: Priority[] = ['Very High', 'High', 'Medium', 'Low', 'Very Low', 'On Hold']
 
 export const PAYMENT_STATUSES: PaymentStatus[] = ['Not due', 'Invoiced', 'Paid', 'Overdue', 'Cancelled']
 
+
+export const RISK_TYPES: RiskType[] = ['Risk', 'Issue', 'Assumption', 'Dependency', 'Decision']
+export const RISK_RESPONSES: RiskResponse[] = ['Avoid', 'Mitigate', 'Transfer', 'Accept']
+// Change request types and states from the workbook's CONFIG sheet
+export const CHANGE_TYPES: ChangeType[] = ['Scope', 'Time', 'Budget', 'Risk', 'Decision']
+export const CHANGE_STATUSES: ChangeStatus[] = ['Open', 'Approved', 'Rejected', 'Implemented', 'Closed']
 
 export const RISK_STATUSES: RiskStatus[] = ['Open', 'Mitigated', 'Closed', 'Accepted', 'Cancelled']
 

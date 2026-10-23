@@ -113,7 +113,7 @@ describe('schema 4 migration (scheduling)', () => {
     const parsed = parseAnyFile(JSON.stringify(v3))
     if (parsed.kind !== 'workspace') throw new Error('expected workspace')
     const tasks = parsed.workspace.projects[0].tasks
-    expect(parsed.workspace.schemaVersion).toBe(4)
+    expect(parsed.workspace.schemaVersion).toBe(5)
     expect(tasks.map((t) => [t.currentStart, t.currentFinish])).toEqual(seedTasks.map((t) => [t.currentStart, t.currentFinish]))
     expect(new Set(tasks.map((t) => t.no)).size).toBe(tasks.length)
   })

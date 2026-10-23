@@ -1,4 +1,6 @@
-import type { CalendarSettings, Holiday, ProjectLists, Settings } from '../types'
+import type { CalendarSettings, Holiday, ProjectLists, Settings, Status } from '../types'
+
+export const STATUS_KINDS: Status[] = ['Not started', 'In progress', 'On hold', 'Delayed', 'Cancelled', 'Done']
 
 // Defaults transcribed from the CONFIG sheet of the original workbook.
 // Note: the workbook lists Easter Monday 2026 as 07.04.2026; Easter Sunday
@@ -7,6 +9,9 @@ export const defaultSettings: Settings = {
   phases: ['INITIATION', 'PLANNING', 'REALIZATION', 'CLOSING'],
   projectAreas: ['RFI', 'Tender', 'Implementation'],
   budgetCategories: ['License', 'HW/SW', 'Services', 'Development', 'Implementation', 'Contingency', 'Other'],
+  // Status names from the workbook; each maps to a fixed meaning (kind).
+  statuses: STATUS_KINDS.map((kind) => ({ name: kind, kind })),
+  priorities: ['Very High', 'High', 'Medium', 'Low', 'Very Low', 'On Hold'],
   // Generated for the current and next year (algorithmic Easter, so the
   // workbook's 07.04.2026 error cannot recur).
   holidays: [...czechHolidays(new Date().getFullYear()), ...czechHolidays(new Date().getFullYear() + 1)],
@@ -24,6 +29,8 @@ export const defaultLists: ProjectLists = {
   phases: defaultSettings.phases,
   projectAreas: defaultSettings.projectAreas,
   budgetCategories: defaultSettings.budgetCategories,
+  statuses: defaultSettings.statuses,
+  priorities: defaultSettings.priorities,
 }
 
 export const defaultCalendar: CalendarSettings = {

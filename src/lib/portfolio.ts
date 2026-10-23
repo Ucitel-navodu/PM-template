@@ -1,4 +1,6 @@
+import { approvedImpact } from './changes'
 import { leafTasks } from './schedule/tree'
+import { statusKind } from './status'
 import type { CalendarSettings, Health, Milestone, Project } from '../types'
 import { computeHealth } from './health'
 import { toDateKey } from './dates'
@@ -13,7 +15,9 @@ export interface ProjectSummary {
   overdueTasks: number
   nextMilestone?: Milestone
   openRisks: number
+  openIssues: number
   highRisks: number
+  pendingChanges: number
   budgetForecast: number
   budgetUsedPct: number | null
   finish?: string
@@ -36,13 +40,14 @@ export function summarizeProject(p: Project, calendar: CalendarSettings, today =
   let weights = 0
   let overdueTasks = 0
   for (const t of leaves) {
-    const h = computeHealth(t, calendar)
+    const h = computeHealth(t, { ...calendar, statuses: p.lists.statuses })
     if (h) health[h]++
-    if (t.status === 'Cancelled') continue
+    const kind = statusKind(t.status, p.lists.statuses)
+    if (kind === 'Cancelled') continue
     const w = durationDays(t.currentStart, t.currentFinish)
-    weighted += (t.status === 'Done' ? 1 : (t.percentComplete ?? 0)) * w
+    weighted += (kind === 'Done' ? 1 : (t.percentComplete ?? 0)) * w
     weights += w
-    if (t.status !== 'Done' && t.currentFinish && t.currentFinish.slice(0, 10) < todayKey) overdueTasks++
+    if (kind !== 'Done' && t.currentFinish && t.currentFinish.slice(0, 10) < todayKey) overdueTasks++
   }
 
   const openMilestones = p.milestones
@@ -51,12 +56,16 @@ export function summarizeProject(p: Project, calendar: CalendarSettings, today =
   const overdueMilestones = openMilestones.filter((m) => (m.plannedDate ?? '') < todayKey)
   const nextMilestone = openMilestones.find((m) => (m.plannedDate ?? '') >= todayKey)
 
-  const openRisks = p.risks.filter((r) => r.status === 'Open')
-  const highRisks = openRisks.filter((r) => (LEVEL[r.probability] ?? 0) * (LEVEL[r.impact] ?? 0) >= 9).length
+  // RAID: only risks and issues carry a P x I exposure; assumptions etc. are tracked, not scored.
+  const openRaid = p.risks.filter((r) => r.status === 'Open')
+  const openRisks = openRaid.filter((r) => (r.type ?? 'Risk') === 'Risk')
+  const openIssues = openRaid.filter((r) => r.type === 'Issue').length
+  const pendingChanges = (p.changes ?? []).filter((c) => c.status === 'Open').length
+  const highRisks = openRaid.filter((r) => r.type === 'Risk' || r.type === 'Issue').filter((r) => (LEVEL[r.probability] ?? 0) * (LEVEL[r.impact] ?? 0) >= 9).length
 
   const budgetForecast = p.budget.reduce((s, b) => s + Math.max(b.actual, b.committed, b.planned), 0)
   const actual = p.budget.reduce((s, b) => s + b.actual, 0)
-  const approved = p.info.budget
+  const approved = p.info.budget + approvedImpact(p.changes).cost
 
   let rag: Rag = leaves.length ? 'Green' : 'Grey'
   const ragReasons: string[] = []
@@ -94,7 +103,9 @@ export function summarizeProject(p: Project, calendar: CalendarSettings, today =
     overdueTasks,
     nextMilestone,
     openRisks: openRisks.length,
+    openIssues,
     highRisks,
+    pendingChanges,
     budgetForecast,
     budgetUsedPct: approved > 0 ? actual / approved : null,
     finish: finish ?? (p.info.plannedFinish || undefined),

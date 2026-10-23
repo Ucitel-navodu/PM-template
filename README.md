@@ -44,7 +44,17 @@ Etapa E1 – plánování (jako MS Project):
   šipky vazeb, svátky, zvýraznění kritické cesty.
 - **Kanban** ([dnd-kit](https://dndkit.com)) – změna stavu přetažením, i klávesnicí.
 
-Další etapy (RAID + change requesty + audit log, reporting PDF/PPTX, import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
+Etapa E2 – governance:
+
+- **RAID log** – rizika, issues, předpoklady, závislosti a rozhodnutí v jednom registru, mapa rizik
+  P×I (4×4 jako v Excelu), strategie odezvy, záložní plán, spouštěč.
+- **Change requesty** – dopad na termín a rozpočet; schválení zapíše rozhodujícího, nabídne novou
+  baseline a záznam do RAID; schválené změny navyšují aktuální rozpočet.
+- **Historie (audit log)** – kdo, kdy, co a z jaké hodnoty na jakou, uložená v souboru projektu,
+  export do CSV (`src/lib/audit.ts`).
+- **Vlastní stavy úkolů a priority** – každý stav má pevný význam, takže vzorec Health zůstává 1:1.
+
+Další etapy (reporting PDF/PPTX, import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
 [`docs/research.md`](docs/research.md).
 
 ## Vývoj
@@ -55,7 +65,7 @@ npm run dev              # http://localhost:5173
 npm test                 # Vitest (unit testy, TZ Europe/Prague)
 npm run build            # licence/SBOM + typecheck + build do dist/ + CSP
 npm run build:portable   # totéž, ale JEDEN self-contained dist-portable/index.html
-npm run e2e              # Playwright: smoke test, plánování (file://) + autosave/konflikty
+npm run e2e              # Playwright: smoke, plánování, governance (file://) + autosave/konflikty
 ```
 
 E2E testy potřebují Chromium (`npx playwright install chromium`, nebo `CHROMIUM_PATH=/cesta/k/chromium`).

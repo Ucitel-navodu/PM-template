@@ -1,3 +1,4 @@
+import { statusKind } from '../lib/status'
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { computeHealth } from '../lib/health'
@@ -11,7 +12,7 @@ function sameDay(a: Date, b: Date): boolean {
 type DotKind = 'done' | 'overdue' | 'upcoming'
 
 function dotForTask(task: Task, settings: Settings): DotKind {
-  if (task.status === 'Done') return 'done'
+  if (statusKind(task.status, settings.statuses) === 'Done') return 'done'
   const health = computeHealth(task, settings)
   if (health === 'Red') return 'overdue'
   return 'upcoming'

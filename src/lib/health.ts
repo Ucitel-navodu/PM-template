@@ -1,5 +1,6 @@
 import type { Health, Settings, Task } from '../types'
 import { parseDateKey } from './dates'
+import { statusKind } from './status'
 
 /**
  * Port of the original TASKS!V health formula (an Excel LET() expression).
@@ -7,7 +8,7 @@ import { parseDateKey } from './dates'
  * a task can be "In progress" and still be Red if it is behind plan.
  */
 
-type Tolerances = Pick<Settings, 'orangeTolerance' | 'redTolerance'>
+type Tolerances = Pick<Settings, 'orangeTolerance' | 'redTolerance'> & { statuses?: Settings['statuses'] }
 
 const DEFAULT_TOLERANCES: Tolerances = { orangeTolerance: 0.1, redTolerance: 0.25 }
 
@@ -38,6 +39,8 @@ export function computeHealth(task: Task, tolerances: Tolerances = DEFAULT_TOLER
   if (!task.name) return ''
 
   const now = today()
+  // Custom status names are evaluated by their meaning, so the formula stays the workbook's.
+  const status = statusKind(task.status, tolerances.statuses)
   const start = toDate(task.currentStart)
   const finish = toDate(task.currentFinish)
   const baselineFinish = toDate(task.baselineFinish)
@@ -47,21 +50,21 @@ export function computeHealth(task: Task, tolerances: Tolerances = DEFAULT_TOLER
 
   const isDataIssue =
     (start && finish && start.getTime() > finish.getTime()) ||
-    (task.status === 'In progress' && start && start.getTime() > now.getTime()) ||
-    (task.status === 'Done' && (!finish || finish.getTime() > now.getTime())) ||
-    (task.status === 'Done' && (actual == null || actual < 1)) ||
-    (task.status === 'Not started' && actual != null && actual > 0)
+    (status === 'In progress' && start && start.getTime() > now.getTime()) ||
+    (status === 'Done' && (!finish || finish.getTime() > now.getTime())) ||
+    (status === 'Done' && (actual == null || actual < 1)) ||
+    (status === 'Not started' && actual != null && actual > 0)
 
   if (isDataIssue) return 'Blue'
-  if (task.status === 'Done') return 'Green'
-  if (task.status === 'Cancelled' || task.status === 'On hold') return 'Grey'
+  if (status === 'Done') return 'Green'
+  if (status === 'Cancelled' || status === 'On hold') return 'Grey'
   if (!start || !finish) return 'Grey'
   if (finish.getTime() < now.getTime()) return 'Red'
-  if (task.status === 'In progress' && progressGap > tolerances.redTolerance) return 'Red'
-  if (task.status === 'Not started' && start.getTime() < now.getTime()) return 'Orange'
+  if (status === 'In progress' && progressGap > tolerances.redTolerance) return 'Red'
+  if (status === 'Not started' && start.getTime() < now.getTime()) return 'Orange'
   if (
     (baselineFinish && finish.getTime() > baselineFinish.getTime()) ||
-    (task.status === 'In progress' && progressGap > tolerances.orangeTolerance)
+    (status === 'In progress' && progressGap > tolerances.orangeTolerance)
   ) {
     return 'Orange'
   }

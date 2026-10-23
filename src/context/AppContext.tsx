@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { Absence, BudgetItem, Lang, Milestone, ProjectInfo, Risk, Settings, Task, Theme } from '../types'
+import type { ProjectLists, Absence, BudgetItem, Lang, Milestone, ProjectInfo, Risk, Settings, Task, Theme } from '../types'
 import { t, type TKey } from '../i18n'
 import { useActiveProject, useWorkspaceStore, type ListKey } from '../store/workspaceStore'
 import { usePrefsStore } from '../store/prefsStore'
@@ -51,7 +51,7 @@ interface AppState {
   deleteAbsence: (id: string) => void
 }
 
-const LIST_KEYS: ListKey[] = ['phases', 'projectAreas', 'budgetCategories']
+const LIST_KEYS: (keyof ProjectLists)[] = ['phases', 'projectAreas', 'budgetCategories', 'statuses', 'priorities']
 
 /**
  * Facade over the workspace store for the active project. Pages keep a simple
@@ -119,6 +119,8 @@ export function useApp(): AppState {
       if (list === 'phases') return project.tasks.filter((x) => x.phase === name).length
       if (list === 'projectAreas')
         return project.tasks.filter((x) => x.projectArea === name).length + project.risks.filter((x) => x.area === name).length
+      if (list === 'priorities')
+        return project.tasks.filter((x) => x.priority === name).length + project.risks.filter((x) => x.priority === name).length
       return project.budget.filter((x) => x.category === name).length
     },
 

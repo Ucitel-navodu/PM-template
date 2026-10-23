@@ -1,15 +1,20 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
-import type { Absence, BudgetItem, CalendarSettings, Milestone, Project, ProjectInfo, ProjectLists, Risk, Task, TaskView, Workspace } from '../types'
+import type { Absence, AuditEntry, BudgetItem, CalendarSettings, ChangeRequest, Milestone, Project, ProjectInfo, ProjectLists, Risk, StatusDef, Task, TaskView, Workspace } from '../types'
 import { createBlankProject, migrateWorkspace, newId } from '../domain/workspace'
 import { applySchedule } from '../lib/schedule/cpm'
 import { WorkCalendar } from '../lib/schedule/calendar'
 import { subtreeIds } from '../lib/schedule/tree'
+import { appendAudit, diffProject } from '../lib/audit'
+import { statusKind, statusOfKind } from '../lib/status'
+import { toDateKey } from '../lib/dates'
+import { usePrefsStore } from './prefsStore'
 
-export type ListKey = keyof ProjectLists
+/** Plain string lists of a project (statuses have their own actions). */
+export type ListKey = 'phases' | 'projectAreas' | 'budgetCategories' | 'priorities'
 
 // Collections inside a project that share add/update/delete semantics.
-type CollectionMap = { tasks: Task; milestones: Milestone; budget: BudgetItem; risks: Risk }
+type CollectionMap = { tasks: Task; milestones: Milestone; budget: BudgetItem; risks: Risk; changes: ChangeRequest }
 export type CollectionKey = keyof CollectionMap
 
 interface WorkspaceState {
@@ -51,6 +56,10 @@ interface WorkspaceState {
 
   updateLists: (patch: Partial<ProjectLists>) => void
   renameListItem: (list: ListKey, oldName: string, newName: string) => void
+  setStatuses: (statuses: StatusDef[]) => void
+  renameStatus: (oldName: string, newName: string) => void
+  /** Approve or reject a change request; on approval optionally re-baseline and log the decision in RAID. */
+  decideChange: (id: string, approve: boolean, opts?: { baseline?: boolean; decision?: boolean }) => void
   updateCalendar: (patch: Partial<CalendarSettings>) => void
 
   addAbsence: (a: Absence) => void
@@ -84,10 +93,21 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       }
       // Every project edit re-runs the scheduler, so dates are always consistent
       // (one undo step for the edit and its knock-on effects).
-      const setProject = (fn: (p: Project) => Project) =>
+      // The audit trail is the diff of the user's edit, taken before the
+      // scheduler adds its knock-on effects; `audit` overrides it with one
+      // summary line for bulk operations (baseline, renames).
+      const setProject = (fn: (p: Project) => Project, audit?: (p: Project) => Omit<AuditEntry, 'at' | 'user'>[]) =>
         setWs((ws) => ({
           ...ws,
-          projects: ws.projects.map((p) => (p.id === get().activeProjectId ? touch(applySchedule(fn(p), ws.calendar)) : p)),
+          projects: ws.projects.map((p) => {
+            if (p.id !== get().activeProjectId) return p
+            const edited = fn(p)
+            if (edited === p) return p
+            const at = new Date().toISOString()
+            const user = usePrefsStore.getState().userName.trim() || '—'
+            const entries = audit ? audit(p).map((e) => ({ ...e, at, user })) : diffProject(p, edited, user, at)
+            return touch(applySchedule({ ...edited, auditLog: appendAudit(p.auditLog ?? [], entries) }, ws.calendar))
+          }),
         }))
       const setTaskList = (fn: (tasks: Task[]) => Task[]) => setProject((p) => ({ ...p, tasks: fn(p.tasks) }))
 
@@ -171,7 +191,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               wbs: '',
               name: '',
               phase: tasks[after]?.phase ?? '',
-              status: 'Not started',
+              status: statusOfKind('Not started', get().workspace.projects.find((p) => p.id === get().activeProjectId)?.lists.statuses),
               owner: '',
               percentComplete: 0,
               schedulingMode: 'auto',
@@ -186,14 +206,15 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           })
           return id
         },
-        updateTask: (id, patch) =>
+        updateTask: (id, patch) => {
+          const statuses = get().workspace.projects.find((p) => p.id === get().activeProjectId)?.lists.statuses
           setTaskList((tasks) =>
             tasks.map((t) => {
               if (t.id !== id) return t
               const next: Task = { ...t, ...patch }
               if ('milestone' in patch) next.duration = patch.milestone ? 0 : Math.max(1, t.duration ?? 1)
               if ('duration' in patch && patch.duration !== undefined) next.milestone = patch.duration === 0
-              if (patch.status === 'Done') next.percentComplete = 1
+              if (patch.status && statusKind(patch.status, statuses) === 'Done') next.percentComplete = 1
               if (t.schedulingMode === 'auto') {
                 if (patch.currentStart && patch.currentStart !== t.currentStart) {
                   next.constraint = { type: 'SNET', date: patch.currentStart }
@@ -206,7 +227,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               }
               return next
             }),
-          ),
+          )
+        },
         deleteTask: (id) =>
           setTaskList((tasks) => {
             const gone = new Set(subtreeIds(tasks, id))
@@ -227,7 +249,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               ? p.tasks.map((t) => ({ ...t, baselineStart: t.currentStart, baselineFinish: t.currentFinish }))
               : p.tasks
             return { ...p, baselines, tasks }
-          }),
+          }, (p) => [{ entity: 'project', entityId: p.id, label: name, action: 'create', field: 'baseline', new: primary ? `${name} (hlavní)` : name }]),
         setPrimaryBaseline: (id) =>
           setProject((p) => {
             const b = p.baselines.find((x) => x.id === id)
@@ -236,7 +258,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               ...p,
               tasks: p.tasks.map((t) => ({ ...t, baselineStart: b.tasks[t.id]?.start, baselineFinish: b.tasks[t.id]?.finish })),
             }
-          }),
+          }, (p) => [{ entity: 'project', entityId: p.id, label: p.baselines.find((x) => x.id === id)?.name ?? id, action: 'update', field: 'primaryBaseline' }]),
         deleteBaseline: (id) => setProject((p) => ({ ...p, baselines: p.baselines.filter((b) => b.id !== id) })),
         saveView: (view) =>
           setProject((p) => ({ ...p, views: [...p.views.filter((v) => v.id !== view.id), view] })),
@@ -247,6 +269,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           if (!newName || oldName === newName) return
           setProject((p) => {
             const lists = { ...p.lists, [list]: p.lists[list].map((x) => (x === oldName ? newName : x)) }
+            if (list === 'priorities') {
+              return {
+                ...p,
+                lists,
+                tasks: p.tasks.map((t) => (t.priority === oldName ? { ...t, priority: newName } : t)),
+                risks: p.risks.map((r) => (r.priority === oldName ? { ...r, priority: newName } : r)),
+              }
+            }
             if (list === 'phases') {
               return { ...p, lists, tasks: p.tasks.map((t) => (t.phase === oldName ? { ...t, phase: newName } : t)) }
             }
@@ -259,6 +289,74 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               }
             }
             return { ...p, lists, budget: p.budget.map((b) => (b.category === oldName ? { ...b, category: newName } : b)) }
+          }, () => [{ entity: 'lists', entityId: list, label: list, action: 'update', field: list, old: oldName, new: newName }])
+        },
+        setStatuses: (statuses) => setProject((p) => ({ ...p, lists: { ...p.lists, statuses } })),
+        renameStatus: (oldName, newName) => {
+          if (!newName || oldName === newName) return
+          setProject(
+            (p) => ({
+              ...p,
+              lists: { ...p.lists, statuses: p.lists.statuses.map((s) => (s.name === oldName ? { ...s, name: newName } : s)) },
+              tasks: p.tasks.map((t) => (t.status === oldName ? { ...t, status: newName } : t)),
+            }),
+            () => [{ entity: 'lists', entityId: 'statuses', label: 'statuses', action: 'update', field: 'statuses', old: oldName, new: newName }],
+          )
+        },
+        decideChange: (id, approve, opts = {}) => {
+          const user = usePrefsStore.getState().userName.trim()
+          const today = toDateKey(new Date())
+          setProject((p) => {
+            const cr = p.changes.find((c) => c.id === id)
+            if (!cr) return p
+            let next: Project = {
+              ...p,
+              changes: p.changes.map((c) =>
+                c.id === id ? { ...c, status: approve ? 'Approved' : 'Rejected', decidedBy: user || c.decidedBy, decisionDate: today } : c,
+              ),
+            }
+            if (approve && opts.decision) {
+              const no = Math.max(0, ...p.risks.map((r) => Number(/(\d+)$/.exec(r.id)?.[1] ?? 0))) + 1
+              next = {
+                ...next,
+                risks: [
+                  ...next.risks,
+                  {
+                    id: `R-${String(no).padStart(3, '0')}`,
+                    type: 'Decision',
+                    title: `${cr.id}: ${cr.title}`,
+                    description: cr.description,
+                    area: '',
+                    probability: 'Low',
+                    impact: 'Low',
+                    owner: user,
+                    mitigation: '',
+                    status: 'Closed',
+                    decidedBy: user,
+                    decisionDate: today,
+                    rationale: cr.notes,
+                    linkedChangeId: cr.id,
+                    lastUpdate: today,
+                  },
+                ],
+              }
+            }
+            if (approve && opts.baseline) {
+              const snapshot = Object.fromEntries(next.tasks.map((t) => [t.id, { start: t.currentStart, finish: t.currentFinish }]))
+              next = {
+                ...next,
+                baselines: [...next.baselines, { id: newId('b'), name: `${cr.id} ${cr.title}`, createdAt: new Date().toISOString(), tasks: snapshot }],
+                tasks: next.tasks.map((t) => ({ ...t, baselineStart: t.currentStart, baselineFinish: t.currentFinish })),
+              }
+            }
+            return next
+          }, (p) => {
+            const cr = p.changes.find((c) => c.id === id)
+            return [
+              { entity: 'change', entityId: id, label: `${id} ${cr?.title ?? ''}`.trim(), action: 'update', field: 'status', old: cr?.status, new: approve ? 'Approved' : 'Rejected' },
+              ...(approve && opts.baseline ? [{ entity: 'project' as const, entityId: p.id, label: `${id} ${cr?.title ?? ''}`, action: 'create' as const, field: 'baseline' }] : []),
+              ...(approve && opts.decision ? [{ entity: 'raid' as const, entityId: id, label: `Decision ${id}`, action: 'create' as const }] : []),
+            ]
           })
         },
         updateCalendar: (patch) =>

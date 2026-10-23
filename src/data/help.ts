@@ -149,6 +149,35 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       ],
     },
     {
+      title: "🏛️ Řízení projektu (RAID, změny, historie)",
+      items: [
+        {
+          q: "Co je RAID log?",
+          a: "Jeden registr pro Rizika (co se může stát), Issues (co se už děje), Předpoklady (co bereme jako fakt – je potřeba je ověřit), Závislosti (na čem projekt závisí mimo vlastní rozsah) a Rozhodnutí (co, kdo a proč rozhodl). Záložky nahoře filtrují typ; u rizik vyplň strategii (Avoid/Mitigate/Transfer/Accept), opatření, záložní plán a spouštěč.",
+        },
+        {
+          q: "Jak číst mapu rizik?",
+          a: "Mapa ukazuje otevřená rizika a issues podle pravděpodobnosti (řádky) a dopadu (sloupce) – stejná matice 4×4 jako v Excelu. Skóre P×I od 9 je červené, od 4 oranžové. Kliknutím na buňku vyfiltruješ tabulku.",
+        },
+        {
+          q: "Jak funguje change request?",
+          a: "V záložce Změny založ CR, popiš ho a zapiš dopad v pracovních dnech a penězích. Tlačítko Schválit zapíše tebe jako rozhodujícího a datum, nabídne uložit novou baseline (další zpoždění se pak měří od schváleného plánu) a zapsat rozhodnutí do RAID. Schválené CR navyšují aktuální rozpočet na Rozpočtu, Dashboardu i v Portfoliu.",
+        },
+        {
+          q: "Co je v Historii?",
+          a: "Každá změna v projektu: kdo (jméno z ⚙️ Nastavení → Já a ukládání), kdy, co a z jaké hodnoty na jakou. Psaní do jednoho pole do 2 minut je jeden záznam. Termíny, které appka přepočítala sama (automatické plánování), se nezapisují – zapíše se jen tvoje změna, která přepočet vyvolala. Historie je uložená v souboru projektu a jde exportovat do CSV.",
+        },
+        {
+          q: "Proč mi Ctrl+Z smaže i záznam v Historii?",
+          a: "Historie odpovídá skutečnému stavu dat: vrácená změna se nikdy nestala, takže v historii nezůstane.",
+        },
+        {
+          q: "Můžu si přejmenovat stavy úkolů?",
+          a: "Ano, v ⚙️ Nastavení → Stavy úkolů. Každý stav má pevný význam (Not started, In progress, On hold, Delayed, Cancelled, Done), podle kterého se počítá Health a plánování, takže si můžeš udělat např. „Analýza“ a „Testování“ (oba In progress) a vzorec Health se nemění. Pořadí stavů určuje sloupce Kanbanu. Stav, který používají úkoly, nejde smazat. Stejně tak lze upravit seznam priorit.",
+        },
+      ],
+    },
+    {
       title: '📋 Práce s listy appky',
       items: [
         {
@@ -355,6 +384,35 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         {
           q: "Can I save my own table view?",
           a: "Yes: set filters, sorting (click a header) and columns (Columns ▾) and choose \"Save view…\". Views are stored in the project, so colleagues opening the file see them too.",
+        },
+      ],
+    },
+    {
+      title: "🏛️ Governance (RAID, changes, history)",
+      items: [
+        {
+          q: "What is the RAID log?",
+          a: "One register for Risks (may happen), Issues (happening now), Assumptions (taken as true - validate them), Dependencies (outside the project) and Decisions (what, who and why). The tabs filter by type; for risks fill in the response (Avoid/Mitigate/Transfer/Accept), mitigation, contingency and trigger.",
+        },
+        {
+          q: "How do I read the risk map?",
+          a: "It shows open risks and issues by probability (rows) and impact (columns) - the same 4×4 matrix as the Excel. A P×I score of 9+ is red, 4+ amber. Click a cell to filter the table.",
+        },
+        {
+          q: "How does a change request work?",
+          a: "On the Changes tab create a CR, describe it and enter the impact in working days and money. Approve records you as the decision maker and the date, offers to save a new baseline (further slippage is then measured against the approved plan) and to log the decision in RAID. Approved CRs raise the current budget on Budget, Dashboard and Portfolio.",
+        },
+        {
+          q: "What is in the History?",
+          a: "Every change in the project: who (name from ⚙️ Settings → Me & saving), when, what and from which value to which. Typing into one field within 2 minutes is one entry. Dates recalculated by the app (auto scheduling) are not logged - only your edit that caused them. The history is stored in the project file and can be exported to CSV.",
+        },
+        {
+          q: "Why does Ctrl+Z also remove the History entry?",
+          a: "The history matches the real state of the data: an undone change never happened, so it does not stay in the history.",
+        },
+        {
+          q: "Can I rename task statuses?",
+          a: "Yes, in ⚙️ Settings → Task statuses. Each status has a fixed meaning (Not started, In progress, On hold, Delayed, Cancelled, Done) used by Health and scheduling, so you can have e.g. \"Analysis\" and \"Testing\" (both In progress) without changing the Health formula. The order defines the board columns. A status used by tasks cannot be deleted. The priority list can be edited the same way.",
         },
       ],
     },

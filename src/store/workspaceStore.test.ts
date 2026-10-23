@@ -44,7 +44,7 @@ describe('workspace store', () => {
     expect(s().activeProjectId).not.toBe(first)
     s().addItem('risks', { id: 'R-001', type: 'Risk', area: '', description: 'x', probability: 'Low', impact: 'Low', owner: '', mitigation: '', status: 'Open' })
     expect(active().risks).toHaveLength(1)
-    expect(s().workspace.projects.find((p) => p.id === first)!.risks).toHaveLength(1) // sample has 1
+    expect(s().workspace.projects.find((p) => p.id === first)!.risks).toHaveLength(5) // sample RAID log has 5
   })
 
   it('re-selects a project when undo removes the active one', () => {
@@ -75,6 +75,8 @@ describe('portfolio summary', () => {
     expect(sum.progress).toBeGreaterThan(0)
     expect(sum.progress).toBeLessThan(1)
     expect(sum.openRisks).toBe(1)
+    expect(sum.openIssues).toBe(1)
+    expect(sum.pendingChanges).toBe(1)
   })
 
   it('goes Red when the forecast exceeds the approved budget', () => {
@@ -82,5 +84,45 @@ describe('portfolio summary', () => {
     p.info.budget = 100
     p.budget = [{ id: 'B001', category: 'Other', supplier: '', description: '', planned: 200, committed: 0, actual: 0, paymentStatus: 'Not due' }]
     expect(summarizeProject(p, createSampleWorkspace().calendar).rag).toBe('Red')
+  })
+})
+
+describe('governance in the store', () => {
+  it('writes an audit entry with the user name and lets undo remove it', async () => {
+    const { usePrefsStore } = await import('./prefsStore')
+    usePrefsStore.getState().setUserName('Jana Testová')
+    const before = active().auditLog.length
+    s().updateTask('t11', { owner: 'Někdo' })
+    const last = active().auditLog.at(-1)!
+    expect(active().auditLog.length).toBe(before + 1)
+    expect(last).toMatchObject({ user: 'Jana Testová', entity: 'task', field: 'owner', new: 'Někdo' })
+    useWorkspaceStore.temporal.getState().undo()
+    expect(active().auditLog.length).toBe(before)
+  })
+
+  it('does not log dates the scheduler recalculated', () => {
+    const id = s().addTask({ name: 'A', duration: 2 })
+    const b = s().addTask({ name: 'B', duration: 1, dependencies: [{ predId: id, type: 'FS', lag: 0 }] })
+    const n = active().auditLog.length
+    s().updateTask(id, { duration: 5 })
+    const added = active().auditLog.slice(n)
+    expect(added.map((e) => e.field)).toEqual(['duration'])
+    expect(active().tasks.find((t) => t.id === b)!.currentStart).toBeTruthy()
+  })
+
+  it('approving a change request re-baselines and logs a decision', () => {
+    s().decideChange('CR-002', true, { baseline: true, decision: true })
+    const p = active()
+    expect(p.changes.find((c) => c.id === 'CR-002')).toMatchObject({ status: 'Approved', decidedBy: 'Jana Testová' })
+    expect(p.baselines.at(-1)!.name).toContain('CR-002')
+    expect(p.risks.at(-1)).toMatchObject({ type: 'Decision', linkedChangeId: 'CR-002' })
+    expect(p.auditLog.at(-1)!.entity).toBe('raid')
+  })
+
+  it('renaming a status renames it on the tasks', () => {
+    s().renameStatus('Done', 'Hotovo')
+    expect(active().tasks.filter((t) => t.status === 'Hotovo').length).toBeGreaterThan(0)
+    expect(active().tasks.some((t) => t.status === 'Done')).toBe(false)
+    expect(active().lists.statuses.find((x) => x.name === 'Hotovo')!.kind).toBe('Done')
   })
 })

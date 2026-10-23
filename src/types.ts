@@ -1,3 +1,5 @@
+/** The six fixed status meanings the Health formula and the scheduler understand.
+ *  User-defined statuses (Settings) each map to one of them. */
 export type Status =
   | 'Not started'
   | 'In progress'
@@ -8,7 +10,12 @@ export type Status =
 
 export type Health = 'Green' | 'Orange' | 'Red' | 'Grey' | 'Blue'
 
-export type Priority = 'Very High' | 'High' | 'Medium' | 'Low' | 'Very Low' | 'On Hold'
+export type Priority = string
+
+export interface StatusDef {
+  name: string
+  kind: Status
+}
 
 // Phases are user-defined in Settings (CONFIG sheet equivalent).
 export type Phase = string
@@ -46,7 +53,8 @@ export interface Task {
   name: string
   phase: Phase
   release?: string
-  status: Status
+  // Name of a status from the project's list (see StatusDef)
+  status: string
   owner: string
   notes?: string
   baselineStart?: string
@@ -102,15 +110,19 @@ export interface BudgetItem {
   notes?: string
 }
 
-export type RiskType = 'Risk' | 'Issue'
+// RAID log: Risks, Assumptions, Issues, Dependencies + Decisions
+export type RiskType = 'Risk' | 'Issue' | 'Assumption' | 'Dependency' | 'Decision'
+export type RiskResponse = 'Avoid' | 'Mitigate' | 'Transfer' | 'Accept'
 export type RiskStatus = 'Open' | 'Mitigated' | 'Closed' | 'Accepted' | 'Cancelled'
 export type ImpactLevel = 'Low' | 'Medium' | 'High' | 'Critical'
 
 export interface Risk {
   id: string
   type: RiskType
+  title?: string
   area: string
   linkedTaskId?: string
+  linkedChangeId?: string
   description: string
   probability: ImpactLevel
   impact: ImpactLevel
@@ -120,6 +132,53 @@ export interface Risk {
   status: RiskStatus
   lastUpdate?: string
   comment?: string
+  // risk
+  response?: RiskResponse
+  contingency?: string
+  trigger?: string
+  // issue
+  priority?: string
+  resolution?: string
+  // assumption
+  validated?: boolean
+  // decision
+  decidedBy?: string
+  decisionDate?: string
+  rationale?: string
+}
+
+export type ChangeType = 'Scope' | 'Time' | 'Budget' | 'Risk' | 'Decision'
+export type ChangeStatus = 'Open' | 'Approved' | 'Rejected' | 'Implemented' | 'Closed'
+
+export interface ChangeRequest {
+  id: string
+  title: string
+  description: string
+  type: ChangeType
+  status: ChangeStatus
+  requestedBy: string
+  raised: string
+  // Impact on the schedule in working days and on the budget (project currency)
+  impactDays: number
+  impactCost: number
+  decidedBy?: string
+  decisionDate?: string
+  linkedTaskIds: string[]
+  notes?: string
+}
+
+export type AuditEntity = 'task' | 'milestone' | 'budget' | 'raid' | 'change' | 'project' | 'lists'
+
+export interface AuditEntry {
+  at: string
+  user: string
+  entity: AuditEntity
+  entityId: string
+  label: string
+  action: 'create' | 'update' | 'delete'
+  field?: string
+  old?: string
+  new?: string
 }
 
 export interface ProjectInfo {
@@ -148,6 +207,8 @@ export interface ProjectLists {
   phases: string[]
   projectAreas: string[]
   budgetCategories: string[]
+  statuses: StatusDef[]
+  priorities: string[]
 }
 
 // Calendar and Health tolerances are shared by the whole workspace (portfolio).
@@ -195,6 +256,8 @@ export interface Project {
   tasks: Task[]
   baselines: Baseline[]
   views: TaskView[]
+  changes: ChangeRequest[]
+  auditLog: AuditEntry[]
   milestones: Milestone[]
   budget: BudgetItem[]
   risks: Risk[]
@@ -203,7 +266,7 @@ export interface Project {
   updatedAt: string
 }
 
-export const WORKSPACE_SCHEMA_VERSION = 4
+export const WORKSPACE_SCHEMA_VERSION = 5
 
 export interface Workspace {
   fileType: 'pm-web-workspace'

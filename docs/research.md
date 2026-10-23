@@ -63,3 +63,21 @@ will be validated with a real MSP XML sample.
   The policy therefore adds `style-src-attr 'unsafe-inline'` - style *attributes*
   only; `<style>` blocks stay hash-locked, scripts stay hash-locked, and with
   `connect-src`/`img-src` closed a style attribute cannot send data anywhere.
+
+## E2 design notes
+
+- **RAID** follows the common PMO practice (Risks, Assumptions, Issues,
+  Dependencies + a Decision log); risk responses use the PMBOK/PRINCE2 set
+  Avoid/Mitigate/Transfer/Accept. Scoring keeps the workbook's 4×4 P×I matrix
+  (`src/lib/raid.ts`), so existing registers keep their numbers.
+- **Change requests** use the workbook's CONFIG types and states. Approved,
+  implemented and closed CRs add their cost to the approved budget everywhere
+  (`src/lib/changes.ts`); approval offers re-baselining - standard change
+  control so variance is measured against the approved plan.
+- **Audit trail** (`src/lib/audit.ts`) is a field-level diff of the user's edit
+  taken in the store *before* the scheduler runs; bulk operations (baseline,
+  renames) write one summary line. Edits of one field within 2 minutes merge.
+  The log is part of the project data, so undo removes the undone entries.
+- **Custom statuses** map to six fixed meanings; Health, the scheduler, the
+  board and the statistics read the meaning (`src/lib/status.ts`), never the
+  name, so the Excel Health formula is untouched.

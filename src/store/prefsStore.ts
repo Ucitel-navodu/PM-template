@@ -40,5 +40,5 @@ usePrefsStore.subscribe((s) => {
   savePref('userName', s.userName)
   savePref('autosaveDelayMs', s.autosaveDelayMs)
   savePref('maxBackups', s.maxBackups)
-  document.documentElement.classList.toggle('dark', s.theme === 'dark')
+  if (typeof document !== 'undefined') document.documentElement.classList.toggle('dark', s.theme === 'dark')
 })
