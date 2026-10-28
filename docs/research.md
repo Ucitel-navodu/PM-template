@@ -23,6 +23,7 @@ change requests, status report export.
 | Gantt rendering | frappe-gantt 1.2 | MIT | 0 deps. Deps = array of task ids, `custom_class`, events on_click/on_date_change/on_progress_change/on_double_click, `holidays`, `ignore: ['weekend', dates]`, `move_dependencies`, `readonly`. Draws all links as FS arrows (link type semantics handled by our scheduler). |
 | Task table | @tanstack/react-table 8 | MIT | headless: sorting, column visibility; filtering/outline done by us |
 | Kanban drag & drop | @dnd-kit/core 6 | MIT | pointer + keyboard sensors (accessible) |
+| PowerPoint export | pptxgenjs 4.0 | MIT | deps jszip (MIT OR GPL → MIT), pako (MIT AND Zlib); `image-size` pinned to 2.0.4 via `overrides` (GHSA-5p2g-fcmc-qvqq; the browser build never loads it) |
 | Unit tests | vitest 3.2 | MIT | v5 needs Vite 6+ |
 
 Rejected: SVAR React Gantt (MIT core, but 17 transitive deps incl. its own grid/store/editor duplicating ours; auto-scheduling is PRO); gantt-task-react (unmaintained since 2022); DHTMLX Gantt (GPL); SheetJS `xlsx` from npm (stuck at 0.18.5, CVE-2023-30533) -> ExcelJS (MIT) for Excel import.
@@ -81,3 +82,19 @@ will be validated with a real MSP XML sample.
 - **Custom statuses** map to six fixed meanings; Health, the scheduler, the
   board and the statistics read the meaning (`src/lib/status.ts`), never the
   name, so the Excel Health formula is untouched.
+
+## E3 design notes
+
+- **PDF = browser print** (`@media print`, `@page A4 landscape`): no PDF library,
+  text stays selectable and it works with "Microsoft Print to PDF". The page
+  switches to light mode for printing (`printLight`).
+- **PowerPoint = pptxgenjs** with native shapes, tables and a native column
+  chart, so the deck stays editable. It is generated in the browser and saved
+  via a Blob download (allowed by the CSP; no network).
+- **Report content** (`src/lib/report.ts`) is a pure function of the project
+  data and period, shared by screen, print and PPTX. Saved reports keep the
+  edited texts and RAG for the history and the portfolio trend.
+- **Roadmap** follows the workbook's RoadMap.bas: tasks flagged Mgmt export in
+  Mgmt order, one row per item, lanes by phase/area.
+- Bundle size: the portable file grew to ~1.2 MB (≈360 kB gzip), mostly
+  pptxgenjs + jszip - acceptable for a local file.

@@ -54,7 +54,18 @@ Etapa E2 – governance:
   export do CSV (`src/lib/audit.ts`).
 - **Vlastní stavy úkolů a priority** – každý stav má pevný význam, takže vzorec Health zůstává 1:1.
 
-Další etapy (reporting PDF/PPTX, import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
+Etapa E3 – reporting:
+
+- **Status report** (záložka Report) předvyplněný z dat za období: RAG, KPI, shrnutí, eskalace,
+  RoadMapa, milníky, hotovo/další kroky, rizika, změny, rozpočet; historie reportů a trend RAG.
+- **PDF** přes tisk prohlížeče (A4 na šířku, tiskové CSS) a **PowerPoint** přes
+  [pptxgenjs](https://github.com/gitbrent/PptxGenJS) (MIT) – 8 editovatelných slidů včetně nativní
+  RoadMapy a grafu rozpočtu; branding (logo, barva, organizace) v Nastavení.
+- **Manažerská RoadMapa** jako náhrada VBA `RoadMap.bas` (Export pro vedení + Mgmt order, řádky
+  podle fáze/oblasti, barvy podle fáze/Health).
+- **Portfolio** – tisk a PPTX pro vedení s trendem RAG.
+
+Další etapy (import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
 [`docs/research.md`](docs/research.md).
 
 ## Vývoj
@@ -65,7 +76,7 @@ npm run dev              # http://localhost:5173
 npm test                 # Vitest (unit testy, TZ Europe/Prague)
 npm run build            # licence/SBOM + typecheck + build do dist/ + CSP
 npm run build:portable   # totéž, ale JEDEN self-contained dist-portable/index.html
-npm run e2e              # Playwright: smoke, plánování, governance (file://) + autosave/konflikty
+npm run e2e              # Playwright: smoke, plánování, governance, reporting (file://) + autosave/konflikty
 ```
 
 E2E testy potřebují Chromium (`npx playwright install chromium`, nebo `CHROMIUM_PATH=/cesta/k/chromium`).

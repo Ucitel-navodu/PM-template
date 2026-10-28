@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
-import type { Absence, AuditEntry, BudgetItem, CalendarSettings, ChangeRequest, Milestone, Project, ProjectInfo, ProjectLists, Risk, StatusDef, Task, TaskView, Workspace } from '../types'
+import type { ReportSettings, StatusReport, Absence, AuditEntry, BudgetItem, CalendarSettings, ChangeRequest, Milestone, Project, ProjectInfo, ProjectLists, Risk, StatusDef, Task, TaskView, Workspace } from '../types'
 import { createBlankProject, migrateWorkspace, newId } from '../domain/workspace'
 import { applySchedule } from '../lib/schedule/cpm'
 import { WorkCalendar } from '../lib/schedule/calendar'
@@ -60,6 +60,9 @@ interface WorkspaceState {
   renameStatus: (oldName: string, newName: string) => void
   /** Approve or reject a change request; on approval optionally re-baseline and log the decision in RAID. */
   decideChange: (id: string, approve: boolean, opts?: { baseline?: boolean; decision?: boolean }) => void
+  saveStatusReport: (report: StatusReport) => void
+  deleteStatusReport: (id: string) => void
+  updateReportSettings: (patch: Partial<ReportSettings>) => void
   updateCalendar: (patch: Partial<CalendarSettings>) => void
 
   addAbsence: (a: Absence) => void
@@ -112,7 +115,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       const setTaskList = (fn: (tasks: Task[]) => Task[]) => setProject((p) => ({ ...p, tasks: fn(p.tasks) }))
 
       return {
-        workspace: { fileType: 'pm-web-workspace', schemaVersion: 3, id: '', revision: 0, calendar: { holidays: [], workingDays: [], orangeTolerance: 0.1, redTolerance: 0.25 }, absences: [], projects: [] },
+        workspace: { fileType: 'pm-web-workspace', schemaVersion: 3, id: '', revision: 0, calendar: { holidays: [], workingDays: [], orangeTolerance: 0.1, redTolerance: 0.25 }, absences: [], reportSettings: { organization: '', accentColor: '#4f46e5', footer: '' }, projects: [] },
         activeProjectId: '',
         readOnly: false,
 
@@ -359,6 +362,17 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             ]
           })
         },
+        saveStatusReport: (report) =>
+          setProject(
+            (p) => ({ ...p, statusReports: [...p.statusReports.filter((r) => r.id !== report.id), report] }),
+            () => [{ entity: 'project', entityId: report.id, label: `Status report ${report.date}`, action: 'create', field: 'statusReport', new: report.rag }],
+          ),
+        deleteStatusReport: (id) =>
+          setProject(
+            (p) => ({ ...p, statusReports: p.statusReports.filter((r) => r.id !== id) }),
+            (p) => [{ entity: 'project', entityId: id, label: `Status report ${p.statusReports.find((r) => r.id === id)?.date ?? ''}`, action: 'delete' }],
+          ),
+        updateReportSettings: (patch) => setWs((ws) => ({ ...ws, reportSettings: { ...ws.reportSettings, ...patch } })),
         updateCalendar: (patch) =>
           setWs((ws) => {
             const calendar = { ...ws.calendar, ...patch }

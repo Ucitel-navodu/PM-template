@@ -264,6 +264,53 @@ function PersonalSection() {
   )
 }
 
+/** Branding for printed reports and PowerPoint decks (shared by the workspace). */
+function ReportSection() {
+  const { tr, readOnly } = useApp()
+  const rs = useWorkspaceStore((s) => s.workspace.reportSettings)
+  const update = useWorkspaceStore.getState().updateReportSettings
+  const label = 'flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400'
+  const onLogo = (file?: File) => {
+    if (!file) return
+    if (file.size > 300_000) return window.alert(tr('report_logo_too_big'))
+    const reader = new FileReader()
+    reader.onload = () => typeof reader.result === 'string' && update({ logoDataUrl: reader.result })
+    reader.readAsDataURL(file)
+  }
+  return (
+    <Section title={tr('report_settings')} help={tr('report_settings_help')}>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className={label}>
+          {tr('report_org')}
+          <input className={inputBox} value={rs.organization} onChange={(e) => update({ organization: e.target.value })} disabled={readOnly} />
+        </label>
+        <label className={label}>
+          {tr('report_footer')}
+          <input className={inputBox} value={rs.footer} onChange={(e) => update({ footer: e.target.value })} disabled={readOnly} />
+        </label>
+        <label className={label}>
+          {tr('report_color')}
+          <input type="color" className="h-8 w-16 rounded border border-gray-300 dark:border-white/15" value={rs.accentColor} onChange={(e) => update({ accentColor: e.target.value })} disabled={readOnly} />
+        </label>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <label className={label}>
+          {tr('report_logo')}
+          <input type="file" accept="image/png,image/jpeg" onChange={(e) => onLogo(e.target.files?.[0])} disabled={readOnly} className="text-xs" />
+        </label>
+        {rs.logoDataUrl && (
+          <>
+            <img src={rs.logoDataUrl} alt="" className="h-10 max-w-[8rem] object-contain" />
+            <button className={btnSecondary} onClick={() => update({ logoDataUrl: undefined })} disabled={readOnly}>
+              {tr('report_logo_remove')}
+            </button>
+          </>
+        )}
+      </div>
+    </Section>
+  )
+}
+
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { tr, settings, updateSettings } = useApp()
   const [newHoliday, setNewHoliday] = useState({ date: '', name: '' })
@@ -325,6 +372,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 
         <div className="max-h-[72vh] overflow-y-auto px-5">
           <PersonalSection />
+
+          <ReportSection />
 
           <Section title={tr('settings_phases')} help={tr('settings_phases_help')}>
             <ListEditor list="phases" />

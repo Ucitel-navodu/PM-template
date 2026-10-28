@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Absence, CalendarSettings, Dependency, LinkType, Project, ProjectInfo, ProjectLists, Status, Task, Workspace } from '../types'
+import type { Absence, CalendarSettings, Dependency, LinkType, Project, ProjectInfo, ProjectLists, ReportSettings, Status, Task, Workspace } from '../types'
 import { WORKSPACE_SCHEMA_VERSION } from '../types'
 import { STATUS_KINDS, defaultCalendar, defaultLists } from '../data/settings'
 import {
@@ -82,6 +82,7 @@ const workspaceSchema = z.looseObject({
   savedBy: z.string().optional(),
   calendar: calendarSchema.catch(defaultCalendar),
   absences: z.array(idObject).catch([]),
+  reportSettings: z.looseObject({}).optional(),
   projects: z.array(projectSchema),
 })
 
@@ -170,12 +171,19 @@ export function migrateProject(p: Project, calendar: CalendarSettings): Project 
     lists: listsSchema.parse(p.lists ?? {}),
     changes: Array.isArray(p.changes) ? p.changes : [],
     auditLog: Array.isArray(p.auditLog) ? p.auditLog : [],
+    statusReports: Array.isArray(p.statusReports) ? p.statusReports : [],
   }
   return applySchedule(migrated, calendar)
 }
 
+export const defaultReportSettings: ReportSettings = { organization: '', accentColor: '#4f46e5', footer: '' }
+
 export function migrateWorkspace(ws: Workspace): Workspace {
-  return { ...ws, schemaVersion: WORKSPACE_SCHEMA_VERSION, projects: ws.projects.map((p) => migrateProject(p, ws.calendar)) }
+  return {
+    ...ws,
+    schemaVersion: WORKSPACE_SCHEMA_VERSION,
+    reportSettings: { ...defaultReportSettings, ...(ws.reportSettings ?? {}) },
+    projects: ws.projects.map((p) => migrateProject(p, ws.calendar)) }
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +222,7 @@ export function createBlankProject(name: string, lists: ProjectLists = defaultLi
     baselines: [],
     changes: [],
     auditLog: [],
+    statusReports: [],
     views: [],
     createdAt: now,
     updatedAt: now,
@@ -266,6 +275,7 @@ export function createSampleProject(calendar: CalendarSettings = defaultCalendar
       baselines: [],
       changes: structuredClone(seedChanges),
       auditLog: [],
+      statusReports: [],
       views: [],
       createdAt: now,
       updatedAt: now,
@@ -282,6 +292,7 @@ export function createWorkspace(projects: Project[], calendar: CalendarSettings 
     revision: 0,
     calendar: structuredClone(calendar),
     absences: structuredClone(absences),
+    reportSettings: { ...defaultReportSettings },
     projects,
   }
 }

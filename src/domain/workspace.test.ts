@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { WORKSPACE_SCHEMA_VERSION } from '../types'
 import { createSampleWorkspace, parseAnyFile, serializeWorkspace, workspaceFromLegacySnapshot, WorkspaceFileError } from './workspace'
 import { seedTasks, projectInfo } from '../data/seed'
 
@@ -113,7 +114,7 @@ describe('schema 4 migration (scheduling)', () => {
     const parsed = parseAnyFile(JSON.stringify(v3))
     if (parsed.kind !== 'workspace') throw new Error('expected workspace')
     const tasks = parsed.workspace.projects[0].tasks
-    expect(parsed.workspace.schemaVersion).toBe(5)
+    expect(parsed.workspace.schemaVersion).toBe(WORKSPACE_SCHEMA_VERSION)
     expect(tasks.map((t) => [t.currentStart, t.currentFinish])).toEqual(seedTasks.map((t) => [t.currentStart, t.currentFinish]))
     expect(new Set(tasks.map((t) => t.no)).size).toBe(tasks.length)
   })

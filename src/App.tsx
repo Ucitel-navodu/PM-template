@@ -11,6 +11,7 @@ import { BudgetPage } from './pages/Budget'
 import { RisksPage } from './pages/Risks'
 import { ChangesPage } from './pages/Changes'
 import { AuditPage } from './pages/Audit'
+import { ReportPage } from './pages/Report'
 import { TeamPage } from './pages/Team'
 import { PortfolioPage } from './pages/Portfolio'
 import { FileMenu } from './components/FileMenu'
@@ -18,7 +19,7 @@ import { SyncBanner } from './components/SyncBanner'
 import { HelpPanel } from './components/HelpPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 
-type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'changes' | 'team' | 'audit'
+type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'changes' | 'team' | 'audit' | 'report'
 
 const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'portfolio', label: 'nav_portfolio' },
@@ -31,6 +32,7 @@ const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'risks', label: 'nav_raid' },
   { key: 'changes', label: 'nav_changes' },
   { key: 'team', label: 'nav_team' },
+  { key: 'report', label: 'nav_report' },
   { key: 'audit', label: 'nav_audit' },
 ]
 
@@ -85,8 +87,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
-    <div className="min-h-full bg-gray-50 dark:bg-[#14141c]">
-      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#1a1a24]/95">
+    <div className="min-h-full bg-gray-50 print:bg-white dark:bg-[#14141c]">
+      <header className="sticky top-0 z-20 print:hidden border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#1a1a24]/95">
         <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-4 pt-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-fuchsia-500 text-sm font-bold text-white shadow-sm shadow-brand-500/30">
@@ -139,7 +141,7 @@ export default function App() {
         <SyncBanner />
       </header>
 
-      <main className={`mx-auto max-w-[90rem] px-4 py-6 sm:px-6 ${readOnly ? 'read-only' : ''}`}>
+      <main className={`mx-auto max-w-[90rem] px-4 py-6 sm:px-6 print:max-w-none print:p-0 ${readOnly ? 'read-only' : ''}`}>
         {page === 'portfolio' && <PortfolioPage onOpenProject={() => setPage('dashboard')} />}
         {page === 'dashboard' && <Dashboard />}
         {page === 'tasks' && <TasksPage onOpenSettings={() => setSettingsOpen(true)} />}
@@ -151,6 +153,7 @@ export default function App() {
         {page === 'changes' && <ChangesPage />}
         {page === 'team' && <TeamPage />}
         {page === 'audit' && <AuditPage />}
+        {page === 'report' && <ReportPage />}
       </main>
 
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}

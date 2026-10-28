@@ -5,7 +5,14 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const ALLOWED = new Set(['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', '0BSD'])
+const ALLOWED = new Set(['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', '0BSD', 'Zlib'])
+
+// Simple SPDX expressions: "A OR B" needs one allowed option, "A AND B" needs all of them.
+export const permitted = (expr) =>
+  expr
+    .replace(/[()]/g, '')
+    .split(/\s+OR\s+/)
+    .some((alt) => alt.split(/\s+AND\s+/).every((l) => ALLOWED.has(l.trim())))
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const run = (args) => execFileSync(npm, args, { encoding: 'utf8', shell: process.platform === 'win32' })
 
@@ -32,7 +39,7 @@ for (const dir of dirs) {
 }
 
 const packages = [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
-const bad = packages.filter((p) => !p.license.split(/\s+OR\s+/).some((l) => ALLOWED.has(l.replace(/[()]/g, ''))))
+const bad = packages.filter((p) => !permitted(p.license))
 if (bad.length) {
   console.error('Disallowed licenses:\n' + bad.map((p) => `  ${p.name}@${p.version}: ${p.license}`).join('\n'))
   process.exit(1)

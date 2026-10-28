@@ -6,7 +6,10 @@ import { summarizeProject, type Rag } from '../lib/portfolio'
 import { formatDate, formatMoney } from '../lib/format'
 import { toDateKey } from '../lib/dates'
 import { Card, Stat } from '../components/Card'
-import { btnPrimary, tableWrap, tbodyRow, theadRow } from '../lib/ui'
+import { btnPrimary, btnSecondary, tableWrap, tbodyRow, theadRow } from '../lib/ui'
+import { printLight } from './Report'
+import { downloadPortfolioDeck } from '../lib/pptx'
+import type { TKey } from '../i18n'
 
 const RAG_CLASS: Record<Rag, string> = {
   Red: 'bg-rose-500 text-white',
@@ -16,7 +19,7 @@ const RAG_CLASS: Record<Rag, string> = {
 }
 
 export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) {
-  const { tr, readOnly } = useApp()
+  const { tr, lang, readOnly } = useApp()
   const workspace = useWorkspaceStore((s) => s.workspace)
   const activeProjectId = useWorkspaceStore((s) => s.activeProjectId)
   const store = useWorkspaceStore.getState()
@@ -26,7 +29,7 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
     () =>
       workspace.projects
         .filter((p) => showArchived || !p.archived)
-        .map((p) => ({ p, s: summarizeProject(p, workspace.calendar) })),
+        .map((p) => ({ p, s: summarizeProject(p, workspace.calendar, new Date(), lang) })),
     [workspace, showArchived],
   )
 
@@ -52,6 +55,22 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
     onOpenProject()
   }
 
+  // RAG trend: change against the project's last saved status report.
+  const trend = (p: (typeof rows)[number]['p'], rag: string) => {
+    const last = [...p.statusReports].sort((a, b) => a.date.localeCompare(b.date)).at(-1)
+    if (!last || last.rag === rag) return last ? '→' : ''
+    const order = ['Green', 'Amber', 'Red']
+    return order.indexOf(rag) > order.indexOf(last.rag) ? '↘' : '↗'
+  }
+
+  const portfolioPptx = () =>
+    downloadPortfolioDeck(
+      rows.filter((r) => !r.p.archived).map(({ p, s }) => ({ name: p.info.projectName, itpm: p.info.itpm, summary: s, currency: p.info.currency, budget: p.info.budget, trend: trend(p, s.rag) })),
+      workspace.reportSettings,
+      (k) => tr(k as TKey),
+      toDateKey(new Date()),
+    )
+
   const open = (id: string) => {
     store.setActiveProject(id)
     onOpenProject()
@@ -61,13 +80,24 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="hidden print:block">
+        <h1 className="text-xl font-bold">
+          {[workspace.reportSettings.organization, tr('report_portfolio_title')].filter(Boolean).join(' · ')} · {new Date().toLocaleDateString('cs-CZ')}
+        </h1>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">{tr('portfolio_title')}</h2>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
             <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
             {tr('portfolio_show_archived')}
           </label>
+          <button onClick={printLight} className={btnSecondary}>
+            🖨️ {tr('report_print')}
+          </button>
+          <button onClick={portfolioPptx} className={btnSecondary}>
+            📊 {tr('report_portfolio_pptx')}
+          </button>
           <button onClick={newProject} className={btnPrimary} disabled={readOnly}>
             {tr('portfolio_new')}
           </button>
@@ -109,7 +139,7 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
               <th className="px-3 py-2">{tr('portfolio_open_risks')}</th>
               <th className="px-3 py-2">{tr('portfolio_budget_used')}</th>
               <th className="px-3 py-2">{tr('portfolio_finish')}</th>
-              <th className="px-3 py-2" />
+              <th className="px-3 py-2 print:hidden" />
             </tr>
           </thead>
           <tbody>
@@ -121,6 +151,9 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
                     title={s.ragReasons.join('\n') || undefined}
                   >
                     {s.rag}
+                  </span>
+                  <span className="ml-1 text-xs text-gray-400" title={tr('report_trend')}>
+                    {trend(p, s.rag)}
                   </span>
                 </td>
                 <td className="px-3 py-2">
@@ -155,7 +188,7 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
                   {s.budgetUsedPct === null ? '—' : `${Math.round(s.budgetUsedPct * 100)} % ${tr('portfolio_of')} ${formatMoney(p.info.budget, p.info.currency)}`}
                 </td>
                 <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{formatDate(s.finish) || '—'}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-right">
+                <td className="whitespace-nowrap px-3 py-2 text-right print:hidden">
                   <button className={action} onClick={() => open(p.id)}>
                     {tr('portfolio_open')}
                   </button>

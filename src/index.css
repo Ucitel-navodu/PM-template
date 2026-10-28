@@ -27,3 +27,26 @@ html.dark input,
 html.dark select {
   color-scheme: dark;
 }
+
+/* Printed status report: A4 landscape, light, app chrome hidden (print:hidden). */
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+@media print {
+  html,
+  body,
+  #root {
+    height: auto;
+    background: #fff !important;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11px;
+  }
+  .report-doc section,
+  .report-doc header {
+    box-shadow: none !important;
+  }
+}

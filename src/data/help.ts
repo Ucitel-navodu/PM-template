@@ -178,6 +178,27 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       ],
     },
     {
+      title: "📊 Reporting pro vedení",
+      items: [
+        {
+          q: "Jak udělám status report?",
+          a: "Záložka Report: zvol období (výchozí je od posledního uloženého reportu, jinak 14 dní). Appka předvyplní stav (RAG) a texty Hotovo / Další kroky / Eskalace z dat projektu – uprav je a doplň shrnutí. Pak „Tisk / PDF“ (v dialogu tisku zvol Uložit jako PDF, A4 na šířku) nebo „Stáhnout PPTX“. „Uložit do historie“ si report zapamatuje: příští období začne od něj a Portfolio ukáže trend RAG.",
+        },
+        {
+          q: "Co obsahuje PowerPoint?",
+          a: "8 slidů: titulní, manažerské shrnutí (RAG, KPI, eskalace), RoadMapa, milníky, hotovo/další kroky, top rizika a issues, změny a rozhodnutí, rozpočet s grafem. Vše jsou normální textová pole, tabulky a graf PowerPointu – můžeš je dál upravit. Logo, barvu, organizaci a patičku nastavíš v ⚙️ Nastavení → Report a prezentace.",
+        },
+        {
+          q: "Jak řídím, co je na RoadMapě?",
+          a: "Stejně jako v Excelu: u úkolu zaškrtni „Export pro vedení“ a pořadí urči sloupcem „Mgmt order“ (v Úkolech přes Sloupce ▾). Řádky RoadMapy jsou podle fáze nebo oblasti, barva podle fáze nebo Health. Když není označený žádný úkol, použijí se hlavní úkoly a milníky.",
+        },
+        {
+          q: "Report pro celé portfolio?",
+          a: "Na stránce Portfolio: „Tisk / PDF“ vytiskne přehled všech projektů, „PPTX pro vedení“ vytvoří prezentaci s tabulkou projektů (RAG, trend proti minulému reportu, postup, další milník, rizika, čerpání, konec).",
+        },
+      ],
+    },
+    {
       title: '📋 Práce s listy appky',
       items: [
         {
@@ -413,6 +434,27 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         {
           q: "Can I rename task statuses?",
           a: "Yes, in ⚙️ Settings → Task statuses. Each status has a fixed meaning (Not started, In progress, On hold, Delayed, Cancelled, Done) used by Health and scheduling, so you can have e.g. \"Analysis\" and \"Testing\" (both In progress) without changing the Health formula. The order defines the board columns. A status used by tasks cannot be deleted. The priority list can be edited the same way.",
+        },
+      ],
+    },
+    {
+      title: "📊 Management reporting",
+      items: [
+        {
+          q: "How do I create a status report?",
+          a: "Report tab: pick the period (default: since the last saved report, otherwise 14 days). The app suggests the RAG status and the Achieved / Next / Escalation texts from the project data - edit them and add a summary. Then \"Print / PDF\" (choose Save as PDF, A4 landscape) or \"Download PPTX\". \"Save to history\" keeps the report: the next period starts after it and Portfolio shows the RAG trend.",
+        },
+        {
+          q: "What is in the PowerPoint?",
+          a: "8 slides: title, executive summary (RAG, KPIs, escalations), roadmap, milestones, achieved/next, top risks and issues, changes and decisions, budget with a chart. All are normal PowerPoint text boxes, tables and a chart you can still edit. Logo, colour, organisation and footer are in ⚙️ Settings → Reports & slides.",
+        },
+        {
+          q: "How do I control what is on the roadmap?",
+          a: "As in the Excel: tick \"Mgmt export\" on a task and set the order in \"Mgmt order\" (Tasks → Columns ▾). Lanes are by phase or area, colour by phase or Health. Without any flagged task, top-level tasks and milestones are used.",
+        },
+        {
+          q: "A report for the whole portfolio?",
+          a: "On the Portfolio page: \"Print / PDF\" prints all projects, \"Management PPTX\" creates a deck with the project table (RAG, trend vs. last report, progress, next milestone, risks, budget use, finish).",
         },
       ],
     },

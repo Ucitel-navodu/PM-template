@@ -249,6 +249,33 @@ export interface TaskView {
   sort?: { id: string; desc: boolean }
 }
 
+export type Rag = 'Green' | 'Amber' | 'Red'
+
+/** A saved status report (history for trend and audit). */
+export interface StatusReport {
+  id: string
+  date: string
+  periodFrom: string
+  periodTo: string
+  rag: Rag
+  ragAuto: Rag | 'Grey'
+  ragComment?: string
+  summary: string
+  achievements: string
+  nextSteps: string
+  escalations: string
+  createdBy: string
+  createdAt: string
+}
+
+/** Branding of printed and PowerPoint reports (shared by the whole workspace). */
+export interface ReportSettings {
+  organization: string
+  accentColor: string
+  logoDataUrl?: string
+  footer: string
+}
+
 export interface Project {
   id: string
   info: ProjectInfo
@@ -258,6 +285,7 @@ export interface Project {
   views: TaskView[]
   changes: ChangeRequest[]
   auditLog: AuditEntry[]
+  statusReports: StatusReport[]
   milestones: Milestone[]
   budget: BudgetItem[]
   risks: Risk[]
@@ -266,7 +294,7 @@ export interface Project {
   updatedAt: string
 }
 
-export const WORKSPACE_SCHEMA_VERSION = 5
+export const WORKSPACE_SCHEMA_VERSION = 6
 
 export interface Workspace {
   fileType: 'pm-web-workspace'
@@ -279,5 +307,6 @@ export interface Workspace {
   savedBy?: string
   calendar: CalendarSettings
   absences: Absence[]
+  reportSettings: ReportSettings
   projects: Project[]
 }

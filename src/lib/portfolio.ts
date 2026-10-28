@@ -32,7 +32,13 @@ function durationDays(start?: string, finish?: string): number {
   return Math.max(1, (new Date(finish).getTime() - new Date(start).getTime()) / 86_400_000 + 1)
 }
 
-export function summarizeProject(p: Project, calendar: CalendarSettings, today = new Date()): ProjectSummary {
+const REASONS = {
+  CZ: { red: 'úkolů s Health Red', orange: 'úkolů Orange/Blue', budget: 'prognóza nad schváleným rozpočtem', milestone: 'milníků po termínu', risk: 'vysokých rizik' },
+  EN: { red: 'Red health', orange: 'Orange/Blue health', budget: 'forecast > approved budget', milestone: 'overdue milestone', risk: 'high risk' },
+}
+
+export function summarizeProject(p: Project, calendar: CalendarSettings, today = new Date(), lang: 'CZ' | 'EN' = 'EN'): ProjectSummary {
+  const R = REASONS[lang]
   const todayKey = toDateKey(today)
   const leaves = leafTasks(p.tasks)
   const health: Record<Health, number> = { Green: 0, Orange: 0, Red: 0, Grey: 0, Blue: 0 }
@@ -71,22 +77,22 @@ export function summarizeProject(p: Project, calendar: CalendarSettings, today =
   const ragReasons: string[] = []
   if (health.Red) {
     rag = worse(rag, 'Red')
-    ragReasons.push(`${health.Red}× Red health`)
+    ragReasons.push(`${health.Red}× ${R.red}`)
   } else if (health.Orange || health.Blue) {
     rag = worse(rag, 'Amber')
-    ragReasons.push(`${health.Orange + health.Blue}× Orange/Blue health`)
+    ragReasons.push(`${health.Orange + health.Blue}× ${R.orange}`)
   }
   if (approved > 0 && budgetForecast > approved) {
     rag = worse(rag, 'Red')
-    ragReasons.push('forecast > approved budget')
+    ragReasons.push(R.budget)
   }
   if (overdueMilestones.length) {
     rag = worse(rag, 'Red')
-    ragReasons.push(`${overdueMilestones.length}× overdue milestone`)
+    ragReasons.push(`${overdueMilestones.length}× ${R.milestone}`)
   }
   if (highRisks) {
     rag = worse(rag, 'Amber')
-    ragReasons.push(`${highRisks}× high risk`)
+    ragReasons.push(`${highRisks}× ${R.risk}`)
   }
 
   const finish = p.tasks
