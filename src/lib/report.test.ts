@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { WORKSPACE_SCHEMA_VERSION } from '../types'
 import { addDays, buildRoadmap, buildStatusReport, defaultPeriod } from './report'
 import { createSampleWorkspace, parseAnyFile, serializeWorkspace } from '../domain/workspace'
 
@@ -63,6 +64,6 @@ describe('schema 6 migration', () => {
     if (parsed.kind !== 'workspace') throw new Error('workspace expected')
     expect(parsed.workspace.reportSettings.accentColor).toMatch(/^#/)
     expect(parsed.workspace.projects[0].statusReports).toEqual([])
-    expect(parsed.workspace.schemaVersion).toBe(6)
+    expect(parsed.workspace.schemaVersion).toBe(WORKSPACE_SCHEMA_VERSION)
   })
 })

@@ -126,3 +126,18 @@ describe('governance in the store', () => {
     expect(active().lists.statuses.find((x) => x.name === 'Hotovo')!.kind).toBe('Done')
   })
 })
+
+describe('import in the store', () => {
+  it('is its own undo step even right after another edit', async () => {
+    const { planTaskImport } = await import('../lib/import/plan')
+    s().updateTask('t11', { owner: 'Hned předtím' })
+    const imported = [{ key: '1', uid: '1', name: 'Importovaný úkol', outlineLevel: 1, links: [] }]
+    const tasks = planTaskImport(active(), imported, { source: 'msp', fileName: 'x.xml', matchedBy: 'uid' }, { baseline: false, autoSchedule: false })
+    s().importPlan({ source: 'msp', fileName: 'x.xml', tasks, warnings: [], unmapped: [] }, 'keep')
+    expect(active().tasks.some((t) => t.name === 'Importovaný úkol')).toBe(true)
+    expect(active().importLog.at(-1)).toMatchObject({ source: 'msp', fileName: 'x.xml', added: 1 })
+    useWorkspaceStore.temporal.getState().undo()
+    expect(active().tasks.some((t) => t.name === 'Importovaný úkol')).toBe(false)
+    expect(active().tasks.find((t) => t.id === 't11')!.owner).toBe('Hned předtím') // the earlier edit stays
+  })
+})

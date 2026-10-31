@@ -19,3 +19,12 @@ export function downloadCsv(filename: string, rows: Record<string, unknown>[]): 
   a.click()
   URL.revokeObjectURL(url)
 }
+
+export function downloadBlob(filename: string, data: BlobPart, type: string): void {
+  const url = URL.createObjectURL(new Blob([data], { type }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}

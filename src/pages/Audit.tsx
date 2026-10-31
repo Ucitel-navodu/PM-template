@@ -38,7 +38,7 @@ export function AuditPage() {
 
   const fmt = (iso: string) => new Date(iso).toLocaleString(lang === 'CZ' ? 'cs-CZ' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })
   const change = (e: AuditEntry) =>
-    e.action === 'create' ? tr('audit_create') : e.action === 'delete' ? tr('audit_delete') : `${e.old || '∅'} → ${e.new || '∅'}`
+    e.action === 'create' ? (e.new ? `${tr('audit_create')}: ${e.new}` : tr('audit_create')) : e.action === 'delete' ? tr('audit_delete') : `${e.old || '∅'} → ${e.new || '∅'}`
 
   const exportCsv = () =>
     downloadCsv(

@@ -49,6 +49,7 @@ check('sync status shown', await page.getByTestId('sync-status').isVisible())
 
 // Portfolio
 await page.locator('nav button', { hasText: /Portfolio/ }).click()
+await page.getByRole('heading', { name: 'Portfolio projektů' }).waitFor()
 check('portfolio lists the project', (await page.locator('tbody tr').count()) === 1)
 if (shots) await page.screenshot({ path: `${shots}/portfolio-light.png`, fullPage: true })
 await page.getByRole('button', { name: /Nový projekt/ }).click()
@@ -57,11 +58,12 @@ check('new project created and active', (await page.locator('select[aria-label] 
 
 // Undo / redo of the project creation
 await page.locator('nav button', { hasText: /Portfolio/ }).click()
+await page.getByRole('heading', { name: 'Portfolio projektů' }).waitFor()
 await page.keyboard.press('Control+z')
-await page.waitForTimeout(100)
+await page.waitForTimeout(250)
 check('Ctrl+Z undoes the project creation', (await page.locator('tbody tr').count()) === 1)
 await page.keyboard.press('Control+y')
-await page.waitForTimeout(100)
+await page.waitForTimeout(250)
 check('Ctrl+Y redoes it', (await page.locator('tbody tr').count()) === 2)
 
 // Switch back to the sample and walk all tabs

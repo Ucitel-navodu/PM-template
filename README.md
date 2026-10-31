@@ -65,6 +65,15 @@ Etapa E3 – reporting:
   podle fáze/oblasti, barvy podle fáze/Health).
 - **Portfolio** – tisk a PPTX pro vedení s trendem RAG.
 
+Etapa E4 – import a export:
+
+- **MS Project XML** (Uložit jako › XML): hierarchie, termíny, %, milníky, vazby FS/SS/FF/SF s posunem, baseline.
+  Opakovaný import podle UID s náhledem změn; soubor určuje strukturu a termíny, údaje PM (fáze, oblast,
+  priorita, poznámky) zůstávají; chybějící úkoly se nemažou samy. Jeden krok Zpět, záznam do Historie.
+- **Excel (.xlsx) a CSV**: listy TASKS / MILESTONES / BUDGET / RISKS, české i anglické hlavičky, mapování
+  s výpisem nepřečtených sloupců; **export do Excelu** (round-trip). `.xlsx` se čte a píše přes jszip +
+  fast-xml-parser (`src/lib/import/xlsx.ts`) – ExcelJS jsem nepoužil, protože jeho závislosti mají nepermisivní/neznámé licence.
+
 Další etapy (import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
 [`docs/research.md`](docs/research.md).
 
@@ -76,7 +85,7 @@ npm run dev              # http://localhost:5173
 npm test                 # Vitest (unit testy, TZ Europe/Prague)
 npm run build            # licence/SBOM + typecheck + build do dist/ + CSP
 npm run build:portable   # totéž, ale JEDEN self-contained dist-portable/index.html
-npm run e2e              # Playwright: smoke, plánování, governance, reporting (file://) + autosave/konflikty
+npm run e2e              # Playwright: smoke, plánování, governance, reporting, import (file://) + autosave/konflikty
 ```
 
 E2E testy potřebují Chromium (`npx playwright install chromium`, nebo `CHROMIUM_PATH=/cesta/k/chromium`).

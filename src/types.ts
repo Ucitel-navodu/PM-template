@@ -50,6 +50,8 @@ export interface Task {
   wbs: string
   projectArea?: string
   externalId?: string
+  // MS Project UID: key of the repeated import
+  uid?: string
   name: string
   phase: Phase
   release?: string
@@ -268,6 +270,18 @@ export interface StatusReport {
   createdAt: string
 }
 
+export interface ImportRecord {
+  id: string
+  at: string
+  user: string
+  source: 'msp' | 'excel' | 'csv'
+  fileName: string
+  added: number
+  updated: number
+  removed: number
+  unchanged: number
+}
+
 /** Branding of printed and PowerPoint reports (shared by the whole workspace). */
 export interface ReportSettings {
   organization: string
@@ -286,6 +300,7 @@ export interface Project {
   changes: ChangeRequest[]
   auditLog: AuditEntry[]
   statusReports: StatusReport[]
+  importLog: ImportRecord[]
   milestones: Milestone[]
   budget: BudgetItem[]
   risks: Risk[]
@@ -294,7 +309,7 @@ export interface Project {
   updatedAt: string
 }
 
-export const WORKSPACE_SCHEMA_VERSION = 6
+export const WORKSPACE_SCHEMA_VERSION = 7
 
 export interface Workspace {
   fileType: 'pm-web-workspace'

@@ -6,6 +6,8 @@ import { applySchedule } from '../lib/schedule/cpm'
 import { WorkCalendar } from '../lib/schedule/calendar'
 import { subtreeIds } from '../lib/schedule/tree'
 import { appendAudit, diffProject } from '../lib/audit'
+import { applyFilePlan, auditForFilePlan, type FilePlan } from '../lib/import/workbook'
+import type { RemovedChoice } from '../lib/import/plan'
 import { statusKind, statusOfKind } from '../lib/status'
 import { toDateKey } from '../lib/dates'
 import { usePrefsStore } from './prefsStore'
@@ -60,6 +62,8 @@ interface WorkspaceState {
   renameStatus: (oldName: string, newName: string) => void
   /** Approve or reject a change request; on approval optionally re-baseline and log the decision in RAID. */
   decideChange: (id: string, approve: boolean, opts?: { baseline?: boolean; decision?: boolean }) => void
+  /** Write a reviewed import plan (MS Project / Excel / CSV) into the active project: one undo step. */
+  importPlan: (plan: FilePlan, removed: RemovedChoice) => void
   saveStatusReport: (report: StatusReport) => void
   deleteStatusReport: (id: string) => void
   updateReportSettings: (patch: Partial<ReportSettings>) => void
@@ -307,6 +311,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           )
         },
         decideChange: (id, approve, opts = {}) => {
+          lastTrackedAt = 0
           const user = usePrefsStore.getState().userName.trim()
           const today = toDateKey(new Date())
           setProject((p) => {
@@ -361,6 +366,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               ...(approve && opts.decision ? [{ entity: 'raid' as const, entityId: id, label: `Decision ${id}`, action: 'create' as const }] : []),
             ]
           })
+        },
+        importPlan: (plan, removed) => {
+          lastTrackedAt = 0 // a deliberate bulk operation is always its own undo step
+          const user = usePrefsStore.getState().userName.trim() || '—'
+          setProject(
+            (p) => applyFilePlan(p, plan, removed, user),
+            (p) => auditForFilePlan(plan, removed, p.id),
+          )
         },
         saveStatusReport: (report) =>
           setProject(

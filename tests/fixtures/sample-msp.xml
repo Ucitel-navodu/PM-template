@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <Name>Projekt Alfa</Name><Title>Projekt Alfa</Title><MinutesPerDay>480</MinutesPerDay>
+  <StartDate>2026-11-02T08:00:00</StartDate><FinishDate>2026-11-30T17:00:00</FinishDate>
+  <Tasks>
+    <Task><UID>0</UID><ID>0</ID><Name>Projekt Alfa</Name><OutlineLevel>0</OutlineLevel><Start>2026-11-02T08:00:00</Start><Finish>2026-11-30T17:00:00</Finish></Task>
+    <Task>
+      <UID>1</UID><ID>1</ID><Name>Projekt Alfa</Name><WBS>1</WBS><OutlineLevel>1</OutlineLevel>
+      <Start>2026-11-02T08:00:00</Start><Finish>2026-11-30T17:00:00</Finish><Duration>PT160H0M0S</Duration>
+      <PercentComplete>40</PercentComplete><Summary>1</Summary><Milestone>0</Milestone><Manual>0</Manual>
+    </Task>
+    <Task>
+      <UID>2</UID><ID>2</ID><Name>Analýza &amp; návrh</Name><WBS>2</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-11-02T08:00:00</Start><Finish>2026-11-06T17:00:00</Finish><Duration>PT40H0M0S</Duration>
+      <PercentComplete>100</PercentComplete><Summary>0</Summary><Milestone>0</Milestone><Manual>0</Manual>
+      <Baseline><Number>0</Number><Start>2026-11-02T08:00:00</Start><Finish>2026-11-06T17:00:00</Finish></Baseline>
+    </Task>
+    <Task>
+      <UID>3</UID><ID>3</ID><Name>Implementace</Name><WBS>3</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-11-09T08:00:00</Start><Finish>2026-11-13T17:00:00</Finish><Duration>PT40H0M0S</Duration>
+      <PercentComplete>50</PercentComplete><Summary>0</Summary><Milestone>0</Milestone><Manual>0</Manual>
+      <Notes>Ruční poznámka z MSP</Notes>
+      <PredecessorLink><PredecessorUID>2</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-11-09T08:00:00</Start><Finish>2026-11-13T17:00:00</Finish></Baseline>
+    </Task>
+    <Task>
+      <UID>4</UID><ID>4</ID><Name>Vývoj modulu</Name><WBS>4</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-11-10T08:00:00</Start><Finish>2026-11-20T17:00:00</Finish><Duration>PT72H0M0S</Duration>
+      <PercentComplete>20</PercentComplete><Summary>0</Summary><Milestone>0</Milestone><Manual>0</Manual>
+      <PredecessorLink><PredecessorUID>3</PredecessorUID><Type>3</Type><CrossProject>0</CrossProject><LinkLag>4800</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-11-10T08:00:00</Start><Finish>2026-11-19T17:00:00</Finish></Baseline>
+    </Task>
+    <Task>
+      <UID>5</UID><ID>5</ID><Name>Testování</Name><WBS>5</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-11-18T08:00:00</Start><Finish>2026-11-24T17:00:00</Finish><Duration>PT40H0M0S</Duration>
+      <PercentComplete>0</PercentComplete><Summary>0</Summary><Milestone>0</Milestone><Manual>0</Manual>
+      <PredecessorLink><PredecessorUID>4</PredecessorUID><Type>0</Type><CrossProject>0</CrossProject><LinkLag>-4800</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-11-18T08:00:00</Start><Finish>2026-11-24T17:00:00</Finish></Baseline>
+    </Task>
+    <Task>
+      <UID>6</UID><ID>6</ID><Name>Dokumentace</Name><WBS>6</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-11-16T08:00:00</Start><Finish>2026-11-20T17:00:00</Finish><Duration>PT40H0M0S</Duration>
+      <PercentComplete>0</PercentComplete><Summary>0</Summary><Milestone>0</Milestone><Manual>0</Manual>
+      <PredecessorLink><PredecessorUID>4</PredecessorUID><Type>2</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+    </Task>
+    <Task>
+      <UID>7</UID><ID>7</ID><Name>Go-live</Name><WBS>7</WBS><OutlineLevel>2</OutlineLevel>
+      <Start>2026-11-30T08:00:00</Start><Finish>2026-11-30T17:00:00</Finish><Duration>PT0H0M0S</Duration>
+      <PercentComplete>0</PercentComplete><Summary>0</Summary><Milestone>1</Milestone><Manual>0</Manual>
+      <PredecessorLink><PredecessorUID>5</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <PredecessorLink><PredecessorUID>6</PredecessorUID><Type>1</Type><CrossProject>0</CrossProject><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>
+      <Baseline><Number>0</Number><Start>2026-11-27T08:00:00</Start><Finish>2026-11-27T17:00:00</Finish></Baseline>
+    </Task>
+  </Tasks>
+  <Resources>
+    <Resource><UID>0</UID><ID>0</ID></Resource>
+    <Resource><UID>1</UID><ID>1</ID><Name>Jana Nováková</Name></Resource>
+    <Resource><UID>2</UID><ID>2</ID><Name>Petr Svoboda</Name></Resource>
+  </Resources>
+  <Assignments>
+    <Assignment><UID>1</UID><TaskUID>3</TaskUID><ResourceUID>1</ResourceUID></Assignment>
+    <Assignment><UID>2</UID><TaskUID>4</TaskUID><ResourceUID>2</ResourceUID></Assignment>
+  </Assignments>
+</Project>

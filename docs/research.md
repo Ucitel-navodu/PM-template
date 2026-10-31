@@ -24,6 +24,8 @@ change requests, status report export.
 | Task table | @tanstack/react-table 8 | MIT | headless: sorting, column visibility; filtering/outline done by us |
 | Kanban drag & drop | @dnd-kit/core 6 | MIT | pointer + keyboard sensors (accessible) |
 | PowerPoint export | pptxgenjs 4.0 | MIT | deps jszip (MIT OR GPL → MIT), pako (MIT AND Zlib); `image-size` pinned to 2.0.4 via `overrides` (GHSA-5p2g-fcmc-qvqq; the browser build never loads it) |
+| XML parsing | fast-xml-parser 5 | MIT | MS Project XML; DOCTYPE / entities are refused (no XXE) |
+| .xlsx read / write | jszip 3.10 (+ own thin layer) | MIT | ExcelJS rejected: transitive deps with Unlicense / unknown licences |
 | Unit tests | vitest 3.2 | MIT | v5 needs Vite 6+ |
 
 Rejected: SVAR React Gantt (MIT core, but 17 transitive deps incl. its own grid/store/editor duplicating ours; auto-scheduling is PRO); gantt-task-react (unmaintained since 2022); DHTMLX Gantt (GPL); SheetJS `xlsx` from npm (stuck at 0.18.5, CVE-2023-30533) -> ExcelJS (MIT) for Excel import.
@@ -98,3 +100,17 @@ will be validated with a real MSP XML sample.
   Mgmt order, one row per item, lanes by phase/area.
 - Bundle size: the portable file grew to ~1.2 MB (≈360 kB gzip), mostly
   pptxgenjs + jszip - acceptable for a local file.
+
+## E4 design notes
+
+- **MSP XML mapping** (verified on a hand-made sample, not on a real export): link
+  types 0=FF 1=FS 2=SF 3=SS; `LinkLag` is in tenths of a minute -> working days via
+  `MinutesPerDay`; `Duration` ISO 8601 -> working days; dates keep their written
+  calendar day (no time-zone conversion); UID 0 is the project summary row.
+- **Repeated import policy**: the file owns structure and schedule, the app owns
+  the PM's data (phase, area, priority, notes, Mgmt export, scheduling mode).
+  Tasks missing from the file are offered for keep / cancel / delete.
+- **Excel**: header matching ignores case and diacritics and knows CZ + EN names;
+  dates accept ISO, d.m.yyyy, m/d/yyyy and Excel serials and reject impossible
+  days; the original `.xlsm` was not available, so the mapping rests on the
+  documented sheet / column names and the app's own export (round-trip tested).

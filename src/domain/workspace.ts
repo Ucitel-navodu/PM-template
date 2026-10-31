@@ -172,6 +172,7 @@ export function migrateProject(p: Project, calendar: CalendarSettings): Project 
     changes: Array.isArray(p.changes) ? p.changes : [],
     auditLog: Array.isArray(p.auditLog) ? p.auditLog : [],
     statusReports: Array.isArray(p.statusReports) ? p.statusReports : [],
+    importLog: Array.isArray(p.importLog) ? p.importLog : [],
   }
   return applySchedule(migrated, calendar)
 }
@@ -223,6 +224,7 @@ export function createBlankProject(name: string, lists: ProjectLists = defaultLi
     changes: [],
     auditLog: [],
     statusReports: [],
+    importLog: [],
     views: [],
     createdAt: now,
     updatedAt: now,
@@ -276,6 +278,7 @@ export function createSampleProject(calendar: CalendarSettings = defaultCalendar
       changes: structuredClone(seedChanges),
       auditLog: [],
       statusReports: [],
+      importLog: [],
       views: [],
       createdAt: now,
       updatedAt: now,

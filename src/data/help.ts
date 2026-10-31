@@ -199,6 +199,27 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       ],
     },
     {
+      title: "📥 Import a export",
+      items: [
+        {
+          q: "Jak naimportuji plán z MS Project?",
+          a: "V MS Project: Soubor › Uložit jako › XML (*.xml). Pak v appce 💾 Soubor › Import…, vyber soubor a zkontroluj náhled (co se přidá, změní a odstraní). Nic se nezapíše, dokud nepotvrdíš. Hierarchie, termíny, % dokončení, milníky, vazby (FS/SS/FF/SF s posunem) a baseline se převezmou. Formát .mpp přímo číst neumím.",
+        },
+        {
+          q: "Co se stane při opětovném importu?",
+          a: "Úkoly se párují podle UID z MS Projectu (při prvním importu podle názvu). Soubor určuje strukturu a termíny; tvoje vlastní údaje – fáze, oblast, priorita, poznámky, „Export pro vedení“ – zůstanou. Úkoly, které v souboru už nejsou, se nemažou samy: můžeš je ponechat, označit jako zrušené, nebo smazat. Importované úkoly drží termíny ze souboru (ruční plánování); chceš-li je plánovat v appce, přepni je na automatické. Celý import vrátíš jedním Ctrl+Z a zapíše se do Historie.",
+        },
+        {
+          q: "Jak naimportuji data z Excelu nebo CSV?",
+          a: "Import… přijme .xlsx i .csv. Z Excelu se čtou listy TASKS, MILESTONES, BUDGET a RISKS (česky i anglicky, např. „Název úkolu“, „Aktuální start“, „Předchůdci“); CSV může mít oddělovač ; , nebo tabulátor a kódování UTF-8 i Windows-1250. Sloupce, kterým nerozumím, náhled vypíše jako ignorované. Úkoly se párují podle názvu, takže opakovaný import aktualizuje, neduplikuje.",
+        },
+        {
+          q: "Jak exportuji do Excelu?",
+          a: "💾 Soubor › Export do Excelu (.xlsx): listy TASKS (včetně hierarchie, vazeb, rezerv a kritické cesty), MILESTONES, BUDGET, RISKS, CHANGES a CONFIG. Soubor jde zase naimportovat zpět.",
+        },
+      ],
+    },
+    {
       title: '📋 Práce s listy appky',
       items: [
         {
@@ -278,7 +299,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'Umí appka import z MS Project?',
-          a: 'Připravuje se import MS Project XML (Uložit jako → XML), původní Excel šablony a CSV. Zatím je k dispozici CSV export úkolů.',
+          a: 'Ano, přes XML: v MS Project Uložit jako → XML, pak 💾 Soubor › Import…. Přímo .mpp číst neumím. Podrobnosti v sekci Import a export.',
         },
       ],
     },
@@ -459,6 +480,27 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       ],
     },
     {
+      title: "📥 Import & export",
+      items: [
+        {
+          q: "How do I import a plan from MS Project?",
+          a: "In MS Project: File › Save As › XML (*.xml). Then in the app 💾 File › Import…, choose the file and review the preview (what is added, changed and removed). Nothing is written until you confirm. Hierarchy, dates, % complete, milestones, links (FS/SS/FF/SF with lag) and baseline are taken over. The .mpp format cannot be read directly.",
+        },
+        {
+          q: "What happens on a repeated import?",
+          a: "Tasks are matched by the MS Project UID (by name on the first import). The file sets structure and dates; your own data - phase, area, priority, notes, \"Mgmt export\" - stays. Tasks that are no longer in the file are never deleted silently: keep them, mark them cancelled or delete them. Imported tasks keep the file's dates (manual scheduling); switch them to auto if you want the app to schedule them. One Ctrl+Z reverts the whole import and it is recorded in the History.",
+        },
+        {
+          q: "How do I import from Excel or CSV?",
+          a: "Import… accepts .xlsx and .csv. From Excel the sheets TASKS, MILESTONES, BUDGET and RISKS are read (Czech or English headers, e.g. \"Task Name\", \"Current Start\", \"Predecessors\"); CSV may use ; , or tab and UTF-8 or Windows-1250. Columns the app does not understand are listed as ignored in the preview. Tasks are matched by name, so repeating an import updates instead of duplicating.",
+        },
+        {
+          q: "How do I export to Excel?",
+          a: "💾 File › Export to Excel (.xlsx): sheets TASKS (with hierarchy, links, slack and critical path), MILESTONES, BUDGET, RISKS, CHANGES and CONFIG. The file can be imported back.",
+        },
+      ],
+    },
+    {
       title: '📋 Working with the app pages',
       items: [
         {
@@ -535,7 +577,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'Does it import from MS Project?',
-          a: 'Import of MS Project XML (Save as → XML), the original Excel template and CSV is coming. For now a CSV export of tasks is available.',
+          a: 'Yes, via XML: in MS Project Save as → XML, then 💾 File › Import…. The .mpp file itself cannot be read. See the Import & export section.',
         },
       ],
     },

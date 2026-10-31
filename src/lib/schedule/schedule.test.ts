@@ -164,7 +164,7 @@ describe('summary tasks', () => {
     expect(r.get('k1')!.start).toBe('2026-10-21')
     expect(r.get('S')).toMatchObject({ summary: true, start: '2026-10-21', finish: '2026-10-26' })
     const p = applySchedule(
-      { id: 'p', info: { start: START } as never, lists: {} as never, tasks, milestones: [], budget: [], risks: [], baselines: [], views: [], changes: [], auditLog: [], statusReports: [], createdAt: '', updatedAt: '' },
+      { id: 'p', info: { start: START } as never, lists: {} as never, tasks, milestones: [], budget: [], risks: [], baselines: [], views: [], changes: [], auditLog: [], statusReports: [], importLog: [], createdAt: '', updatedAt: '' },
       cal,
     )
     const s = p.tasks.find((t) => t.id === 'S')!
@@ -173,7 +173,7 @@ describe('summary tasks', () => {
   })
 
   it('applySchedule returns the same object when nothing changes', () => {
-    const project = { id: 'p', info: { start: START } as never, lists: {} as never, tasks: [task('a')], milestones: [], budget: [], risks: [], baselines: [], views: [], changes: [], auditLog: [], statusReports: [], createdAt: '', updatedAt: '' }
+    const project = { id: 'p', info: { start: START } as never, lists: {} as never, tasks: [task('a')], milestones: [], budget: [], risks: [], baselines: [], views: [], changes: [], auditLog: [], statusReports: [], importLog: [], createdAt: '', updatedAt: '' }
     const once = applySchedule(project, cal)
     expect(applySchedule(once, cal)).toBe(once)
   })

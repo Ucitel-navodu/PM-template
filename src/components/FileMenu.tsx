@@ -1,3 +1,7 @@
+import { createPortal } from 'react-dom'
+import { ImportWizard } from './ImportWizard'
+import { exportWorkbook } from '../lib/import/workbook'
+import { downloadBlob } from '../lib/csv'
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import { useApp } from '../context/AppContext'
@@ -54,6 +58,14 @@ export function FileMenu() {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [backupsOpen, setBackupsOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const exportXlsx = async () => {
+    const { workspace, activeProjectId } = useWorkspaceStore.getState()
+    const project = workspace.projects.find((p) => p.id === activeProjectId)
+    if (!project) return
+    const bytes = await exportWorkbook(project, workspace.calendar)
+    downloadBlob(`${project.info.projectName.replace(/[\\/:*?"<>|]+/g, '-')}.xlsx`, bytes as BlobPart, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  }
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -152,6 +164,13 @@ export function FileMenu() {
           <button className={item} onClick={() => run(downloadCopy)}>
             {tr('file_download_copy')}
           </button>
+          <button className={item} onClick={() => run(async () => setImportOpen(true))}>
+            {tr('import_menu')}
+          </button>
+          <button className={item} onClick={() => run(exportXlsx)}>
+            {tr('export_xlsx')}
+          </button>
+          <div className="my-1 border-t border-gray-100 dark:border-white/10" />
           <button className={item} onClick={() => run(async () => setBackupsOpen(true))}>
             {tr('file_backups')}
           </button>
@@ -168,7 +187,9 @@ export function FileMenu() {
           {error}
         </button>
       )}
-      {backupsOpen && <BackupsDialog onClose={() => setBackupsOpen(false)} />}
+      {/* Portals: the header's backdrop-filter would otherwise trap position:fixed dialogs inside the header box. */}
+      {backupsOpen && createPortal(<BackupsDialog onClose={() => setBackupsOpen(false)} />, document.body)}
+      {importOpen && createPortal(<ImportWizard onClose={() => setImportOpen(false)} />, document.body)}
     </div>
   )
 }

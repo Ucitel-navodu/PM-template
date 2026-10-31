@@ -1,7 +1,7 @@
 {
   "name": "pm-web",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,14 +11,16 @@
     "lint": "eslint .",
     "test": "vitest run",
     "licenses": "node scripts/licenses.mjs",
-    "e2e": "node tests/e2e/smoke.mjs && node tests/e2e/planning.mjs && node tests/e2e/governance.mjs && node tests/e2e/reporting.mjs && node tests/e2e/file-sync.mjs"
+    "e2e": "node tests/e2e/smoke.mjs && node tests/e2e/planning.mjs && node tests/e2e/governance.mjs && node tests/e2e/reporting.mjs && node tests/e2e/import.mjs && node tests/e2e/file-sync.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@tanstack/react-table": "^8.21.3",
     "browser-fs-access": "^0.38.0",
+    "fast-xml-parser": "^5.11.2",
     "frappe-gantt": "^1.2.2",
     "idb-keyval": "^6.3.0",
+    "jszip": "^3.10.1",
     "pptxgenjs": "^4.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
