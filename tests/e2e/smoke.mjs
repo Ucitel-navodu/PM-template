@@ -82,7 +82,11 @@ check('workspace survives reload', (await page.locator('select[aria-label] optio
 
 // Dark mode + EN
 await page.locator('nav button').nth(1).click()
-await page.getByRole('button', { name: /tmavý|dark/i }).click()
+// The default look is the dark Nexus Cyan palette; the sun/moon button toggles light <-> dark.
+check('default palette is Nexus Cyan (dark)', (await page.evaluate(() => document.documentElement.dataset.theme)) === 'nexus')
+await page.getByRole('button', { name: /světlý|light/i }).first().click()
+check('toggle switches to the light look', (await page.evaluate(() => !document.documentElement.classList.contains('dark') && document.documentElement.dataset.theme === 'light')))
+await page.getByRole('button', { name: /tmavý|dark/i }).first().click()
 await page.getByRole('button', { name: 'EN', exact: true }).click()
 await page.waitForTimeout(200)
 check('dark mode applied', await page.evaluate(() => document.documentElement.classList.contains('dark')))

@@ -65,7 +65,7 @@ function ProjectSwitcher() {
       <select
         value={activeId}
         onChange={(e) => useWorkspaceStore.getState().setActiveProject(e.target.value)}
-        className="max-w-[22rem] truncate rounded-md border-0 bg-transparent p-0 pr-6 text-lg font-semibold leading-tight text-gray-900 focus:ring-0 dark:bg-[#1a1a24] dark:text-gray-50"
+        className="max-w-[22rem] truncate rounded-md border-0 bg-transparent p-0 pr-6 text-lg font-semibold leading-tight text-gray-900 focus:ring-0 dark:bg-[rgb(var(--pm-bg))] dark:text-gray-50"
         aria-label={tr('switcher_label')}
       >
         {projects
@@ -87,8 +87,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
-    <div className="min-h-full bg-gray-50 print:bg-white dark:bg-[#14141c]">
-      <header className="sticky top-0 z-20 print:hidden border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#1a1a24]/95">
+    <div className="min-h-full bg-gray-50 print:bg-white dark:bg-[rgb(var(--pm-bg))]">
+      <header className="sticky top-0 z-20 print:hidden border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[rgb(var(--pm-bg)/0.95)]">
         <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-4 pt-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-fuchsia-500 text-sm font-bold text-white shadow-sm shadow-brand-500/30">

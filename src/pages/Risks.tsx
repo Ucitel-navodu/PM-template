@@ -25,7 +25,7 @@ function Heatmap({ items, cell, onCell }: { items: Risk[]; cell?: [ImpactLevel, 
   const { tr } = useApp()
   const open = items.filter((r) => r.status === 'Open' && isScored(r))
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-[#1d1d29]">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-[rgb(var(--pm-card))]">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200" title={tr('raid_heatmap_help')}>
           {tr('raid_heatmap')} ⓘ
@@ -48,7 +48,7 @@ function Heatmap({ items, cell, onCell }: { items: Risk[]; cell?: [ImpactLevel, 
                   key={i}
                   data-cell={`${p}-${i}`}
                   onClick={() => onCell(active ? undefined : [p, i])}
-                  className={`h-9 rounded font-semibold ${scoreClass(riskScore({ probability: p, impact: i }))} ${n ? '' : 'opacity-40'} ${active ? 'ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-[#1d1d29]' : ''}`}
+                  className={`h-9 rounded font-semibold ${scoreClass(riskScore({ probability: p, impact: i }))} ${n ? '' : 'opacity-40'} ${active ? 'ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-[rgb(var(--pm-card))]' : ''}`}
                 >
                   {n || ''}
                 </button>

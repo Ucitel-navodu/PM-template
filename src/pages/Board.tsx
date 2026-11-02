@@ -26,7 +26,7 @@ function Card({ task, dragging = false }: { task: Task; dragging?: boolean }) {
   const color = health ? (theme === 'dark' ? HEALTH_COLOR_DARK : HEALTH_COLOR)[health] : 'transparent'
   return (
     <div
-      className={`rounded-lg border border-gray-200 bg-white p-2.5 text-sm shadow-sm dark:border-white/10 dark:bg-[#24242f] ${dragging ? 'rotate-1 shadow-lg ring-2 ring-brand-400' : ''}`}
+      className={`rounded-lg border border-gray-200 bg-white p-2.5 text-sm shadow-sm dark:border-white/10 dark:bg-[color-mix(in_srgb,rgb(var(--pm-card)),white_8%)] ${dragging ? 'rotate-1 shadow-lg ring-2 ring-brand-400' : ''}`}
     >
       <div className="flex items-start justify-between gap-2">
         <span className="font-medium text-gray-800 dark:text-gray-100">

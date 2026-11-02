@@ -6,11 +6,12 @@ import { btnPrimary, btnSecondary, inputGhost } from '../lib/ui'
 import { usePrefsStore } from '../store/prefsStore'
 import { useActiveProject, useWorkspaceStore } from '../store/workspaceStore'
 import { STATUS_KINDS } from '../data/settings'
+import { PALETTES, type PaletteId } from '../lib/palettes'
 import { STATUS_ICON } from '../data/config'
 import type { Status, StatusDef } from '../types'
 
 const inputBox =
-  'rounded-md border border-gray-300 bg-white px-2 py-1 text-sm dark:border-white/15 dark:bg-[#14141c] dark:text-gray-100'
+  'rounded-md border border-gray-300 bg-white px-2 py-1 text-sm dark:border-white/15 dark:bg-[rgb(var(--pm-bg))] dark:text-gray-100'
 
 function Section({ title, help, children }: { title: string; help?: string; children: React.ReactNode }) {
   return (
@@ -264,6 +265,79 @@ function PersonalSection() {
   )
 }
 
+/** Colour palette (the JARVIS palettes + light) and an optional custom accent. */
+function AppearanceSection() {
+  const { tr } = useApp()
+  const { palette, accent, setPalette, setAccent } = usePrefsStore()
+  const current = PALETTES.find((p) => p.id === palette)!
+  const move = (id: PaletteId, key: string) => {
+    if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(key)) return
+    const i = PALETTES.findIndex((p) => p.id === id)
+    const step = key === 'ArrowRight' || key === 'ArrowDown' ? 1 : -1
+    const next = PALETTES[(i + step + PALETTES.length) % PALETTES.length].id
+    setPalette(next)
+    setTimeout(() => document.querySelector<HTMLElement>(`[data-palette="${next}"]`)?.focus())
+  }
+  return (
+    <Section title={tr('settings_appearance')} help={tr('settings_appearance_help')}>
+      <div role="radiogroup" aria-label={tr('settings_appearance')} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {PALETTES.map((p) => {
+          const on = p.id === palette
+          return (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              tabIndex={on ? 0 : -1}
+              data-palette={p.id}
+              onClick={() => setPalette(p.id)}
+              onKeyDown={(e) => {
+                if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(e.key)) {
+                  e.preventDefault()
+                  move(p.id, e.key)
+                }
+              }}
+              className={`flex min-h-[44px] items-center gap-2.5 rounded-md border px-2.5 py-2 text-left text-xs ${
+                on ? 'border-brand-500 ring-1 ring-brand-500' : 'border-gray-300 hover:border-gray-400 dark:border-white/15 dark:hover:border-white/30'
+              } text-gray-800 dark:text-gray-100`}
+            >
+              <span aria-hidden className="flex shrink-0 overflow-hidden rounded border border-black/10 dark:border-white/20">
+                {p.swatch.map((c) => (
+                  <i key={c} className="block h-[22px] w-3" style={{ background: c }} />
+                ))}
+              </span>
+              <span>
+                {p.id === 'light' ? tr('palette_light') : p.name}
+                {p.note && <small className="ml-1 opacity-70">({tr('palette_default')})</small>}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          {tr('settings_accent')}
+          <input
+            type="color"
+            data-testid="accent-input"
+            value={accent || current.swatch[2]}
+            onChange={(e) => setAccent(e.target.value)}
+            disabled={!current.dark}
+            className="h-8 w-14 rounded border border-gray-300 dark:border-white/15"
+          />
+        </label>
+        {accent && (
+          <button className={btnSecondary} onClick={() => setAccent('')}>
+            {tr('settings_accent_reset')}
+          </button>
+        )}
+        {!current.dark && <span className="text-xs text-gray-400">{tr('settings_accent_dark_only')}</span>}
+      </div>
+    </Section>
+  )
+}
+
 /** Branding for printed reports and PowerPoint decks (shared by the workspace). */
 function ReportSection() {
   const { tr, readOnly } = useApp()
@@ -357,7 +431,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label={tr('settings_button')}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1d1d29]"
+        className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-white/10">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">⚙️ {tr('settings_button')}</h2>
@@ -371,6 +445,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="max-h-[72vh] overflow-y-auto px-5">
+          <AppearanceSection />
+
           <PersonalSection />
 
           <ReportSection />

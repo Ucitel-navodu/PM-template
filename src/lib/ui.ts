@@ -2,7 +2,7 @@
 // so light/dark styling stays consistent without repeating long class lists everywhere.
 
 export const tableWrap =
-  'overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#1d1d29]'
+  'overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-[rgb(var(--pm-card))]'
 
 export const theadRow =
   'border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-400'
@@ -18,7 +18,7 @@ export const inputGhost =
 export const selectGhost = `${inputGhost} text-xs`
 
 export const selectFilter =
-  'rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-white/15 dark:bg-[#1d1d29] dark:text-gray-200'
+  'rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-white/15 dark:bg-[rgb(var(--pm-card))] dark:text-gray-200'
 
 export const btnPrimary = 'rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700'
 

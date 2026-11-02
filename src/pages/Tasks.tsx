@@ -87,7 +87,7 @@ function ColumnsMenu({ columns, visibility, onToggle }: { columns: { id: string;
         {tr('plan_columns')} ▾
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1 max-h-96 w-56 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-[#1d1d29]">
+        <div className="absolute right-0 z-30 mt-1 max-h-96 w-56 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-[rgb(var(--pm-card))]">
           {columns.map((c) => (
             <label key={c.id} className="flex items-center gap-2 px-3 py-1 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/5">
               <input type="checkbox" checked={visibility[c.id] !== false} onChange={() => onToggle(c.id)} />

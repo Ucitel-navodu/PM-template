@@ -197,7 +197,7 @@ export function GanttPage() {
         <div
           ref={host}
           data-testid="gantt"
-          className={`gx-host overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#1d1d29] ${showCritical ? 'gx-show-critical' : ''}`}
+          className={`gx-host overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-[rgb(var(--pm-card))] ${showCritical ? 'gx-show-critical' : ''}`}
         />
       )}
     </div>

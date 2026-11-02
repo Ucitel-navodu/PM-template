@@ -74,8 +74,12 @@ Etapa E4 – import a export:
   s výpisem nepřečtených sloupců; **export do Excelu** (round-trip). `.xlsx` se čte a píše přes jszip +
   fast-xml-parser (`src/lib/import/xlsx.ts`) – ExcelJS jsem nepoužil, protože jeho závislosti mají nepermisivní/neznámé licence.
 
-Další etapy (import MS Project XML / Excel / CSV) a důvody výběru knihoven jsou v
-[`docs/research.md`](docs/research.md).
+Vzhled: ⚙️ Nastavení → Vzhled nabízí **5 tmavých palet z Jarvise** (Nexus Cyan výchozí, Nebula Violet, Emerald Matrix,
+Sapphire Command, Titanium Graphite – hodnoty 1:1 z `ui2.css`, ADR-120) a **Světlý** vzhled, plus vlastní akcentovou
+barvu. Volba je per zařízení; barvy jsou CSS proměnné (`src/index.css`, `src/lib/palettes.ts`), tisk/PDF/PPTX zůstávají světlé.
+
+Všech pět plánovaných etap (základ, plánování, governance, reporting, import) je hotových. Důvody výběru
+knihoven a návrhová rozhodnutí jsou v [`docs/research.md`](docs/research.md).
 
 ## Vývoj
 

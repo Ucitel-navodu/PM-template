@@ -264,8 +264,8 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: 'Tlačítko "EN"/"CZ" vpravo nahoře v hlavičce.',
         },
         {
-          q: 'Jak zapnu tmavý režim?',
-          a: 'Ikona ☀️/🌙 vedle jazyka. Appka si při prvním spuštění odhadne preferenci podle nastavení systému, pak si pamatuje tvou volbu.',
+          q: 'Jak změním barvy (tmavý režim, palety)?',
+          a: '⚙️ Nastavení → Vzhled: vyber barevnou paletu – Nexus Cyan (výchozí), Nebula Violet, Emerald Matrix, Sapphire Command, Titanium Graphite (stejné palety jako v Jarvisovi) nebo Světlý. Volitelně si nastav vlastní akcentovou barvu. Ikona ☀️/🌙 vedle jazyka přepíná mezi světlým vzhledem a poslední tmavou paletou. Volba platí jen pro tento počítač; tisk, PDF a PowerPoint jsou vždy světlé.',
         },
       ],
     },
@@ -542,8 +542,8 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         { q: 'How do I switch CZ/EN?', a: 'The "EN"/"CZ" button in the top-right of the header.' },
         {
-          q: 'How do I turn on dark mode?',
-          a: 'The ☀️/🌙 icon next to the language switch. The app guesses your preference from the system setting on first run, then remembers your choice.',
+          q: 'How do I change the colours (dark mode, palettes)?',
+          a: '⚙️ Settings → Appearance: pick a colour palette - Nexus Cyan (default), Nebula Violet, Emerald Matrix, Sapphire Command, Titanium Graphite (the same palettes as in Jarvis) or Light. Optionally set your own accent colour. The ☀️/🌙 icon next to the language switches between the light look and your last dark palette. The choice applies to this computer only; print, PDF and PowerPoint are always light.',
         },
       ],
     },

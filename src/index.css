@@ -2,6 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Light look (default tokens). The dark palettes below override them. */
+  --pm-bg: 249 250 251;
+  --pm-card: 255 255 255;
+  --pm-primary: 91 48 240;
+  --pm-brand-50: 242 241 255;
+  --pm-brand-100: 231 229 255;
+  --pm-brand-200: 209 204 255;
+  --pm-brand-300: 176 165 255;
+  --pm-brand-400: 139 118 255;
+  --pm-brand-500: 109 77 253;
+  --pm-brand-600: 91 48 240;
+  --pm-brand-700: 76 34 207;
+  --pm-brand-800: 63 30 167;
+  --pm-brand-900: 52 28 132;
+}
+
+/* --- Colour palettes (values from JARVIS ui2.css, ADR-120). Generated with the maths of src/lib/palettes.ts. --- */
+html[data-theme="nexus"] {
+  --pm-bg: 10 15 28;
+  --pm-card: 15 23 42;
+  --pm-primary: 0 212 255;
+  --pm-brand-50: 9 35 51;
+  --pm-brand-100: 8 47 64;
+  --pm-brand-200: 7 70 92;
+  --pm-brand-300: 0 212 255;
+  --pm-brand-400: 0 212 255;
+  --pm-brand-500: 0 212 255;
+  --pm-brand-600: 0 127 153;
+  --pm-brand-700: 0 104 125;
+  --pm-brand-800: 0 84 101;
+  --pm-brand-900: 0 64 76;
+}
+html[data-theme="nebula"] {
+  --pm-bg: 16 12 31;
+  --pm-card: 32 25 50;
+  --pm-primary: 194 154 255;
+  --pm-brand-50: 34 26 53;
+  --pm-brand-100: 44 35 67;
+  --pm-brand-200: 66 52 94;
+  --pm-brand-300: 194 154 255;
+  --pm-brand-400: 194 154 255;
+  --pm-brand-500: 194 154 255;
+  --pm-brand-600: 128 102 168;
+  --pm-brand-700: 105 83 138;
+  --pm-brand-800: 85 67 111;
+  --pm-brand-900: 64 51 84;
+}
+html[data-theme="emerald"] {
+  --pm-bg: 7 22 18;
+  --pm-card: 16 36 29;
+  --pm-primary: 88 230 174;
+  --pm-brand-50: 15 43 34;
+  --pm-brand-100: 20 55 43;
+  --pm-brand-200: 30 80 62;
+  --pm-brand-300: 88 230 174;
+  --pm-brand-400: 88 230 174;
+  --pm-brand-500: 88 230 174;
+  --pm-brand-600: 49 129 97;
+  --pm-brand-700: 40 106 80;
+  --pm-brand-800: 33 85 64;
+  --pm-brand-900: 25 64 49;
+}
+html[data-theme="sapphire"] {
+  --pm-bg: 9 19 33;
+  --pm-card: 20 38 61;
+  --pm-primary: 112 173 255;
+  --pm-brand-50: 19 34 55;
+  --pm-brand-100: 25 44 69;
+  --pm-brand-200: 38 62 95;
+  --pm-brand-300: 112 173 255;
+  --pm-brand-400: 112 173 255;
+  --pm-brand-500: 112 173 255;
+  --pm-brand-600: 76 118 173;
+  --pm-brand-700: 62 96 142;
+  --pm-brand-800: 50 78 114;
+  --pm-brand-900: 38 59 87;
+}
+html[data-theme="titanium"] {
+  --pm-bg: 16 19 24;
+  --pm-card: 32 38 48;
+  --pm-primary: 180 210 228;
+  --pm-brand-50: 32 38 44;
+  --pm-brand-100: 42 50 57;
+  --pm-brand-200: 62 72 81;
+  --pm-brand-300: 180 210 228;
+  --pm-brand-400: 180 210 228;
+  --pm-brand-500: 180 210 228;
+  --pm-brand-600: 101 118 128;
+  --pm-brand-700: 83 96 105;
+  --pm-brand-800: 67 78 84;
+  --pm-brand-900: 50 59 64;
+}
+
 html, body, #root {
   height: 100%;
 }
@@ -14,7 +108,7 @@ body {
 }
 
 html.dark body {
-  background-color: #14141c;
+  background-color: rgb(var(--pm-bg));
   color: #e7e6f0;
 }
 

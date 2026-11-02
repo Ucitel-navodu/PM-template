@@ -44,7 +44,7 @@ function EditableText({ value, onChange, rows = 5, label }: { value: string; onC
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className="w-full rounded-md border border-gray-200 bg-white p-2 text-sm leading-relaxed text-gray-800 print:hidden dark:border-white/10 dark:bg-[#14141c] dark:text-gray-100"
+        className="w-full rounded-md border border-gray-200 bg-white p-2 text-sm leading-relaxed text-gray-800 print:hidden dark:border-white/10 dark:bg-[rgb(var(--pm-bg))] dark:text-gray-100"
       />
       <div className="hidden whitespace-pre-wrap text-sm leading-relaxed print:block">{value || '—'}</div>
     </>
@@ -53,7 +53,7 @@ function EditableText({ value, onChange, rows = 5, label }: { value: string; onC
 
 function Section({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`break-inside-avoid rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[#1d1d29] print:border-gray-300 ${className}`}>
+    <section className={`break-inside-avoid rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-gray-300 ${className}`}>
       <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{title}</h3>
       {children}
     </section>
@@ -185,7 +185,7 @@ export function ReportPage() {
 
       {/* The report document (this is what gets printed) */}
       <article className="report-doc space-y-4" data-testid="report">
-        <header className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[#1d1d29] print:border-0 print:p-0">
+        <header className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-0 print:p-0">
           <div>
             <div className="text-xs uppercase tracking-wide text-gray-500">{[reportSettings.organization, tr('report_title')].filter(Boolean).join(' · ')}</div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{project.info.projectName}</h2>
@@ -227,7 +227,7 @@ export function ReportPage() {
             [tr('report_budget_forecast'), formatMoney(b.forecast, cur), `${tr('budget_current')}: ${formatMoney(b.current, cur)}`],
             [tr('report_open_raid'), `${data.summary.openRisks} / ${data.summary.openIssues}`, `${tr('cr_open')}: ${data.changes.open.length}`],
           ].map(([label, value, sub]) => (
-            <div key={label} className="rounded-xl border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-[#1d1d29] print:border-gray-300">
+            <div key={label} className="rounded-xl border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-gray-300">
               <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
               <div className="text-xl font-bold text-gray-900 dark:text-gray-50">{value}</div>
               {sub && <div className={`text-xs ${String(sub).startsWith('+') ? 'text-rose-600' : 'text-gray-500 dark:text-gray-400'}`}>{sub}</div>}
@@ -365,7 +365,7 @@ export function ReportPage() {
       </article>
 
       {/* History (not printed) */}
-      <section className="rounded-xl border border-gray-200 bg-white p-4 print:hidden dark:border-white/10 dark:bg-[#1d1d29]">
+      <section className="rounded-xl border border-gray-200 bg-white p-4 print:hidden dark:border-white/10 dark:bg-[rgb(var(--pm-card))]">
         <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">{tr('report_history')}</h3>
         {history.length === 0 ? (
           <p className="text-sm text-gray-400">{tr('report_history_empty')}</p>

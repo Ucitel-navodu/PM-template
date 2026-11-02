@@ -23,9 +23,9 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label={tr('help_title')}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1d1d29]"
+        className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
       >
-        <div className="sticky top-0 flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-white px-5 py-3 dark:border-white/10 dark:bg-[#1d1d29]">
+        <div className="sticky top-0 flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-white px-5 py-3 dark:border-white/10 dark:bg-[rgb(var(--pm-card))]">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">{tr('help_title')}</h2>
           <button
             onClick={() => setAboutOpen(true)}

@@ -149,7 +149,7 @@ export function FileMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-10 z-40 min-w-[14rem] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#1d1d29]"
+          className="absolute right-0 top-10 z-40 min-w-[14rem] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
         >
           <button className={item} onClick={() => run(linkNewFile)}>
             {tr('file_link_new')}
@@ -221,7 +221,7 @@ function BackupsDialog({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-label={tr('backups_title')}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#1d1d29]"
+        className="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
       >
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">{tr('backups_title')}</h2>
         <p className="mb-3 mt-1 text-xs text-gray-500 dark:text-gray-400">{tr('backups_help')}</p>

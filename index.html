@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project Manager Web</title>
     <script>
-      // Applied before paint to avoid a light->dark flash on load.
+      // Palette applied before first paint (no flash). Mirrors applyAppearance() in src/store/prefsStore.ts.
       try {
-        var stored = JSON.parse(localStorage.getItem('pm-web:theme') || 'null')
-        var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
-        document.documentElement.classList.toggle('dark', dark)
+        var p = JSON.parse(localStorage.getItem('pm-web:palette') || 'null')
+        if (!p) p = JSON.parse(localStorage.getItem('pm-web:theme') || 'null') === 'light' ? 'light' : 'nexus'
+        document.documentElement.dataset.theme = p
+        document.documentElement.classList.toggle('dark', p !== 'light')
       } catch (e) {}
     </script>
   </head>

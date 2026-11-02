@@ -7,7 +7,7 @@ import type { ProjectInfo } from '../types'
 import type { TKey } from '../i18n'
 
 const field =
-  'w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-white/15 dark:bg-[#14141c] dark:text-gray-100'
+  'w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-white/15 dark:bg-[rgb(var(--pm-bg))] dark:text-gray-100'
 
 const FIELDS: { key: keyof ProjectInfo; label: TKey | 'BPM' | 'ITPM'; type?: 'date' | 'number'; wide?: boolean }[] = [
   { key: 'projectName', label: 'dash_project_name', wide: true },

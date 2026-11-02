@@ -29,7 +29,7 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label={tr('about_title')}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1d1d29]"
+        className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-white/10">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">ℹ️ {tr('about_title')}</h2>

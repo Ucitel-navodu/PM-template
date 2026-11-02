@@ -27,7 +27,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#1d1d29] ${className}`}
+      className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[rgb(var(--pm-card))] ${className}`}
     >
       {title && (
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">

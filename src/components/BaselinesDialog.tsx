@@ -28,7 +28,7 @@ export function BaselinesDialog({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label={tr('baseline_title')}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1d1d29]"
+        className="w-full max-w-xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-white/10">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">📏 {tr('baseline_title')}</h2>
@@ -43,7 +43,7 @@ export function BaselinesDialog({ onClose }: { onClose: () => void }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               aria-label={tr('baseline_name')}
-              className="flex-1 rounded-md border border-gray-300 px-2 py-1 dark:border-white/15 dark:bg-[#14141c]"
+              className="flex-1 rounded-md border border-gray-300 px-2 py-1 dark:border-white/15 dark:bg-[rgb(var(--pm-bg))]"
             />
             <label className="flex items-center gap-1.5 text-xs">
               <input type="checkbox" checked={primary} onChange={(e) => setPrimary(e.target.checked)} />
