@@ -37,7 +37,7 @@ await page.waitForSelector('nav button')
 check('first start uses Nexus Cyan', (await theme()) === 'nexus' && (await bodyBg()) === rgb(PALETTES.nexus), await bodyBg())
 
 await openSettings()
-check('picker offers 6 looks', (await page.locator('[data-palette]').count()) === 6)
+check('picker offers 8 looks', (await page.locator('[data-palette]').count()) === 8)
 for (const [id, bg] of Object.entries(PALETTES)) {
   await page.locator(`[data-palette="${id}"]`).click()
   await page.waitForTimeout(250) // body background has a short transition
@@ -54,6 +54,20 @@ const btnContrast = await page.evaluate(() => {
   return (1.05) / (l + 0.05)
 })
 check('primary button contrast >= 4.5', btnContrast >= 4.5, btnContrast.toFixed(2))
+
+// corporate palettes: brand red, light and dark
+await page.locator('[data-palette="corp-light"]').click()
+await page.waitForTimeout(250)
+const corp = await page.evaluate(() => ({ dark: document.documentElement.classList.contains('dark'), primary: getComputedStyle(document.documentElement).getPropertyValue('--pm-primary').trim(), bg: getComputedStyle(document.body).backgroundColor }))
+check('corporate light: brand red on a light page', !corp.dark && corp.primary === '216 30 4' && corp.bg === 'rgb(242, 242, 241)', JSON.stringify(corp))
+if (shots) await page.screenshot({ path: `${shots}/palette-corp-light.png` })
+await page.getByTestId('report-use-palette').click()
+check('report takes the palette colour', (await page.getByTestId('report-use-palette').isDisabled()) && (await page.getByRole('dialog').innerText()).includes('#d81e04'))
+await page.locator('[data-palette="corp-dark"]').click()
+await page.waitForTimeout(250)
+check('corporate dark', (await theme()) === 'corp-dark' && (await bodyBg()) === 'rgb(28, 30, 31)', await bodyBg())
+if (shots) await page.screenshot({ path: `${shots}/palette-corp-dark.png` })
+await page.locator('[data-palette="titanium"]').click()
 
 // custom accent
 await page.getByTestId('accent-input').fill('#ff8800')

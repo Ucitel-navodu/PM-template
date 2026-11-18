@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { PALETTES, WHITE, accentVars, brandScale, contrast, hexToRgb, isHex, triplet, validPalette } from './palettes'
+import { CORPORATE, isDark, PALETTES, WHITE, accentVars, brandScale, contrast, hexToRgb, isHex, triplet, validPalette } from './palettes'
 
 const css = readFileSync('src/index.css', 'utf8')
 const block = (id: string) => new RegExp(`html\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? ''
@@ -8,7 +8,7 @@ const token = (b: string, name: string) => new RegExp(`--${name}:\\s*([^;]+);`).
 
 describe('palettes', () => {
   it('has the five Jarvis palettes (values 1:1) plus the light look', () => {
-    expect(PALETTES.map((p) => p.id)).toEqual(['nexus', 'nebula', 'emerald', 'sapphire', 'titanium', 'light'])
+    expect(PALETTES.map((p) => p.id)).toEqual(['nexus', 'nebula', 'emerald', 'sapphire', 'titanium', 'light', 'corp-light', 'corp-dark'])
     expect(PALETTES[0].swatch).toEqual(['#0a0f1c', '#0f172a', '#00d4ff']) // Nexus Cyan, the default
   })
 
@@ -29,6 +29,19 @@ describe('palettes', () => {
     for (const accent of ['#ffffff', '#ffff00', '#00ff00', '#ff0000', '#000000', '#7f7f7f']) {
       expect(contrast(brandScale(accent, '#0a0f1c')[600], WHITE), accent).toBeGreaterThanOrEqual(4.5)
     }
+  })
+
+  it('corporate palettes use the brand red and keep white button text readable', () => {
+    for (const id of ['corp-light', 'corp-dark']) {
+      const b = block(id)
+      expect(token(b, 'pm-primary'), id).toBe('216 30 4')
+      expect(token(b, 'pm-brand-600'), id).toBe('216 30 4')
+      expect(isDark(id as never)).toBe(id === 'corp-dark')
+    }
+    expect(contrast(hexToRgb(CORPORATE.red), WHITE)).toBeGreaterThanOrEqual(4.5)
+    // links / active text on the dark corporate page stay readable
+    const soft = token(block('corp-dark'), 'pm-brand-300')!.split(' ').map(Number) as [number, number, number]
+    expect(contrast(soft, hexToRgb('#1c1e1f'))).toBeGreaterThanOrEqual(4.5)
   })
 
   it('a custom accent sets the primary and the whole brand scale', () => {

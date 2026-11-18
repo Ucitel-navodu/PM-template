@@ -350,6 +350,7 @@ export function ReportPage() {
                   [tr('report_committed'), b.committed],
                   [tr('report_actual'), b.actual],
                   [tr('report_budget_forecast'), b.forecast],
+                  ...(b.capex || b.opex ? ([['– CAPEX', b.capex], ['– OPEX', b.opex]] as [string, number][]) : []),
                   [tr('report_variance'), b.variance],
                 ].map(([label, v]) => (
                   <tr key={label as string}>

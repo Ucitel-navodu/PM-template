@@ -5,7 +5,11 @@ import { formatMoney } from '../lib/format'
 import { PAYMENT_STATUSES } from '../data/config'
 import { nextSequentialId } from '../lib/ids'
 import { btnPrimary, deleteBtn, inputGhost, selectGhost, tableWrap, tbodyRow, tfootRow, theadRow } from '../lib/ui'
-import type { BudgetItem, PaymentStatus } from '../types'
+import { useState } from 'react'
+import type { BudgetItem, CostType, PaymentStatus } from '../types'
+import { budgetByCostType } from '../lib/changes'
+import { selectFilter, btnSecondary } from '../lib/ui'
+import { openSettings } from '../lib/settingsNav'
 
 function blankItem(existing: BudgetItem[], category: string): BudgetItem {
   return {
@@ -33,7 +37,11 @@ export function BudgetPage() {
   // Approved change requests raise the budget the forecast is compared with.
   const crCost = approvedImpact(useActiveProject()?.changes).cost
 
-  const totals = budget.reduce(
+  const [typeFilter, setTypeFilter] = useState<'' | CostType | 'none'>('')
+  const shown = budget.filter((b) => !typeFilter || (typeFilter === 'none' ? !b.costType : b.costType === typeFilter))
+  const byType = budgetByCostType(budget)
+
+  const totals = shown.reduce(
     (acc, b) => ({
       planned: acc.planned + b.planned,
       committed: acc.committed + b.committed,
@@ -45,10 +53,31 @@ export function BudgetPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-sm" data-testid="capex-opex">
+          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} className={selectFilter} aria-label="CAPEX / OPEX">
+            <option value="">{tr('tasks_filter_all')} — CAPEX / OPEX</option>
+            <option value="CAPEX">CAPEX</option>
+            <option value="OPEX">OPEX</option>
+            <option value="none">{tr('budget_unclassified')}</option>
+          </select>
+          {(['CAPEX', 'OPEX', 'none'] as const).map((k) =>
+            k === 'none' && byType.none.forecast === 0 ? null : (
+              <span key={k} className="rounded-md border border-gray-200 px-2 py-1 text-xs dark:border-white/10">
+                <b>{k === 'none' ? tr('budget_unclassified') : k}</b> · {tr('budget_forecast')} {formatMoney(byType[k].forecast, projectInfo.currency)} · {tr('budget_actual')}{' '}
+                {formatMoney(byType[k].actual, projectInfo.currency)}
+              </span>
+            ),
+          )}
+        </div>
+        <div className="flex gap-2">
+        <button onClick={() => openSettings('budget')} className={btnSecondary} data-testid="budget-categories">
+          ⚙️ {tr('settings_budget_categories')}
+        </button>
         <button onClick={() => addBudgetItem(blankItem(budget, settings.budgetCategories[settings.budgetCategories.length - 1] ?? ''))} className={btnPrimary}>
           + {tr('nav_budget')}
         </button>
+        </div>
       </div>
 
       <div className={tableWrap}>
@@ -57,6 +86,7 @@ export function BudgetPage() {
             <tr className={theadRow}>
               <th className="px-3 py-2">ID</th>
               <th className="px-3 py-2">{tr('budget_category')}</th>
+              <th className="px-3 py-2">CAPEX / OPEX</th>
               <th className="px-3 py-2">{tr('budget_supplier')}</th>
               <th className="px-3 py-2">{tr('budget_description')}</th>
               <th className="px-3 py-2">{tr('budget_linked_milestone')}</th>
@@ -73,7 +103,7 @@ export function BudgetPage() {
             </tr>
           </thead>
           <tbody>
-            {budget.map((b) => {
+            {shown.map((b) => {
               const fc = forecast(b)
               const variance = b.planned - fc
               return (
@@ -90,6 +120,13 @@ export function BudgetPage() {
                           {c}
                         </option>
                       ))}
+                    </select>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <select value={b.costType ?? ''} onChange={(e) => updateBudgetItem(b.id, { costType: (e.target.value || undefined) as CostType | undefined })} className={selectGhost} aria-label="CAPEX / OPEX">
+                      <option value="">—</option>
+                      <option value="CAPEX">CAPEX</option>
+                      <option value="OPEX">OPEX</option>
                     </select>
                   </td>
                   <td className="px-3 py-1.5">
@@ -198,7 +235,7 @@ export function BudgetPage() {
           </tbody>
           <tfoot>
             <tr className={tfootRow}>
-              <td className="px-3 py-2" colSpan={5}>
+              <td className="px-3 py-2" colSpan={6}>
                 {tr('common_total')} ({tr('budget_approved')}: {formatMoney(projectInfo.budget, projectInfo.currency)}
                 {crCost !== 0 && (
                   <>

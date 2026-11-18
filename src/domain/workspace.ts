@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Absence, CalendarSettings, Dependency, LinkType, Project, ProjectInfo, ProjectLists, ReportSettings, Status, Task, Workspace } from '../types'
+import type { ProjectLink, Absence, CalendarSettings, Dependency, LinkType, Project, ProjectInfo, ProjectLists, ReportSettings, Status, Task, Workspace } from '../types'
 import { WORKSPACE_SCHEMA_VERSION } from '../types'
 import { STATUS_KINDS, defaultCalendar, defaultLists } from '../data/settings'
 import {
@@ -173,9 +173,16 @@ export function migrateProject(p: Project, calendar: CalendarSettings): Project 
     auditLog: Array.isArray(p.auditLog) ? p.auditLog : [],
     statusReports: Array.isArray(p.statusReports) ? p.statusReports : [],
     importLog: Array.isArray(p.importLog) ? p.importLog : [],
+    links: Array.isArray(p.links) ? p.links : defaultLinks(),
   }
   return applySchedule(migrated, calendar)
 }
+
+/** Empty slots for the systems every project here has; the PM fills in the URLs. */
+export const defaultLinks = (): ProjectLink[] => [
+  { id: 'clarity', label: 'Clarity', url: '' },
+  { id: 'sharepoint', label: 'SharePoint', url: '' },
+]
 
 export const defaultReportSettings: ReportSettings = { organization: '', accentColor: '#4f46e5', footer: '' }
 
@@ -225,6 +232,7 @@ export function createBlankProject(name: string, lists: ProjectLists = defaultLi
     auditLog: [],
     statusReports: [],
     importLog: [],
+    links: defaultLinks(),
     views: [],
     createdAt: now,
     updatedAt: now,
@@ -279,6 +287,7 @@ export function createSampleProject(calendar: CalendarSettings = defaultCalendar
       auditLog: [],
       statusReports: [],
       importLog: [],
+      links: defaultLinks(),
       views: [],
       createdAt: now,
       updatedAt: now,

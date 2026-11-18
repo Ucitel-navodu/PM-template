@@ -5,6 +5,9 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
+  type Cell,
+  type ColumnSizingState,
+  type Row,
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
@@ -20,7 +23,9 @@ import { statusKind } from '../lib/status'
 import { btnPrimary, btnSecondary, inputGhost, selectFilter, selectGhost, tableWrap, tbodyRow, theadRow } from '../lib/ui'
 import { useSchedule } from '../lib/schedule/useSchedule'
 import { formatDependencies, parseDependencies } from '../lib/schedule/predecessors'
-import { indent, move, outdent, subtreeIds } from '../lib/schedule/tree'
+import { indent, move, moveSubtree, outdent, subtreeIds } from '../lib/schedule/tree'
+import { DndContext, DragOverlay, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
+import { loadPref, savePref } from '../lib/storage'
 import { WorkCalendar } from '../lib/schedule/calendar'
 import { newId } from '../domain/workspace'
 import type { Task, TaskView } from '../types'
@@ -45,6 +50,69 @@ interface Filters {
 const NO_FILTERS: Filters = { text: '', phase: '', area: '', status: '', owner: '', critical: '' }
 
 const DEFAULT_HIDDEN = ['baselineStart', 'baselineFinish', 'variance', 'expected', 'priority', 'mgmtExport', 'notes', 'area', 'freeFloat']
+
+/**
+ * Text cell edited as a local draft and committed on blur / Enter (Esc reverts):
+ * the usual grid behaviour. Typing never re-schedules or re-renders the table.
+ */
+function DraftInput({ value, onCommit, className, list, label }: { value: string; onCommit: (v: string) => void; className?: string; list?: string; label?: string }) {
+  const [draft, setDraft] = useState(value)
+  useEffect(() => setDraft(value), [value])
+  return (
+    <input
+      value={draft}
+      title={draft}
+      aria-label={label}
+      list={list}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => draft !== value && onCommit(draft)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+        if (e.key === 'Escape') {
+          setDraft(value)
+          e.stopPropagation()
+        }
+      }}
+      className={className}
+    />
+  )
+}
+
+const DEFAULT_SIZES: Record<string, number> = { actions: 150, no: 44, wbs: 60, name: 320, mode: 120, duration: 84, start: 132, finish: 132, predecessors: 130, percent: 96, status: 140, owner: 150, phase: 130, area: 130, priority: 110, milestone: 70, float: 84, freeFloat: 90, critical: 70, health: 90, baselineStart: 104, baselineFinish: 104, variance: 90, expected: 96, mgmtExport: 80, notes: 240 }
+
+// The row tools stay visible while the table scrolls sideways on narrow screens.
+const STICKY = 'sticky left-0 z-10 bg-white dark:bg-[rgb(var(--pm-card))]'
+
+/** A table row that can be dragged by its handle and is a drop target for other rows. */
+function TaskRow({ row, className, dnd, onKeyDown, renderCell }: { row: Row<Task>; className: string; dnd: boolean; onKeyDown: (e: React.KeyboardEvent) => void; renderCell: (c: Cell<Task, unknown>) => React.ReactNode }) {
+  const drag = useDraggable({ id: row.id, disabled: !dnd })
+  const drop = useDroppable({ id: row.id, disabled: !dnd })
+  return (
+    <tr
+      ref={drop.setNodeRef}
+      data-task-no={row.original.no}
+      onKeyDown={onKeyDown}
+      className={`${className} ${drag.isDragging ? 'opacity-40' : ''} ${drop.isOver && !drag.isDragging ? 'outline outline-2 -outline-offset-2 outline-brand-500' : ''}`}
+    >
+      {row.getVisibleCells().map((cell) => (
+        <td key={cell.id} className={`overflow-hidden px-2 py-1 ${cell.column.id === 'actions' ? STICKY : ''}`}>
+          {cell.column.id === 'actions' ? (
+            <div className="flex items-center gap-0.5">
+              {dnd && (
+                <button ref={drag.setNodeRef} {...drag.listeners} {...drag.attributes} data-drag-handle className="cursor-grab touch-none px-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" aria-label="drag">
+                  ⠿
+                </button>
+              )}
+              {renderCell(cell)}
+            </div>
+          ) : (
+            renderCell(cell)
+          )}
+        </td>
+      ))}
+    </tr>
+  )
+}
 
 /** Predecessor cell: edited as text, committed on blur/Enter, invalid tokens flagged. */
 function PredecessorsInput({ task, tasks, onCommit }: { task: Task; tasks: Task[]; onCommit: (deps: Task['dependencies']) => void }) {
@@ -110,6 +178,11 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [visibility, setVisibility] = useState<VisibilityState>(() => Object.fromEntries(DEFAULT_HIDDEN.map((c) => [c, false])))
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  // Column widths: per device, also stored in saved views.
+  const [sizing, setSizing] = useState<ColumnSizingState>(() => ({ ...DEFAULT_SIZES, ...loadPref<ColumnSizingState>('taskColumnSizes', {}) }))
+  useEffect(() => savePref('taskColumnSizes', sizing), [sizing])
+  const [dragId, setDragId] = useState<string | null>(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
   const [viewId, setViewId] = useState('')
   const [baselinesOpen, setBaselinesOpen] = useState(false)
   const cal = useMemo(() => new WorkCalendar(settings, '2000-01-01'), [settings])
@@ -170,6 +243,39 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const col = createColumnHelper<Task>()
   const columns = useMemo(
     () => [
+      col.display({
+        id: 'actions',
+        header: '',
+        enableHiding: false,
+        cell: ({ row: { original: t } }) => {
+          const b = 'rounded px-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-30 dark:hover:bg-white/10 dark:hover:text-gray-100'
+          return (
+            <div className="flex gap-0.5 whitespace-nowrap">
+              <button className={b} title={tr('plan_outdent')} disabled={readOnly || t.outlineLevel <= 1} onClick={() => store.setTasks((ts) => outdent(ts, t.id))}>
+                ⇤
+              </button>
+              <button className={b} title={tr('plan_indent')} disabled={readOnly} onClick={() => store.setTasks((ts) => indent(ts, t.id))}>
+                ⇥
+              </button>
+              <button className={b} title={tr('plan_move_up')} disabled={readOnly} onClick={() => store.setTasks((ts) => move(ts, t.id, -1))}>
+                ↑
+              </button>
+              <button className={b} title={tr('plan_move_down')} disabled={readOnly} onClick={() => store.setTasks((ts) => move(ts, t.id, 1))}>
+                ↓
+              </button>
+              <button className={`${b} font-bold text-brand-600 dark:text-brand-300`} title={tr('plan_insert_below')} disabled={readOnly} onClick={() => addTask({ phase: t.phase, projectArea: t.projectArea }, t.id)}>
+                ＋
+              </button>
+              <button className={`${b} text-brand-600 dark:text-brand-300`} title={tr('plan_add_subtask')} data-add-subtask disabled={readOnly} onClick={() => addTask({ phase: t.phase, projectArea: t.projectArea, outlineLevel: t.outlineLevel + 1 }, t.id)}>
+                ↳＋
+              </button>
+              <button className={`${b} hover:text-rose-600`} title={tr('tasks_delete')} disabled={readOnly} onClick={() => removeTask(t)}>
+                ✕
+              </button>
+            </div>
+          )
+        },
+      }),
       col.accessor('no', { id: 'no', header: '#', cell: (c) => <span className="text-xs text-gray-400">{c.getValue()}</span> }),
       col.accessor('wbs', { id: 'wbs', header: 'WBS', cell: (c) => <span className="text-xs text-gray-500 dark:text-gray-400">{c.getValue()}</span> }),
       col.accessor('name', {
@@ -198,11 +304,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
               ) : (
                 <span className="w-4 text-center text-xs text-gray-400">{t.milestone ? '◆' : ''}</span>
               )}
-              <input
-                value={t.name}
-                onChange={(e) => updateTask(t.id, { name: e.target.value })}
-                className={`w-60 ${inputGhost} ${summary ? 'font-semibold' : ''}`}
-              />
+              <DraftInput value={t.name} onCommit={(v) => updateTask(t.id, { name: v })} label={tr('tasks_task_name')} className={`min-w-0 flex-1 ${inputGhost} ${summary ? 'font-semibold' : ''}`} />
               {t.constraint && t.schedulingMode === 'auto' && !summary && (
                 <button
                   className="text-xs"
@@ -327,7 +429,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         id: 'owner',
         header: tr('common_owner'),
         cell: ({ row: { original: t } }) => (
-          <input value={t.owner} onChange={(e) => updateTask(t.id, { owner: e.target.value })} className={`w-28 ${inputGhost}`} list="task-owners" />
+          <DraftInput value={t.owner} onCommit={(v) => updateTask(t.id, { owner: v })} className={`w-full ${inputGhost}`} list="task-owners" label={tr('common_owner')} />
         ),
       }),
       col.accessor('phase', {
@@ -460,38 +562,8 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         id: 'notes',
         header: tr('common_notes'),
         cell: ({ row: { original: t } }) => (
-          <input value={t.notes ?? ''} onChange={(e) => updateTask(t.id, { notes: e.target.value || undefined })} className={`w-56 ${inputGhost}`} />
+          <DraftInput value={t.notes ?? ''} onCommit={(v) => updateTask(t.id, { notes: v || undefined })} className={`w-full ${inputGhost}`} label={tr('common_notes')} />
         ),
-      }),
-      col.display({
-        id: 'actions',
-        header: '',
-        enableHiding: false,
-        cell: ({ row: { original: t } }) => {
-          const b = 'rounded px-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-30 dark:hover:bg-white/10 dark:hover:text-gray-100'
-          return (
-            <div className="flex justify-end gap-0.5 whitespace-nowrap">
-              <button className={b} title={tr('plan_outdent')} disabled={readOnly || t.outlineLevel <= 1} onClick={() => store.setTasks((ts) => outdent(ts, t.id))}>
-                ⇤
-              </button>
-              <button className={b} title={tr('plan_indent')} disabled={readOnly} onClick={() => store.setTasks((ts) => indent(ts, t.id))}>
-                ⇥
-              </button>
-              <button className={b} title={tr('plan_move_up')} disabled={readOnly} onClick={() => store.setTasks((ts) => move(ts, t.id, -1))}>
-                ↑
-              </button>
-              <button className={b} title={tr('plan_move_down')} disabled={readOnly} onClick={() => store.setTasks((ts) => move(ts, t.id, 1))}>
-                ↓
-              </button>
-              <button className={b} title={tr('plan_insert_below')} disabled={readOnly} onClick={() => addTask({ phase: t.phase, projectArea: t.projectArea }, t.id)}>
-                ＋
-              </button>
-              <button className={`${b} hover:text-rose-600`} title={tr('tasks_delete')} disabled={readOnly} onClick={() => removeTask(t)}>
-                ✕
-              </button>
-            </div>
-          )
-        },
       }),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -501,13 +573,26 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const table = useReactTable({
     data: rows,
     columns,
-    state: { sorting, columnVisibility: visibility },
+    state: { sorting, columnVisibility: visibility, columnSizing: sizing },
     onSortingChange: setSorting,
+    onColumnSizingChange: setSizing,
+    columnResizeMode: 'onChange',
+    defaultColumn: { minSize: 40, maxSize: 900 },
     onColumnVisibilityChange: setVisibility,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getRowId: (t) => t.id,
   })
+
+  // Cells are called as plain functions, not mounted as components: the column
+  // definitions are rebuilt when data changes, and a new component identity would
+  // remount every cell (an input would lose focus after each keystroke).
+  const renderCell = (cell: Cell<Task, unknown>) => {
+    const def = cell.column.columnDef.cell
+    return typeof def === 'function' ? def(cell.getContext()) : def
+  }
+  // Reordering by drag & drop only makes sense in the natural outline order.
+  const canDrag = !readOnly && sorting.length === 0 && !Object.values(filters).some(Boolean)
 
   // --- saved views ----------------------------------------------------------
   const views = project?.views ?? []
@@ -518,6 +603,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
     setSorting(v?.sort ? [v.sort] : [])
     const hidden = v ? v.hiddenColumns : DEFAULT_HIDDEN
     setVisibility(Object.fromEntries(hidden.map((c) => [c, false])))
+    if (v?.columnSizes) setSizing({ ...DEFAULT_SIZES, ...v.columnSizes })
   }
   const saveView = () => {
     const name = window.prompt(tr('plan_view_name'), views.find((v) => v.id === viewId)?.name ?? '')?.trim()
@@ -529,6 +615,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
       filters: { ...filters },
       hiddenColumns: Object.entries(visibility).filter(([, on]) => on === false).map(([c]) => c),
       sort: sorting[0],
+      columnSizes: sizing,
     }
     store.saveView(view)
     setViewId(view.id)
@@ -686,48 +773,68 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         </div>
       )}
 
-      <div className={tableWrap}>
-        <table className="w-full min-w-[1400px] text-sm">
-          <thead>
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className={theadRow}>
-                {hg.headers.map((h) => (
-                  <th key={h.id} className="whitespace-nowrap px-2 py-2">
-                    {h.column.getCanSort() ? (
-                      <button className="uppercase" onClick={h.column.getToggleSortingHandler()} title={h.id === 'variance' ? tr('plan_variance_help') : undefined}>
-                        {flexRender(h.column.columnDef.header, h.getContext())}
-                        {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? ''}
-                      </button>
-                    ) : (
-                      flexRender(h.column.columnDef.header, h.getContext())
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => {
-              const summary = isSummary(row.id)
-              const critical = sched.tasks.get(row.id)?.critical
-              return (
-                <tr
-                  key={row.id}
-                  data-task-no={row.original.no}
-                  onKeyDown={(e) => onRowKey(e, row.id)}
-                  className={`${tbodyRow} ${summary ? 'bg-gray-50/70 dark:bg-white/[0.03]' : ''} ${critical ? 'shadow-[inset_3px_0_0_#e11d48]' : ''}`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-2 py-1">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={(e) => setDragId(String(e.active.id))}
+        onDragCancel={() => setDragId(null)}
+        onDragEnd={(e) => {
+          setDragId(null)
+          if (e.over && e.over.id !== e.active.id) store.setTasks((ts) => moveSubtree(ts, String(e.active.id), String(e.over!.id)))
+        }}
+      >
+        <div className={tableWrap}>
+          <table className="text-sm" style={{ width: table.getTotalSize(), tableLayout: 'fixed' }}>
+            <thead>
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id} className={theadRow}>
+                  {hg.headers.map((h) => (
+                    <th key={h.id} className={`overflow-hidden whitespace-nowrap px-2 py-2 ${h.id === 'actions' ? `${STICKY} z-20` : 'relative'}`} style={{ width: h.getSize() }} data-col={h.id}>
+                      {h.column.getCanSort() ? (
+                        <button className="max-w-full truncate uppercase" onClick={h.column.getToggleSortingHandler()} title={h.id === 'variance' ? tr('plan_variance_help') : String(h.column.columnDef.header)}>
+                          {flexRender(h.column.columnDef.header, h.getContext())}
+                          {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? ''}
+                        </button>
+                      ) : (
+                        flexRender(h.column.columnDef.header, h.getContext())
+                      )}
+                      <span
+                        role="separator"
+                        aria-orientation="vertical"
+                        data-resizer
+                        title={tr('plan_resize_hint')}
+                        onMouseDown={h.getResizeHandler()}
+                        onTouchStart={h.getResizeHandler()}
+                        onDoubleClick={() => h.column.resetSize()}
+                        className={`absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none touch-none hover:bg-brand-500 ${h.column.getIsResizing() ? 'bg-brand-500' : 'bg-transparent'}`}
+                      />
+                    </th>
                   ))}
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => {
+                const summary = isSummary(row.id)
+                const critical = sched.tasks.get(row.id)?.critical
+                return (
+                  <TaskRow
+                    key={row.id}
+                    row={row}
+                    dnd={canDrag}
+                    onKeyDown={(e) => onRowKey(e, row.id)}
+                    renderCell={renderCell}
+                    className={`${tbodyRow} ${summary ? 'bg-gray-50/70 dark:bg-white/[0.03]' : ''} ${critical ? 'shadow-[inset_3px_0_0_#e11d48]' : ''}`}
+                  />
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <DragOverlay>
+          {dragId ? <div className="rounded-md border border-brand-500 bg-white px-3 py-1.5 text-sm shadow-lg dark:bg-[rgb(var(--pm-card))] dark:text-gray-100">{tasks.find((t) => t.id === dragId)?.name || '—'}</div> : null}
+        </DragOverlay>
+      </DndContext>
       {baselinesOpen && <BaselinesDialog onClose={() => setBaselinesOpen(false)} />}
     </div>
   )

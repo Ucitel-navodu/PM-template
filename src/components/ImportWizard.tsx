@@ -5,11 +5,11 @@ import { createBlankProject } from '../domain/workspace'
 import { decodeText } from '../lib/import/csv'
 import { ImportError, parseMspXml, type MspProject } from '../lib/import/msp'
 import { fromMsp, planTaskImport, type PlanOptions, type RemovedChoice } from '../lib/import/plan'
-import { planTables, readTableFile, type FilePlan, type TableInput } from '../lib/import/workbook'
+import { planTables, readTableFile, type FilePlan, type TableInput, type WorkbookExtras } from '../lib/import/workbook'
 import { btnPrimary, btnSecondary } from '../lib/ui'
 import type { ImportSource } from '../lib/import/plan'
 
-type Loaded = { source: 'msp'; fileName: string; msp: MspProject } | { source: 'excel' | 'csv'; fileName: string; inputs: TableInput[] }
+type Loaded = { source: 'msp'; fileName: string; msp: MspProject } | { source: 'excel' | 'csv'; fileName: string; inputs: TableInput[]; extras?: WorkbookExtras }
 
 const MAX_LIST = 40
 
@@ -45,9 +45,9 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
       if (/\.xls$/i.test(name)) throw new ImportError(tr('import_xls'))
       const data = await file.arrayBuffer()
       if (/\.xml$/i.test(name)) setLoaded({ source: 'msp', fileName: name, msp: parseMspXml(decodeText(data)) })
-      else if (/\.(xlsx|csv|txt)$/i.test(name)) {
-        const { source, inputs } = await readTableFile(name, data, decodeText)
-        setLoaded({ source: source as 'excel' | 'csv', fileName: name, inputs })
+      else if (/\.(xlsx|xlsm|csv|txt)$/i.test(name)) {
+        const { source, inputs, extras } = await readTableFile(name, data, decodeText)
+        setLoaded({ source: source as 'excel' | 'csv', fileName: name, inputs, extras })
       } else throw new ImportError(tr('import_unknown'))
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -64,13 +64,15 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
       const tasks = planTaskImport(base, fromMsp(loaded.msp), { source: 'msp', fileName: loaded.fileName, matchedBy: 'uid', warnings: loaded.msp.warnings }, opts)
       return { source: 'msp', fileName: loaded.fileName, tasks, warnings: [], unmapped: [] } as FilePlan
     }
-    return planTables(base, loaded.inputs, loaded.source, loaded.fileName, opts)
+    return planTables(base, loaded.inputs, loaded.source, loaded.fileName, opts, loaded.extras)
   }, [loaded, base, opts])
 
   const t = plan?.tasks
   const total =
     (t ? t.added.length + t.updated.length + (removed === 'keep' ? 0 : t.removed.length) : 0) +
-    [plan?.milestones, plan?.budget, plan?.risks].reduce((n, x) => n + (x ? x.added.length + x.updated.length : 0), 0)
+    [plan?.milestones, plan?.budget, plan?.risks].reduce((n, x) => n + (x ? x.added.length + x.updated.length : 0), 0) +
+    Object.keys(plan?.info ?? {}).length +
+    Object.values(plan?.lists ?? {}).flat().length
 
   const apply = () => {
     if (!plan) return
@@ -114,7 +116,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
             <button className={btnSecondary} onClick={() => input.current?.click()} disabled={readOnly}>
               {tr('import_choose')}
             </button>
-            <input ref={input} data-testid="import-file" type="file" accept=".xml,.xlsx,.csv,.txt,.mpp,.xls" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+            <input ref={input} data-testid="import-file" type="file" accept=".xml,.xlsx,.xlsm,.csv,.txt,.mpp,.xls" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
             {loaded && <span className="text-xs text-gray-500">{loaded.fileName}</span>}
             {busy && <span className="text-xs text-gray-500">{tr('import_reading')}</span>}
           </div>
@@ -213,6 +215,23 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
                     {list(tbl.updated.map((u) => u.item) as { id: string }[], (x) => <li key={x.id}>~ {x.id} {label(x as never)}</li>)}
                   </section>
                 ) : null,
+              )}
+              {(plan.info || plan.lists) && (
+                <section className="space-y-1" data-testid="import-extras">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">{tr('import_project_card')}</h3>
+                  <ul className="space-y-0.5 text-xs">
+                    {Object.entries(plan.info ?? {}).map(([k, v]) => (
+                      <li key={k}>
+                        ~ {k}: <b>{String(v)}</b>
+                      </li>
+                    ))}
+                    {Object.entries(plan.lists ?? {}).map(([k, v]) => (
+                      <li key={k}>
+                        ＋ {k}: {v.join(', ')}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
               {total === 0 && <p className="text-gray-500">{tr('import_nothing')}</p>}
             </div>

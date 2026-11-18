@@ -16,6 +16,9 @@ interface PrefsState {
   lastDark: PaletteId
   userName: string
   autosaveDelayMs: number
+  /** Format of a newly created working file (pmw | xlsx | txt | json). */
+  saveFormat: 'pmw' | 'xlsx' | 'txt' | 'json'
+  setSaveFormat: (f: 'pmw' | 'xlsx' | 'txt' | 'json') => void
   maxBackups: number
   setLang: (l: Lang) => void
   setPalette: (p: PaletteId) => void
@@ -35,7 +38,7 @@ function initialPalette(): PaletteId {
 
 function savedDark(): PaletteId {
   const p = validPalette(loadPref<string>('lastDark', DEFAULT_PALETTE))
-  return p === 'light' ? DEFAULT_PALETTE : p
+  return isDark(p) ? p : DEFAULT_PALETTE
 }
 
 const initial = initialPalette()
@@ -49,6 +52,8 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
   lastDark: isDark(initial) ? initial : savedDark(),
   userName: loadPref<string>('userName', ''),
   autosaveDelayMs: loadPref<number>('autosaveDelayMs', 2000),
+  saveFormat: loadPref<'pmw' | 'xlsx' | 'txt' | 'json'>('saveFormat', 'pmw'),
+  setSaveFormat: (saveFormat) => set({ saveFormat }),
   maxBackups: loadPref<number>('maxBackups', 20),
   setLang: (lang) => set({ lang }),
   setPalette: (palette) => {
@@ -56,7 +61,7 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
     set({ palette: p, theme: isDark(p) ? 'dark' : 'light', ...(isDark(p) ? { lastDark: p } : {}) })
   },
   setAccent: (accent) => set({ accent: isHex(accent) ? accent : '' }),
-  toggleTheme: () => get().setPalette(get().theme === 'dark' ? 'light' : get().lastDark),
+  toggleTheme: () => get().setPalette(get().theme === 'dark' ? (get().lastDark === 'corp-dark' ? 'corp-light' : 'light') : get().palette === 'corp-light' ? 'corp-dark' : get().lastDark),
   setUserName: (userName) => set({ userName }),
   setAutosaveDelayMs: (autosaveDelayMs) => set({ autosaveDelayMs }),
   setMaxBackups: (maxBackups) => set({ maxBackups }),
@@ -72,8 +77,8 @@ export function applyAppearance(palette: PaletteId, accent: string): void {
   root.classList.toggle('dark', isDark(palette))
   ACCENT_KEYS.forEach((k) => root.style.removeProperty(k))
   const p = PALETTES.find((x) => x.id === palette)!
-  // A custom accent only applies on dark palettes: the light look keeps its tuned violet.
-  if (accent && isDark(palette)) Object.entries(accentVars(accent, p.swatch[0])).forEach(([k, v]) => root.style.setProperty(k, v))
+  // A custom accent only applies on the Jarvis dark palettes: the light and corporate looks keep their tuned colours.
+  if (accent && isDark(palette) && palette !== 'corp-dark') Object.entries(accentVars(accent, p.swatch[0])).forEach(([k, v]) => root.style.setProperty(k, v))
   const meta = document.querySelector('meta[name="theme-color"]')
   meta?.setAttribute('content', p.swatch[0])
 }
@@ -86,6 +91,7 @@ usePrefsStore.subscribe((s) => {
   savePref('lastDark', s.lastDark)
   savePref('userName', s.userName)
   savePref('autosaveDelayMs', s.autosaveDelayMs)
+  savePref('saveFormat', s.saveFormat)
   savePref('maxBackups', s.maxBackups)
   applyAppearance(s.palette, s.accent)
 })

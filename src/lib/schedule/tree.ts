@@ -93,3 +93,22 @@ export function subtreeIds(tasks: Task[], id: string): string[] {
 export function leafTasks(tasks: Task[]): Task[] {
   return tasks.filter((t, i) => !(tasks[i + 1] && tasks[i + 1].outlineLevel > t.outlineLevel))
 }
+
+/**
+ * Drag & drop: move a task with its subtree next to `targetId`, taking the
+ * target's outline level. Dragging down places it after the target's subtree,
+ * dragging up before the target (the usual sortable-list behaviour).
+ */
+export function moveSubtree(tasks: Task[], id: string, targetId: string): Task[] {
+  const from = tasks.findIndex((t) => t.id === id)
+  const to = tasks.findIndex((t) => t.id === targetId)
+  if (from < 0 || to < 0 || from === to) return tasks
+  const [s, e] = subtreeRange(tasks, from)
+  if (to >= s && to < e) return tasks // cannot drop into its own subtree
+  const shift = tasks[to].outlineLevel - tasks[from].outlineLevel
+  const moved = tasks.slice(s, e).map((t) => ({ ...t, outlineLevel: t.outlineLevel + shift }))
+  const rest = [...tasks.slice(0, s), ...tasks.slice(e)]
+  const target = rest.findIndex((t) => t.id === targetId)
+  const at = from < to ? subtreeRange(rest, target)[1] : target
+  return [...rest.slice(0, at), ...moved, ...rest.slice(at)]
+}

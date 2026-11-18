@@ -13,16 +13,16 @@
       {
         "vendor": "npm",
         "name": "cli",
-        "version": "10.9.4"
+        "version": "10.9.9"
       }
     ],
     "component": {
-      "bom-ref": "pm-web@0.8.0",
+      "bom-ref": "pm-web@0.9.0",
       "type": "library",
       "name": "PM-template",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "scope": "required",
-      "purl": "pkg:npm/pm-web@0.8.0",
+      "purl": "pkg:npm/pm-web@0.9.0",
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -461,14 +461,14 @@
       ]
     },
     {
-      "bom-ref": "fast-xml-builder@1.3.1",
+      "bom-ref": "fast-xml-builder@1.3.2",
       "type": "library",
       "name": "fast-xml-builder",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "scope": "required",
       "author": "Amit Gupta",
       "description": "Build XML from JSON without C/C++ based libraries",
-      "purl": "pkg:npm/fast-xml-builder@1.3.1",
+      "purl": "pkg:npm/fast-xml-builder@1.3.2",
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -478,7 +478,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/fast-xml-builder/-/fast-xml-builder-1.3.1.tgz"
+          "url": "https://registry.npmjs.org/fast-xml-builder/-/fast-xml-builder-1.3.2.tgz"
         },
         {
           "type": "vcs",
@@ -496,7 +496,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "a4833fd67de7b455ca62b519c16ed008ad20016ed763ec338f560c215ded2c3bcf8ff57ecd31892b97b7ff85897f08f4a96c361253578938b175afd1fb7612ba"
+          "content": "397f7555295284b3c3811655eed93f610e25f2d4fbe50ce217923183c8383c56c254f8ee4d6c0dfb241f0312c9d1db9f269a6b74e77a1e533be0985ddfd4dc05"
         }
       ],
       "licenses": [
@@ -508,14 +508,14 @@
       ]
     },
     {
-      "bom-ref": "fast-xml-parser@5.11.2",
+      "bom-ref": "fast-xml-parser@5.12.1",
       "type": "library",
       "name": "fast-xml-parser",
-      "version": "5.11.2",
+      "version": "5.12.1",
       "scope": "required",
       "author": "Amit Gupta",
       "description": "Validate XML, Parse XML, Build XML without C/C++ based libraries",
-      "purl": "pkg:npm/fast-xml-parser@5.11.2",
+      "purl": "pkg:npm/fast-xml-parser@5.12.1",
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -525,7 +525,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-5.11.2.tgz"
+          "url": "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-5.12.1.tgz"
         },
         {
           "type": "vcs",
@@ -543,7 +543,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "47d883b8dad061e42eb78e9c9f6af6c072a7e07633543bc39b9275c16fa4a197b0ca4bf4cae3b61c285361e66dad42f21c80ccf5c8fd4d45e5a02b2e782414a2"
+          "content": "c11f1d3bf7f1fb3f02e5ec6e7a6d5eec128e5af8ecbb3be34bfb6f03f5eedd9d7342a246717acfcd76dc02268c829d8a8eb78444e7139269e78acadc989da161"
         }
       ],
       "licenses": [
@@ -769,14 +769,14 @@
       ]
     },
     {
-      "bom-ref": "is-unsafe@2.0.2",
+      "bom-ref": "is-unsafe@2.0.3",
       "type": "library",
       "name": "is-unsafe",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "scope": "required",
       "author": "Amit Gupta",
       "description": "Zero-dependency, DOM-free, pure predicate for detecting unsafe strings across HTML, XML, SVG, SQL, SHELL, and REGEX contexts",
-      "purl": "pkg:npm/is-unsafe@2.0.2",
+      "purl": "pkg:npm/is-unsafe@2.0.3",
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -786,7 +786,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/is-unsafe/-/is-unsafe-2.0.2.tgz"
+          "url": "https://registry.npmjs.org/is-unsafe/-/is-unsafe-2.0.3.tgz"
         },
         {
           "type": "vcs",
@@ -804,7 +804,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "1e06c81cf047d0a1c709c8cb7c6b02be1b4f4d5c636806655e3c1dcfbfc6402e344a349ee2c7d0b1aafc279545a3c24e49b6ab92957438b1bde5b6da35df5a01"
+          "content": "6419657330823b6ebbbe07456fa4eade9bfe2e11da0a218c76bf99b2e2fe3a8a6bb8083b4bedd90ecd6f0f444f0b4b92ae48f36eb6b16868ed5f5601c633de15"
         }
       ],
       "licenses": [
@@ -1793,12 +1793,12 @@
   ],
   "dependencies": [
     {
-      "ref": "pm-web@0.8.0",
+      "ref": "pm-web@0.9.0",
       "dependsOn": [
         "@dnd-kit/core@6.3.1",
         "@tanstack/react-table@8.21.3",
         "browser-fs-access@0.38.0",
-        "fast-xml-parser@5.11.2",
+        "fast-xml-parser@5.12.1",
         "frappe-gantt@1.2.2",
         "idb-keyval@6.3.0",
         "jszip@3.10.1",
@@ -1863,18 +1863,18 @@
       "dependsOn": []
     },
     {
-      "ref": "fast-xml-builder@1.3.1",
+      "ref": "fast-xml-builder@1.3.2",
       "dependsOn": [
         "path-expression-matcher@1.6.2",
         "xml-naming@0.3.0"
       ]
     },
     {
-      "ref": "fast-xml-parser@5.11.2",
+      "ref": "fast-xml-parser@5.12.1",
       "dependsOn": [
         "@nodable/entities@3.1.0",
-        "fast-xml-builder@1.3.1",
-        "is-unsafe@2.0.2",
+        "fast-xml-builder@1.3.2",
+        "is-unsafe@2.0.3",
         "path-expression-matcher@1.6.2",
         "strnum@2.5.1",
         "xml-naming@0.3.0"
@@ -1901,7 +1901,7 @@
       "dependsOn": []
     },
     {
-      "ref": "is-unsafe@2.0.2",
+      "ref": "is-unsafe@2.0.3",
       "dependsOn": []
     },
     {

@@ -1,4 +1,4 @@
-import type { BudgetItem, ImpactLevel, Milestone, PaymentStatus, Project, Risk, RiskStatus, RiskType } from '../../types'
+import type { BudgetItem, ImpactLevel, ProjectInfo, Milestone, PaymentStatus, Project, Risk, RiskStatus, RiskType } from '../../types'
 import type { Cell, Table } from './csv'
 import { fromExcelSerial } from './xlsx'
 import { toDateKey } from '../dates'
@@ -49,6 +49,7 @@ const SYNONYMS: Record<Kind, Record<string, string[]>> = {
   budget: {
     id: ['id', 'cislo'],
     category: ['category', 'kategorie'],
+    costType: ['costtype', 'capexopex', 'capex', 'typnakladu'],
     supplier: ['supplier', 'dodavatel'],
     description: ['description', 'popis'],
     planned: ['planned', 'plan', 'planovano'],
@@ -90,6 +91,85 @@ export function kindOfSheet(name: string): Kind | undefined {
   if (/^(budget|rozpocet)$/.test(n)) return 'budget'
   if (/^(risks?|raid|rizika)$/.test(n)) return 'risks'
   return undefined
+}
+
+/** Looser match for the original Excel template ("TASKS_DATA", "Risk register", ...). */
+export function kindOfSheetLoose(name: string): Kind | undefined {
+  const n = norm(name)
+  if (/task|ukol/.test(n)) return 'tasks'
+  if (/milestone|milnik/.test(n)) return 'milestones'
+  if (/budget|rozpocet/.test(n)) return 'budget'
+  if (/risk|raid|rizik/.test(n)) return 'risks'
+  return undefined
+}
+
+/** How many known columns of `kind` a row names: used to find the header row under title rows. */
+export function headerScore(kind: Kind, row: readonly unknown[]): number {
+  const hs = new Set(row.map(norm))
+  return Object.values(SYNONYMS[kind]).filter((syn) => syn.some((s) => hs.has(s))).length
+}
+
+// --- original workbook: project card (DASHBOARD) and lists (CONFIG) ------------------------
+
+const INFO_LABELS: Record<string, string[]> = {
+  projectId: ['projectid', 'idprojektu', 'cisloprojektu', 'projectno', 'projectnumber'],
+  projectName: ['projectname', 'project', 'nazevprojektu', 'projekt'],
+  businessOwner: ['businessowner', 'sponsor', 'sponzor', 'vlastnik'],
+  bpm: ['bpm', 'businesspm', 'businessprojectmanager'],
+  itpm: ['itpm', 'itprojectmanager', 'projectmanager', 'pm', 'projektovymanazer'],
+  start: ['start', 'projectstart', 'startdate', 'zahajeni', 'zacatek', 'startprojektu'],
+  plannedFinish: ['plannedfinish', 'finish', 'projectfinish', 'enddate', 'planovanykonec', 'konec', 'konecprojektu', 'golive'],
+  budget: ['budget', 'totalbudget', 'approvedbudget', 'rozpocet', 'celkovyrozpocet', 'schvalenyrozpocet'],
+  currency: ['currency', 'mena'],
+}
+
+/** Project card of the original workbook: a label cell followed by its value on the same row. */
+export function readProjectInfo(rows: Cell[][]): Partial<ProjectInfo> {
+  const out: Record<string, string | number> = {}
+  for (const row of rows.slice(0, 60)) {
+    for (let c = 0; c < row.length; c++) {
+      const label = norm(String(row[c] ?? '').replace(/:\s*$/, ''))
+      if (!label) continue
+      const field = Object.keys(INFO_LABELS).find((f) => INFO_LABELS[f].includes(label))
+      if (!field || field in out) continue
+      const value = row.slice(c + 1, c + 4).find((v) => v !== null && v !== undefined && String(v).trim() !== '')
+      if (value === undefined || value === null) continue
+      if (field === 'start' || field === 'plannedFinish') {
+        const d = parseDate(value)
+        if (d) out[field] = d
+      } else if (field === 'budget') {
+        const n = toNumber(value)
+        if (n !== undefined) out[field] = n
+      } else out[field] = String(value).trim()
+    }
+  }
+  return out as Partial<ProjectInfo>
+}
+
+const LIST_LABELS: Record<'phases' | 'projectAreas' | 'budgetCategories', string[]> = {
+  phases: ['phases', 'phase', 'faze', 'fazeprojektu', 'projectphases'],
+  projectAreas: ['projectareas', 'projectarea', 'areas', 'oblasti', 'oblastiprojektu', 'oblast'],
+  budgetCategories: ['budgetcategories', 'budgetcategory', 'kategorierozpoctu', 'categories'],
+}
+export type ImportedLists = Partial<Record<keyof typeof LIST_LABELS, string[]>>
+
+/** Value lists of the original CONFIG sheet: a known column title with the values under it. */
+export function readConfigLists(rows: Cell[][]): ImportedLists {
+  const out: ImportedLists = {}
+  rows.slice(0, 30).forEach((row, r) => {
+    row.forEach((cell, c) => {
+      const key = (Object.keys(LIST_LABELS) as (keyof typeof LIST_LABELS)[]).find((k) => LIST_LABELS[k].includes(norm(cell)))
+      if (!key || out[key]) return
+      const values: string[] = []
+      for (let i = r + 1; i < rows.length; i++) {
+        const v = text(rows[i]?.[c])
+        if (!v) break
+        if (!values.includes(v)) values.push(v)
+      }
+      if (values.length) out[key] = values
+    })
+  })
+  return out
 }
 
 /** Guess the kind from the headers (CSV has no sheet name). */
@@ -282,6 +362,7 @@ export function readBudget(table: Table, project: Project): ReadResult<BudgetIte
     records.push({
       id: text(cellAt(row, m, 'id')) ?? `B${String(++n).padStart(3, '0')}`,
       category: text(cellAt(row, m, 'category')) ?? project.lists.budgetCategories.at(-1) ?? '',
+      costType: pick(cellAt(row, m, 'costType'), ['CAPEX', 'OPEX'] as const),
       supplier,
       description,
       planned,

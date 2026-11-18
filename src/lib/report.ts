@@ -1,6 +1,6 @@
 import type { CalendarSettings, ChangeRequest, Health, Milestone, Project, Risk, Task } from '../types'
 import { summarizeProject, type ProjectSummary } from './portfolio'
-import { approvedImpact } from './changes'
+import { approvedImpact, budgetByCostType } from './changes'
 import { isScored, riskScore } from './raid'
 import { statusKind } from './status'
 import { computeHealth } from './health'
@@ -30,7 +30,7 @@ export interface StatusReportData {
   baselineFinish?: string
   /** Scheduled finish vs. primary baseline finish in working days (+ = late). */
   finishVariance: number | null
-  budget: { approved: number; changes: number; current: number; planned: number; committed: number; actual: number; forecast: number; variance: number }
+  budget: { approved: number; changes: number; current: number; planned: number; committed: number; actual: number; forecast: number; variance: number; capex: number; opex: number }
   health: Record<Health, number>
   done: Task[]
   next: Task[]
@@ -102,6 +102,7 @@ export function buildStatusReport(project: Project, calendar: CalendarSettings, 
   const sum = (k: 'planned' | 'committed' | 'actual') => project.budget.reduce((a, b) => a + (b[k] || 0), 0)
   const forecast = project.budget.reduce((a, b) => a + Math.max(b.actual, b.committed, b.planned), 0)
   const current = project.info.budget + cr.cost
+  const byType = budgetByCostType(project.budget)
   const budget = {
     approved: project.info.budget,
     changes: cr.cost,
@@ -111,6 +112,8 @@ export function buildStatusReport(project: Project, calendar: CalendarSettings, 
     actual: sum('actual'),
     forecast,
     variance: current - forecast,
+    capex: byType.CAPEX.forecast,
+    opex: byType.OPEX.forecast,
   }
 
   const todayKey = toDateKey(today)

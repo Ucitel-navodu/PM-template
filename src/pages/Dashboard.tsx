@@ -1,8 +1,9 @@
 import { isScored, riskScore, scoreClass } from '../lib/raid'
-import { approvedImpact } from '../lib/changes'
+import { approvedImpact, budgetByCostType } from '../lib/changes'
 import { useActiveProject } from '../store/workspaceStore'
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
+import { LinksCard } from '../components/LinksCard'
 import { leafTasks } from '../lib/schedule/tree'
 import { Card, Stat } from '../components/Card'
 import { MiniCalendar } from '../components/MiniCalendar'
@@ -20,6 +21,7 @@ export function Dashboard() {
   const tasks = useMemo(() => leafTasks(allTasks), [allTasks])
   const changes = useActiveProject()?.changes ?? []
   const crImpact = approvedImpact(changes)
+  const costTypes = budgetByCostType(budget)
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = Object.fromEntries(settings.statuses.map((s) => [s.name, 0]))
@@ -90,7 +92,10 @@ export function Dashboard() {
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <ProjectInfoCard />
+      <div className="space-y-4">
+        <ProjectInfoCard />
+        <LinksCard />
+      </div>
 
       <Card title={tr('dash_calendar')} icon="📅" accent="sky">
         <MiniCalendar tasks={tasks} />
@@ -178,6 +183,14 @@ export function Dashboard() {
             label={tr('budget_summary_variance')}
             value={formatMoney(budgetSummary.variance, projectInfo.currency)}
           />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-gray-100 pt-2 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400">
+          <span>
+            CAPEX: <b className="text-gray-800 dark:text-gray-100">{formatMoney(costTypes.CAPEX.forecast, projectInfo.currency)}</b>
+          </span>
+          <span>
+            OPEX: <b className="text-gray-800 dark:text-gray-100">{formatMoney(costTypes.OPEX.forecast, projectInfo.currency)}</b>
+          </span>
         </div>
       </Card>
 

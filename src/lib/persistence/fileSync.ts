@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { fileOpen, fileSave, supported as fsaSupported } from 'browser-fs-access'
 import type { Workspace } from '../../types'
-import { parseAnyFile, serializeWorkspace, type ParsedFile } from '../../domain/workspace'
+import type { ParsedFile } from '../../domain/workspace'
+import { decodeWorkspaceFile, encodeWorkspace, FORMATS, FORMAT_ORDER, formatOfName, type FileFormat } from './formats'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 import { addBackup, clearFileHandle, loadFileHandle, saveCachedWorkspace, saveFileHandle } from './cache'
 import { loadState } from '../storage'
@@ -45,13 +46,19 @@ export const useSyncStore = create<SyncState>(() => ({ status: 'local-only' }))
 
 export const fileAccessSupported = fsaSupported
 
-const FILE_EXT = '.pmw.json'
-const fileOptions = {
-  extensions: ['.json'],
-  mimeTypes: ['application/json'],
+// Fresh objects on every call: browser-fs-access mutates the options it gets.
+const saveOptions = (format: FileFormat) => ({
+  extensions: [FORMATS[format].pickerExt],
+  mimeTypes: [FORMATS[format].mime],
   description: 'PM workspace',
   id: 'pm-workspace',
-}
+})
+const openOptions = () => ({
+  extensions: FORMAT_ORDER.map((f) => FORMATS[f].pickerExt),
+  mimeTypes: FORMAT_ORDER.map((f) => FORMATS[f].mime),
+  description: 'PM workspace (.pmw, .xlsx, .txt, .json)',
+  id: 'pm-workspace',
+})
 
 let handle: FileSystemFileHandle | null = null
 let baseModified: number | null = null
@@ -62,23 +69,24 @@ const setSync = (patch: Partial<SyncState>) => useSyncStore.setState(patch)
 const userName = () => usePrefsStore.getState().userName
 const autosaveDelay = () => Math.max(500, usePrefsStore.getState().autosaveDelayMs)
 
-function suggestedName(ws: Workspace): string {
+function suggestedName(ws: Workspace, format: FileFormat): string {
   const name = ws.projects.length === 1 ? ws.projects[0].info.projectName : 'Portfolio'
-  return `${name.replace(/[\\/:*?"<>|]+/g, '-').trim() || 'Portfolio'}${FILE_EXT}`
+  return `${name.replace(/[\\/:*?"<>|]+/g, '-').trim() || 'Portfolio'}${FORMATS[format].ext}`
 }
 
 async function readHandle(h: FileSystemFileHandle): Promise<{ parsed: ParsedFile; modified: number }> {
   const file = await h.getFile()
-  return { parsed: parseAnyFile(await file.text()), modified: file.lastModified }
+  return { parsed: await decodeWorkspaceFile(file), modified: file.lastModified }
 }
 
 /** Write `ws` to the handle with the next revision. Does not check conflicts. */
-async function writeTo(h: FileSystemFileHandle | null, ws: Workspace): Promise<FileSystemFileHandle | null> {
+async function writeTo(h: FileSystemFileHandle | null, ws: Workspace, newFormat: FileFormat = usePrefsStore.getState().saveFormat): Promise<FileSystemFileHandle | null> {
+  const format = h ? formatOfName(h.name) : newFormat
   const savedAt = new Date().toISOString()
   const revision = ws.revision + 1
   const toWrite: Workspace = { ...ws, revision, savedAt, savedBy: userName() || undefined }
-  const blob = new Blob([serializeWorkspace(toWrite)], { type: 'application/json' })
-  const result = await fileSave(blob, { ...fileOptions, fileName: suggestedName(ws) }, h, Boolean(h))
+  const blob = await encodeWorkspace(toWrite, format, useWorkspaceStore.getState().activeProjectId)
+  const result = await fileSave(blob, { ...saveOptions(format), fileName: suggestedName(ws, format) }, h, Boolean(h))
   suppressDirty = true
   useWorkspaceStore.getState().markSaved(revision, savedAt, toWrite.savedBy)
   suppressDirty = false
@@ -99,7 +107,7 @@ export async function saveNow(): Promise<void> {
   try {
     const file = await handle.getFile()
     if (baseModified !== null && file.lastModified !== baseModified) {
-      const other = parseAnyFile(await file.text())
+      const other = await decodeWorkspaceFile(file)
       const foreign =
         other.kind !== 'workspace' || other.workspace.id !== ws.id || other.workspace.revision > ws.revision
       if (foreign) {
@@ -121,9 +129,10 @@ function scheduleAutosave() {
 }
 
 /** Create a new workspace file (Save as) and keep saving into it. */
-export async function linkNewFile(): Promise<void> {
+export async function linkNewFile(format?: FileFormat): Promise<void> {
   try {
-    const h = await writeTo(null, useWorkspaceStore.getState().workspace)
+    if (format) usePrefsStore.getState().setSaveFormat(format)
+    const h = await writeTo(null, useWorkspaceStore.getState().workspace, format)
     if (!h) {
       // Legacy browser: the file was downloaded; nothing to keep in sync with.
       setSync({ status: 'local-only', lastSavedAt: new Date().toISOString() })
@@ -154,12 +163,12 @@ export type OpenResult =
 export async function openFile(readOnly: boolean): Promise<OpenResult> {
   let file
   try {
-    file = await fileOpen(fileOptions)
+    file = await fileOpen(openOptions())
   } catch (e) {
     if ((e as Error)?.name === 'AbortError') return { kind: 'cancelled' }
     throw e
   }
-  const parsed = parseAnyFile(await file.text())
+  const parsed = await decodeWorkspaceFile(file)
   if (parsed.kind === 'legacy-project') return { kind: 'legacy-project', parsed }
 
   const store = useWorkspaceStore.getState()
@@ -186,10 +195,13 @@ export async function openFile(readOnly: boolean): Promise<OpenResult> {
 }
 
 /** Download a copy (always works, also without File System Access). */
-export async function downloadCopy(): Promise<void> {
-  const ws = useWorkspaceStore.getState().workspace
-  const blob = new Blob([serializeWorkspace(ws)], { type: 'application/json' })
-  await fileSave(blob, { ...fileOptions, fileName: suggestedName(ws) })
+export async function downloadCopy(format: FileFormat = usePrefsStore.getState().saveFormat): Promise<void> {
+  const { workspace: ws, activeProjectId } = useWorkspaceStore.getState()
+  try {
+    await fileSave(await encodeWorkspace(ws, format, activeProjectId), { ...saveOptions(format), fileName: suggestedName(ws, format) })
+  } catch (e) {
+    if ((e as Error)?.name !== 'AbortError') throw e
+  }
 }
 
 export async function unlinkFile(): Promise<void> {

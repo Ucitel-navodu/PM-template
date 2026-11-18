@@ -33,7 +33,7 @@ const openWizard = async () => {
   await page.getByRole('dialog', { name: 'Import dat' }).waitFor()
 }
 const closeWizard = () => page.getByRole('button', { name: /Zavřít|Zrušit/ }).last().click()
-const names = () => page.locator('tbody tr[data-task-no] td:nth-child(3) input').evaluateAll((els) => els.map((e) => e.value))
+const names = () => page.locator('tbody tr[data-task-no] td:nth-child(4) input').evaluateAll((els) => els.map((e) => e.value))
 
 await page.goto(`${url}#/tasks`)
 await page.waitForSelector('tbody tr')
@@ -51,7 +51,7 @@ check('new project created and active', (await page.locator('select[aria-label]'
 await page.waitForSelector('tbody tr[data-task-no]')
 const imported = await names()
 check('imported tasks with hierarchy', imported.length === 7 && imported[1] === 'Analýza & návrh', imported.join(' | '))
-const wbs = await page.locator('tbody tr[data-task-no] td:nth-child(2)').allInnerTexts()
+const wbs = await page.locator('tbody tr[data-task-no] td:nth-child(3)').allInnerTexts()
 check('outline numbers 1, 1.1 …', wbs.join() === '1,1.1,1.2,1.3,1.4,1.5,1.6', wbs.join())
 
 await tab('Gantt')

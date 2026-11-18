@@ -19,6 +19,8 @@ import {
 import { addBackup, listBackups, type Backup } from '../lib/persistence/cache'
 import { WorkspaceFileError } from '../domain/workspace'
 import type { TKey } from '../i18n'
+import { FORMATS, FORMAT_ORDER, type FileFormat } from '../lib/persistence/formats'
+import { usePrefsStore } from '../store/prefsStore'
 
 const STATUS_LABEL: Record<SyncStatus, TKey> = {
   'local-only': 'sync_local_only',
@@ -50,6 +52,10 @@ function isTypingTarget(el: EventTarget | null): boolean {
   return Boolean(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable))
 }
 
+const SAVE_AS_EVENT = 'pm:save-as'
+/** Open the "save to file" dialog (format choice) from anywhere. */
+export const requestSaveAs = () => window.dispatchEvent(new Event(SAVE_AS_EVENT))
+
 export function FileMenu() {
   const { tr } = useApp()
   const sync = useSyncStore()
@@ -59,6 +65,7 @@ export function FileMenu() {
   const [error, setError] = useState<string | null>(null)
   const [backupsOpen, setBackupsOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [saveAs, setSaveAs] = useState<'link' | 'copy' | null>(null)
   const exportXlsx = async () => {
     const { workspace, activeProjectId } = useWorkspaceStore.getState()
     const project = workspace.projects.find((p) => p.id === activeProjectId)
@@ -74,6 +81,13 @@ export function FileMenu() {
     return () => document.removeEventListener('mousedown', close)
   }, [])
 
+  // Other places (the "data only in this browser" banner) ask for the same format dialog.
+  useEffect(() => {
+    const ask = () => setSaveAs('link')
+    window.addEventListener(SAVE_AS_EVENT, ask)
+    return () => window.removeEventListener(SAVE_AS_EVENT, ask)
+  }, [])
+
   // Ctrl/Cmd+Z, Ctrl+Y / Ctrl+Shift+Z, Ctrl+S - outside text fields (those keep native undo).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -81,7 +95,8 @@ export function FileMenu() {
       const k = e.key.toLowerCase()
       if (k === 's') {
         e.preventDefault()
-        void (useSyncStore.getState().fileName ? saveNow() : linkNewFile())
+        if (useSyncStore.getState().fileName) void saveNow()
+        else setSaveAs('link')
         return
       }
       if (isTypingTarget(e.target)) return
@@ -151,7 +166,7 @@ export function FileMenu() {
           role="menu"
           className="absolute right-0 top-10 z-40 min-w-[14rem] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
         >
-          <button className={item} onClick={() => run(linkNewFile)}>
+          <button className={item} onClick={() => run(async () => setSaveAs('link'))}>
             {tr('file_link_new')}
           </button>
           <button className={item} onClick={() => doOpen(false)}>
@@ -161,7 +176,7 @@ export function FileMenu() {
             {tr('file_open_readonly')}
           </button>
           <div className="my-1 border-t border-gray-100 dark:border-white/10" />
-          <button className={item} onClick={() => run(downloadCopy)}>
+          <button className={item} onClick={() => run(async () => setSaveAs('copy'))}>
             {tr('file_download_copy')}
           </button>
           <button className={item} onClick={() => run(async () => setImportOpen(true))}>
@@ -189,6 +204,19 @@ export function FileMenu() {
       )}
       {/* Portals: the header's backdrop-filter would otherwise trap position:fixed dialogs inside the header box. */}
       {backupsOpen && createPortal(<BackupsDialog onClose={() => setBackupsOpen(false)} />, document.body)}
+      {saveAs &&
+        createPortal(
+          <SaveAsDialog
+            mode={saveAs}
+            onClose={() => setSaveAs(null)}
+            onPick={(f) => {
+              const mode = saveAs
+              setSaveAs(null)
+              void run(() => (mode === 'link' ? linkNewFile(f) : downloadCopy(f)))
+            }}
+          />,
+          document.body,
+        )}
       {importOpen && createPortal(<ImportWizard onClose={() => setImportOpen(false)} />, document.body)}
     </div>
   )
@@ -251,6 +279,55 @@ function BackupsDialog({ onClose }: { onClose: () => void }) {
         <div className="mt-4 text-right">
           <button onClick={onClose} className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
             {tr('help_close')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const FORMAT_LABEL: Record<FileFormat, TKey> = { pmw: 'fmt_pmw', xlsx: 'fmt_xlsx', txt: 'fmt_txt', json: 'fmt_json' }
+
+/** Format choice for a new working file / a copy (SharePoint and mail gateways often refuse .json). */
+function SaveAsDialog({ mode, onClose, onPick }: { mode: 'link' | 'copy'; onClose: () => void; onPick: (f: FileFormat) => void }) {
+  const { tr } = useApp()
+  const [format, setFormat] = useState<FileFormat>(usePrefsStore.getState().saveFormat)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-16" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-label={tr('saveas_title')}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
+      >
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">{tr(mode === 'link' ? 'file_link_new' : 'file_download_copy')}</h2>
+        <p className="mb-3 mt-1 text-xs text-gray-500 dark:text-gray-400">{tr('saveas_help')}</p>
+        <div role="radiogroup" aria-label={tr('saveas_title')} className="space-y-2">
+          {FORMAT_ORDER.map((f) => (
+            <label
+              key={f}
+              data-format={f}
+              className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2 text-sm ${format === f ? 'border-brand-500 bg-brand-50 dark:bg-white/5' : 'border-gray-200 dark:border-white/10'}`}
+            >
+              <input type="radio" name="save-format" className="mt-1" checked={format === f} onChange={() => setFormat(f)} />
+              <span>
+                <b className="text-gray-900 dark:text-gray-50">{FORMATS[f].ext}</b>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">{tr(FORMAT_LABEL[f])}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-white/15 dark:text-gray-200">
+            {tr('common_cancel')}
+          </button>
+          <button data-testid="saveas-confirm" onClick={() => onPick(format)} className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            {tr('saveas_confirm')}
           </button>
         </div>
       </div>

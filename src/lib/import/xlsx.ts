@@ -98,6 +98,10 @@ export interface OutSheet {
   headers: string[]
   rows: OutCell[][]
   widths?: number[]
+  /** Not shown in Excel's sheet tabs (cannot be unhidden from the UI). */
+  hidden?: boolean
+  /** No header style, frozen row or filter (data sheets). */
+  plain?: boolean
 }
 
 const ENTITY: Record<string, string> = { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }
@@ -124,7 +128,7 @@ export async function writeXlsx(sheets: OutSheet[]): Promise<Uint8Array> {
   zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')
   zip.file(
     'xl/workbook.xml',
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s, i) => `<sheet name="${esc(s.name.slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s, i) => `<sheet name="${esc(s.name.slice(0, 31))}" sheetId="${i + 1}"${s.hidden ? ' state="veryHidden"' : ''} r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`,
   )
   zip.file(
     'xl/_rels/workbook.xml.rels',
@@ -139,7 +143,7 @@ export async function writeXlsx(sheets: OutSheet[]): Promise<Uint8Array> {
     const cell = (v: OutCell, c: number, r: number, header = false): string => {
       const ref = `${colName(c)}${r}`
       if (v === null || v === undefined || v === '') return ''
-      if (header) return `<c r="${ref}" s="1" t="inlineStr"><is><t>${esc(String(v))}</t></is></c>`
+      if (header && !s.plain) return `<c r="${ref}" s="1" t="inlineStr"><is><t>${esc(String(v))}</t></is></c>`
       if (v instanceof Date) return `<c r="${ref}" s="2"><v>${excelSerial(v)}</v></c>`
       if (typeof v === 'number') return Number.isFinite(v) ? `<c r="${ref}"><v>${v}</v></c>` : ''
       if (typeof v === 'boolean') return `<c r="${ref}" t="b"><v>${v ? 1 : 0}</v></c>`
@@ -150,7 +154,7 @@ export async function writeXlsx(sheets: OutSheet[]): Promise<Uint8Array> {
     const widths = s.headers.map((h, ci) => s.widths?.[ci] ?? Math.min(60, Math.max(10, h.length + 4)))
     zip.file(
       `xl/worksheets/sheet${i + 1}.xml`,
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${widths.map((w, ci) => `<col min="${ci + 1}" max="${ci + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${body}</sheetData>${s.headers.length ? `<autoFilter ref="A1:${colName(s.headers.length - 1)}${Math.max(1, rows.length)}"/>` : ''}</worksheet>`,
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${s.plain ? '' : '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'}<cols>${widths.map((w, ci) => `<col min="${ci + 1}" max="${ci + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${body}</sheetData>${s.headers.length && !s.plain ? `<autoFilter ref="A1:${colName(s.headers.length - 1)}${Math.max(1, rows.length)}"/>` : ''}</worksheet>`,
     )
   })
   return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' })

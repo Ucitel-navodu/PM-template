@@ -31,6 +31,7 @@ await page.waitForSelector('nav button')
 
 // Who am I (recorded in the audit trail and as the decision maker)
 await page.getByRole('button', { name: 'Nastavení' }).click()
+await page.locator('[data-settings-nav=personal]').click()
 await page.getByPlaceholder('např. Jan Novák').fill('Jana Testová')
 await page.keyboard.press('Escape')
 
@@ -73,6 +74,7 @@ await page.keyboard.press('Escape')
 
 // Custom status name keeps its meaning
 await page.getByRole('button', { name: 'Nastavení' }).click()
+await page.locator('[data-settings-nav=statuses]').click()
 const doneInput = page.getByRole('dialog').locator('input[value="Done"]')
 await doneInput.fill('Hotovo')
 await doneInput.press('Enter')

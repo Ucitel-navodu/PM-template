@@ -18,6 +18,7 @@ import { FileMenu } from './components/FileMenu'
 import { SyncBanner } from './components/SyncBanner'
 import { HelpPanel } from './components/HelpPanel'
 import { SettingsPanel } from './components/SettingsPanel'
+import { closeSettings, openSettings, useSettingsNav } from './lib/settingsNav'
 
 type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'changes' | 'team' | 'audit' | 'report'
 
@@ -84,7 +85,7 @@ export default function App() {
   const { tr, lang, setLang, theme, toggleTheme, readOnly } = useApp()
   const [page, setPage] = useHashPage()
   const [helpOpen, setHelpOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsPanel = useSettingsNav((s) => s.panel)
 
   return (
     <div className="min-h-full bg-gray-50 print:bg-white dark:bg-[rgb(var(--pm-bg))]">
@@ -100,7 +101,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <FileMenu />
             <div className="h-5 w-px bg-gray-200 dark:bg-white/10" />
-            <button onClick={() => setSettingsOpen(true)} aria-label={tr('settings_button')} title={tr('settings_button')} className={iconBtn}>
+            <button onClick={() => openSettings()} aria-label={tr('settings_button')} title={tr('settings_button')} className={iconBtn}>
               ⚙️
             </button>
             <button onClick={() => setHelpOpen(true)} aria-label={tr('help_button')} title={tr('help_button')} className={iconBtn}>
@@ -122,7 +123,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        <nav className="mx-auto flex max-w-[90rem] items-center gap-1 overflow-x-auto px-4 pb-2 pt-2 sm:px-6">
+        <nav className="mx-auto flex max-w-[90rem] flex-wrap items-center gap-1 px-4 pb-2 pt-2 sm:px-6">
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -144,7 +145,7 @@ export default function App() {
       <main className={`mx-auto max-w-[90rem] px-4 py-6 sm:px-6 print:max-w-none print:p-0 ${readOnly ? 'read-only' : ''}`}>
         {page === 'portfolio' && <PortfolioPage onOpenProject={() => setPage('dashboard')} />}
         {page === 'dashboard' && <Dashboard />}
-        {page === 'tasks' && <TasksPage onOpenSettings={() => setSettingsOpen(true)} />}
+        {page === 'tasks' && <TasksPage onOpenSettings={() => openSettings('phases')} />}
         {page === 'gantt' && <GanttPage />}
         {page === 'board' && <BoardPage />}
         {page === 'milestones' && <MilestonesPage />}
@@ -157,7 +158,7 @@ export default function App() {
       </main>
 
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsPanel && <SettingsPanel key={settingsPanel} initial={settingsPanel} onClose={closeSettings} />}
     </div>
   )
 }

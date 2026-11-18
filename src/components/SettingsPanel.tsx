@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { SettingsPanelId } from '../lib/settingsNav'
 import { useApp, type ListKey } from '../context/AppContext'
 import { defaultSettings } from '../data/settings'
 import type { TKey } from '../i18n'
@@ -267,7 +268,8 @@ function PersonalSection() {
 
 /** Colour palette (the JARVIS palettes + light) and an optional custom accent. */
 function AppearanceSection() {
-  const { tr } = useApp()
+  const { tr, readOnly } = useApp()
+  const reportAccent = useWorkspaceStore((s) => s.workspace.reportSettings.accentColor)
   const { palette, accent, setPalette, setAccent } = usePrefsStore()
   const current = PALETTES.find((p) => p.id === palette)!
   const move = (id: PaletteId, key: string) => {
@@ -308,7 +310,7 @@ function AppearanceSection() {
                 ))}
               </span>
               <span>
-                {p.id === 'light' ? tr('palette_light') : p.name}
+                {p.id === 'light' ? tr('palette_light') : p.id === 'corp-light' ? tr('palette_corp_light') : p.id === 'corp-dark' ? tr('palette_corp_dark') : p.name}
                 {p.note && <small className="ml-1 opacity-70">({tr('palette_default')})</small>}
               </span>
             </button>
@@ -323,7 +325,7 @@ function AppearanceSection() {
             data-testid="accent-input"
             value={accent || current.swatch[2]}
             onChange={(e) => setAccent(e.target.value)}
-            disabled={!current.dark}
+            disabled={!current.dark || palette === 'corp-dark'}
             className="h-8 w-14 rounded border border-gray-300 dark:border-white/15"
           />
         </label>
@@ -333,6 +335,19 @@ function AppearanceSection() {
           </button>
         )}
         {!current.dark && <span className="text-xs text-gray-400">{tr('settings_accent_dark_only')}</span>}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 dark:border-white/10">
+        <button
+          className={btnSecondary}
+          data-testid="report-use-palette"
+          disabled={readOnly || reportAccent.toLowerCase() === (accent || current.swatch[2]).toLowerCase()}
+          onClick={() => useWorkspaceStore.getState().updateReportSettings({ accentColor: accent || current.swatch[2] })}
+        >
+          {tr('settings_report_use_palette')}
+        </button>
+        <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+          {tr('settings_report_accent_now')} <i className="inline-block h-4 w-4 rounded border border-black/10" style={{ background: reportAccent }} /> {reportAccent}
+        </span>
       </div>
     </Section>
   )
@@ -385,8 +400,27 @@ function ReportSection() {
   )
 }
 
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
+const GROUPS = ['settings_group_app', 'settings_group_project', 'settings_group_calendar'] as const
+const PANELS: { id: SettingsPanelId; group: (typeof GROUPS)[number]; icon: string; title: TKey; keywords: string }[] = [
+  { id: 'appearance', group: 'settings_group_app', icon: '🎨', title: 'settings_appearance', keywords: 'barvy paleta vzhled tmavy svetly korporatni colors palette theme dark light corporate accent' },
+  { id: 'personal', group: 'settings_group_app', icon: '👤', title: 'settings_personal', keywords: 'jmeno ukladani autosave zalohy name save backups soubor file' },
+  { id: 'report', group: 'settings_group_app', icon: '📄', title: 'report_settings', keywords: 'report pptx pdf logo organizace paticka organization footer barva' },
+  { id: 'phases', group: 'settings_group_project', icon: '🧭', title: 'settings_phases', keywords: 'faze projektu phases' },
+  { id: 'areas', group: 'settings_group_project', icon: '🗂️', title: 'settings_project_areas', keywords: 'oblasti projektu areas workstream' },
+  { id: 'statuses', group: 'settings_group_project', icon: '🚦', title: 'settings_statuses', keywords: 'stavy status kanban done hotovo' },
+  { id: 'priorities', group: 'settings_group_project', icon: '⚡', title: 'settings_priorities', keywords: 'priority priorita' },
+  { id: 'budget', group: 'settings_group_project', icon: '💰', title: 'settings_budget_categories', keywords: 'rozpocet kategorie budget categories capex opex' },
+  { id: 'calendar', group: 'settings_group_calendar', icon: '📅', title: 'settings_calendar', keywords: 'kalendar svatky pracovni dny holidays working days weekend' },
+  { id: 'health', group: 'settings_group_calendar', icon: '❤️', title: 'settings_health', keywords: 'health tolerance orange red zpozdeni delay' },
+]
+const fold = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+export function SettingsPanel({ onClose, initial = 'appearance' }: { onClose: () => void; initial?: SettingsPanelId }) {
   const { tr, settings, updateSettings } = useApp()
+  const [panel, setPanel] = useState<SettingsPanelId>(initial)
+  const [query, setQuery] = useState('')
+  const q = fold(query.trim())
+  const matches = PANELS.filter((p) => !q || fold(`${tr(p.title)} ${p.keywords}`).includes(q))
   const [newHoliday, setNewHoliday] = useState({ date: '', name: '' })
 
   useEffect(() => {
@@ -431,10 +465,10 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label={tr('settings_button')}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
+        className="w-full max-w-4xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-white/10">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">⚙️ {tr('settings_button')}</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50">⚙️ {tr('settings_button')} <span className="font-normal text-gray-400">› {tr(PANELS.find((x) => x.id === panel)!.title)}</span></h2>
           <button
             onClick={onClose}
             aria-label={tr('help_close')}
@@ -444,137 +478,206 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="max-h-[72vh] overflow-y-auto px-5">
-          <AppearanceSection />
-
-          <PersonalSection />
-
-          <ReportSection />
-
-          <Section title={tr('settings_phases')} help={tr('settings_phases_help')}>
-            <ListEditor list="phases" />
-          </Section>
-
-          <Section title={tr('settings_project_areas')} help={tr('settings_project_areas_help')}>
-            <ListEditor list="projectAreas" />
-          </Section>
-
-          <Section title={tr('settings_statuses')} help={tr('settings_statuses_help')}>
-            <StatusEditor />
-          </Section>
-
-          <Section title={tr('settings_priorities')}>
-            <ListEditor list="priorities" />
-          </Section>
-
-          <Section title={tr('settings_budget_categories')}>
-            <ListEditor list="budgetCategories" />
-          </Section>
-
-          <Section title={tr('settings_working_days')}>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAYS.map(({ day, key }) => {
-                const on = settings.workingDays.includes(day)
-                return (
-                  <button
-                    key={day}
-                    onClick={() => toggleWorkday(day)}
-                    className={`w-12 rounded-md border py-1.5 text-sm font-medium ${
-                      on
-                        ? 'border-brand-600 bg-brand-600 text-white'
-                        : 'border-gray-300 text-gray-500 dark:border-white/15 dark:text-gray-400'
-                    }`}
-                  >
-                    {tr(key)}
-                  </button>
-                )
+        <div className="flex min-h-[26rem] flex-col sm:flex-row">
+          <aside className="shrink-0 border-b border-gray-200 p-3 dark:border-white/10 sm:w-56 sm:border-b-0 sm:border-r">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && matches[0] && (setPanel(matches[0].id), setQuery(''))}
+              placeholder={tr('settings_search')}
+              aria-label={tr('settings_search')}
+              className={`mb-2 w-full ${inputBox}`}
+            />
+            <nav aria-label={tr('settings_button')} className="flex gap-1 overflow-x-auto sm:block sm:space-y-0.5">
+              {GROUPS.map((g) => {
+                const items = matches.filter((m) => m.group === g)
+                return items.length ? (
+                  <div key={g} className="flex gap-1 sm:block">
+                    <div className="hidden px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:block">{tr(g)}</div>
+                    {items.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        data-settings-nav={m.id}
+                        aria-current={panel === m.id ? 'page' : undefined}
+                        onClick={() => setPanel(m.id)}
+                        className={`flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-sm ${
+                          panel === m.id ? 'bg-brand-600 font-medium text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10'
+                        }`}
+                      >
+                        <span aria-hidden>{m.icon}</span>
+                        {tr(m.title)}
+                      </button>
+                    ))}
+                  </div>
+                ) : null
               })}
-            </div>
-          </Section>
-
-          <Section title={tr('settings_holidays')} help={tr('settings_holidays_help')}>
-            <div className="space-y-1">
-              {holidays.map((h, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={h.date}
-                    onChange={(e) =>
-                      updateSettings({
-                        holidays: settings.holidays.map((x) => (x === h ? { ...x, date: e.target.value } : x)),
-                      })
-                    }
-                    className={`text-sm ${inputGhost}`}
-                  />
-                  <input
-                    value={h.name}
-                    onChange={(e) =>
-                      updateSettings({
-                        holidays: settings.holidays.map((x) => (x === h ? { ...x, name: e.target.value } : x)),
-                      })
-                    }
-                    className={`flex-1 text-sm ${inputGhost}`}
-                  />
-                  <button
-                    onClick={() => updateSettings({ holidays: settings.holidays.filter((x) => x !== h) })}
-                    className="h-7 w-7 rounded text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-white/10"
-                    aria-label="delete"
-                  >
-                    ✕
-                  </button>
+              {matches.length === 0 && <p className="px-2 py-2 text-xs text-gray-400">{tr('settings_search_none')}</p>}
+            </nav>
+          </aside>
+          <div className="max-h-[70vh] min-w-0 flex-1 overflow-y-auto px-5" data-settings-panel={panel}>
+            {panel === 'appearance' && (
+              <>
+              <AppearanceSection />
+              </>
+            )}
+            {panel === 'personal' && (
+              <>
+              <PersonalSection />
+              </>
+            )}
+            {panel === 'report' && (
+              <>
+              <ReportSection />
+              </>
+            )}
+            {panel === 'phases' && (
+              <>
+              <Section title={tr('settings_phases')} help={tr('settings_phases_help')}>
+                <ListEditor list="phases" />
+              </Section>
+              </>
+            )}
+            {panel === 'areas' && (
+              <>
+              <Section title={tr('settings_project_areas')} help={tr('settings_project_areas_help')}>
+                <ListEditor list="projectAreas" />
+              </Section>
+              </>
+            )}
+            {panel === 'statuses' && (
+              <>
+              <Section title={tr('settings_statuses')} help={tr('settings_statuses_help')}>
+                <StatusEditor />
+              </Section>
+              </>
+            )}
+            {panel === 'priorities' && (
+              <>
+              <Section title={tr('settings_priorities')}>
+                <ListEditor list="priorities" />
+              </Section>
+              </>
+            )}
+            {panel === 'budget' && (
+              <>
+              <Section title={tr('settings_budget_categories')}>
+                <ListEditor list="budgetCategories" />
+              </Section>
+              </>
+            )}
+            {panel === 'calendar' && (
+              <>
+              <Section title={tr('settings_working_days')}>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAYS.map(({ day, key }) => {
+                    const on = settings.workingDays.includes(day)
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => toggleWorkday(day)}
+                        className={`w-12 rounded-md border py-1.5 text-sm font-medium ${
+                          on
+                            ? 'border-brand-600 bg-brand-600 text-white'
+                            : 'border-gray-300 text-gray-500 dark:border-white/15 dark:text-gray-400'
+                        }`}
+                      >
+                        {tr(key)}
+                      </button>
+                    )
+                  })}
                 </div>
-              ))}
-              <div className="flex gap-2 pt-1">
-                <input
-                  type="date"
-                  value={newHoliday.date}
-                  onChange={(e) => setNewHoliday({ ...newHoliday, date: e.target.value })}
-                  className={inputBox}
-                />
-                <input
-                  value={newHoliday.name}
-                  onChange={(e) => setNewHoliday({ ...newHoliday, name: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && addHoliday()}
-                  placeholder={tr('settings_new_item')}
-                  className={`flex-1 ${inputBox}`}
-                />
-                <button onClick={addHoliday} className={btnSecondary}>
-                  {tr('common_add')}
-                </button>
-              </div>
-            </div>
-          </Section>
-
-          <Section title={tr('settings_health')} help={tr('settings_health_help')}>
-            <div className="flex flex-wrap gap-6 text-sm text-gray-700 dark:text-gray-300">
-              <label className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#e08a00]" />
-                {tr('settings_orange')}
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={Math.round(settings.orangeTolerance * 100)}
-                  onChange={(e) => setTolerance('orangeTolerance', e.target.value)}
-                  className={`w-16 ${inputBox}`}
-                />
-                %
-              </label>
-              <label className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#c62828]" />
-                {tr('settings_red')}
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={Math.round(settings.redTolerance * 100)}
-                  onChange={(e) => setTolerance('redTolerance', e.target.value)}
-                  className={`w-16 ${inputBox}`}
-                />
-                %
-              </label>
-            </div>
-          </Section>
+              </Section>
+              <Section title={tr('settings_holidays')} help={tr('settings_holidays_help')}>
+                <div className="space-y-1">
+                  {holidays.map((h, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={h.date}
+                        onChange={(e) =>
+                          updateSettings({
+                            holidays: settings.holidays.map((x) => (x === h ? { ...x, date: e.target.value } : x)),
+                          })
+                        }
+                        className={`text-sm ${inputGhost}`}
+                      />
+                      <input
+                        value={h.name}
+                        onChange={(e) =>
+                          updateSettings({
+                            holidays: settings.holidays.map((x) => (x === h ? { ...x, name: e.target.value } : x)),
+                          })
+                        }
+                        className={`flex-1 text-sm ${inputGhost}`}
+                      />
+                      <button
+                        onClick={() => updateSettings({ holidays: settings.holidays.filter((x) => x !== h) })}
+                        className="h-7 w-7 rounded text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-white/10"
+                        aria-label="delete"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 pt-1">
+                    <input
+                      type="date"
+                      value={newHoliday.date}
+                      onChange={(e) => setNewHoliday({ ...newHoliday, date: e.target.value })}
+                      className={inputBox}
+                    />
+                    <input
+                      value={newHoliday.name}
+                      onChange={(e) => setNewHoliday({ ...newHoliday, name: e.target.value })}
+                      onKeyDown={(e) => e.key === 'Enter' && addHoliday()}
+                      placeholder={tr('settings_new_item')}
+                      className={`flex-1 ${inputBox}`}
+                    />
+                    <button onClick={addHoliday} className={btnSecondary}>
+                      {tr('common_add')}
+                    </button>
+                  </div>
+                </div>
+              </Section>
+              </>
+            )}
+            {panel === 'health' && (
+              <>
+              <Section title={tr('settings_health')} help={tr('settings_health_help')}>
+                <div className="flex flex-wrap gap-6 text-sm text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#e08a00]" />
+                    {tr('settings_orange')}
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={Math.round(settings.orangeTolerance * 100)}
+                      onChange={(e) => setTolerance('orangeTolerance', e.target.value)}
+                      className={`w-16 ${inputBox}`}
+                    />
+                    %
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#c62828]" />
+                    {tr('settings_red')}
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={Math.round(settings.redTolerance * 100)}
+                      onChange={(e) => setTolerance('redTolerance', e.target.value)}
+                      className={`w-16 ${inputBox}`}
+                    />
+                    %
+                  </label>
+                </div>
+              </Section>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-between border-t border-gray-200 px-5 py-3 dark:border-white/10">

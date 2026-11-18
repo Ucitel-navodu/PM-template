@@ -64,6 +64,7 @@ interface WorkspaceState {
   decideChange: (id: string, approve: boolean, opts?: { baseline?: boolean; decision?: boolean }) => void
   /** Write a reviewed import plan (MS Project / Excel / CSV) into the active project: one undo step. */
   importPlan: (plan: FilePlan, removed: RemovedChoice) => void
+  setLinks: (links: Project['links']) => void
   saveStatusReport: (report: StatusReport) => void
   deleteStatusReport: (id: string) => void
   updateReportSettings: (patch: Partial<ReportSettings>) => void
@@ -375,6 +376,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             (p) => auditForFilePlan(plan, removed, p.id),
           )
         },
+        setLinks: (links) => setProject((p) => ({ ...p, links })),
         saveStatusReport: (report) =>
           setProject(
             (p) => ({ ...p, statusReports: [...p.statusReports.filter((r) => r.id !== report.id), report] }),

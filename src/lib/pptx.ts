@@ -266,6 +266,12 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
       [{ text: tr('budget_current'), options: { bold: true } }, { text: formatMoney(b.current, cur), options: { bold: true, align: 'right' } }],
       [{ text: tr('report_actual') }, { text: formatMoney(b.actual, cur), options: { align: 'right' } }],
       [{ text: tr('report_budget_forecast') }, { text: formatMoney(b.forecast, cur), options: { align: 'right' } }],
+      ...(b.capex || b.opex
+        ? [
+            [{ text: '– CAPEX' }, { text: formatMoney(b.capex, cur), options: { align: 'right' as const } }],
+            [{ text: '– OPEX' }, { text: formatMoney(b.opex, cur), options: { align: 'right' as const } }],
+          ]
+        : []),
       [{ text: tr('report_variance'), options: { bold: true } }, { text: formatMoney(b.variance, cur), options: { bold: true, align: 'right', color: b.variance < 0 ? 'E11D48' : '16A34A' } }],
     ],
     { x: 8.6, y: 1.5, w: 4.2, colW: [2.2, 2], fontSize: 11, border: { type: 'solid', color: 'E5E7EB', pt: 0.75 } },

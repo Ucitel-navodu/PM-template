@@ -97,9 +97,19 @@ export interface Milestone {
 
 export type BudgetCategory = string
 
+export type CostType = 'CAPEX' | 'OPEX'
+
+export interface ProjectLink {
+  id: string
+  label: string
+  url: string
+}
+
 export interface BudgetItem {
   id: string
   category: BudgetCategory
+  // Investment vs. operating cost; empty = not classified yet
+  costType?: CostType
   supplier: string
   description: string
   linkedMilestoneId?: string
@@ -249,6 +259,7 @@ export interface TaskView {
   filters: Record<string, string>
   hiddenColumns: string[]
   sort?: { id: string; desc: boolean }
+  columnSizes?: Record<string, number>
 }
 
 export type Rag = 'Green' | 'Amber' | 'Red'
@@ -301,6 +312,8 @@ export interface Project {
   auditLog: AuditEntry[]
   statusReports: StatusReport[]
   importLog: ImportRecord[]
+  // Quick links on the dashboard (Clarity, SharePoint, ...)
+  links: ProjectLink[]
   milestones: Milestone[]
   budget: BudgetItem[]
   risks: Risk[]
@@ -309,7 +322,7 @@ export interface Project {
   updatedAt: string
 }
 
-export const WORKSPACE_SCHEMA_VERSION = 7
+export const WORKSPACE_SCHEMA_VERSION = 8
 
 export interface Workspace {
   fileType: 'pm-web-workspace'

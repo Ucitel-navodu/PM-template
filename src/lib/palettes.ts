@@ -10,7 +10,7 @@
  * scale for a custom accent colour.
  */
 
-export type PaletteId = 'light' | 'nexus' | 'nebula' | 'emerald' | 'sapphire' | 'titanium'
+export type PaletteId = 'corp-light' | 'corp-dark' | 'light' | 'nexus' | 'nebula' | 'emerald' | 'sapphire' | 'titanium'
 
 export interface Palette {
   id: PaletteId
@@ -21,6 +21,9 @@ export interface Palette {
   swatch: [string, string, string]
 }
 
+/** Brand manual: red Pantone 485 C, greys Pantone 431 C and 429 C. */
+export const CORPORATE = { red: '#d81e04', grey: '#676d6f', lightGrey: '#aeafab' } as const
+
 export const PALETTES: Palette[] = [
   { id: 'nexus', name: 'Nexus Cyan', note: 'výchozí', dark: true, swatch: ['#0a0f1c', '#0f172a', '#00d4ff'] },
   { id: 'nebula', name: 'Nebula Violet', dark: true, swatch: ['#100c1f', '#201932', '#c29aff'] },
@@ -28,12 +31,14 @@ export const PALETTES: Palette[] = [
   { id: 'sapphire', name: 'Sapphire Command', dark: true, swatch: ['#091321', '#14263d', '#70adff'] },
   { id: 'titanium', name: 'Titanium Graphite', dark: true, swatch: ['#101318', '#202630', '#b4d2e4'] },
   { id: 'light', name: 'Světlý', dark: false, swatch: ['#f9fafb', '#ffffff', '#5b30f0'] },
+  { id: 'corp-light', name: 'Korporátní světlá', dark: false, swatch: ['#f2f2f1', '#ffffff', CORPORATE.red] },
+  { id: 'corp-dark', name: 'Korporátní tmavá', dark: true, swatch: ['#1c1e1f', '#2a2d2e', CORPORATE.red] },
 ]
 
 export const DEFAULT_PALETTE: PaletteId = 'nexus'
 const IDS = new Set<string>(PALETTES.map((p) => p.id))
 export const validPalette = (id: unknown): PaletteId => (typeof id === 'string' && IDS.has(id) ? (id as PaletteId) : DEFAULT_PALETTE)
-export const isDark = (id: PaletteId) => id !== 'light'
+export const isDark = (id: PaletteId) => PALETTES.find((p) => p.id === id)?.dark ?? true
 
 // --- colour maths (sRGB) -------------------------------------------------------------------
 

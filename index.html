@@ -10,7 +10,7 @@
         var p = JSON.parse(localStorage.getItem('pm-web:palette') || 'null')
         if (!p) p = JSON.parse(localStorage.getItem('pm-web:theme') || 'null') === 'light' ? 'light' : 'nexus'
         document.documentElement.dataset.theme = p
-        document.documentElement.classList.toggle('dark', p !== 'light')
+        document.documentElement.classList.toggle('dark', p !== 'light' && p !== 'corp-light')
       } catch (e) {}
     </script>
   </head>

@@ -124,3 +124,20 @@ src/
 scripts/                   csp.mjs, licenses.mjs (build kroky)
 tests/e2e/                 Playwright scénáře
 ```
+
+## Novinky ve verzi 0.9.0
+
+- **Úkoly**: psaní do názvu / vlastníka už neztrácí fokus; šířku sloupců lze měnit tažením (dvojklik = výchozí);
+  nástroje řádku (přesun, odsazení, ＋ úkol, ＋ podúkol) jsou na začátku řádku a zůstávají vidět při posunu;
+  pořadí úkolů lze měnit tažením za ⠿ (včetně podúkolů, jeden krok Zpět).
+- **Rozpočet**: typ nákladu **CAPEX / OPEX** – součty, filtr, Dashboard, report, PPTX, export i import.
+- **Dashboard**: karta **Odkazy** (Clarity, SharePoint, vlastní); jen adresy http(s), otevírají se v novém okně.
+- **Pracovní soubor ve více formátech**: `.pmw` (doporučeno pro SharePoint), `.xlsx` (čitelné listy + kompletní
+  data ve skrytém listu `PM_DATA`), `.txt`, `.pmw.json`. Otevření pozná formát podle obsahu; automatické
+  ukládání a hlídání kolizí funguje ve všech.
+- **Import původní šablony Excel** (`.xlsm` / `.xlsx`): najde záhlaví i pod titulky, listy TASKS / MILESTONES /
+  BUDGET / RISKS, údaje projektu z DASHBOARD a číselníky z CONFIG. Makra se nečtou ani nespouštějí.
+- **Korporátní barvy**: palety Korporátní světlá / tmavá (červená `#d81e04`, šedé `#676d6f`, `#aeafab`);
+  tlačítkem lze barvu palety použít i pro report a PPTX.
+- **Nastavení v panelech** s levým menu a hledáním; tlačítka na stránkách otevírají rovnou svůj panel
+  (Úkoly → Fáze projektu, Rozpočet → Kategorie rozpočtu).

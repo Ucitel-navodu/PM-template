@@ -96,6 +96,42 @@ html[data-theme="titanium"] {
   --pm-brand-900: 50 59 64;
 }
 
+/* Corporate palettes: brand red #d81e04 (Pantone 485 C), greys #676d6f (431 C) and #aeafab (429 C). */
+html[data-theme="corp-light"] {
+  --pm-bg: 242 242 241;
+  --pm-card: 255 255 255;
+  --pm-primary: 216 30 4;
+  --pm-brand-50: 253 244 242;
+  --pm-brand-100: 251 232 230;
+  --pm-brand-200: 246 206 200;
+  --pm-brand-300: 239 160 150;
+  --pm-brand-400: 229 106 89;
+  --pm-brand-500: 221 62 39;
+  --pm-brand-600: 216 30 4;
+  --pm-brand-700: 177 25 3;
+  --pm-brand-800: 143 20 3;
+  --pm-brand-900: 108 15 2;
+}
+html[data-theme="corp-light"] body {
+  background-color: #f2f2f1;
+  color: #2b2e2f;
+}
+html[data-theme="corp-dark"] {
+  --pm-bg: 28 30 31;
+  --pm-card: 42 45 46;
+  --pm-primary: 216 30 4;
+  --pm-brand-50: 51 30 28;
+  --pm-brand-100: 66 30 26;
+  --pm-brand-200: 92 30 22;
+  --pm-brand-300: 228 102 84;
+  --pm-brand-400: 228 102 84;
+  --pm-brand-500: 221 57 34;
+  --pm-brand-600: 216 30 4;
+  --pm-brand-700: 177 25 3;
+  --pm-brand-800: 143 20 3;
+  --pm-brand-900: 108 15 2;
+}
+
 html, body, #root {
   height: 100%;
 }

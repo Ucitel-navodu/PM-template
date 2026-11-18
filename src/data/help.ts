@@ -42,7 +42,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       items: [
         {
           q: "Kde jsou moje data?",
-          a: "Primárně v pracovním souboru .pmw.json, který si jednou uložíš přes 💾 Soubor → Uložit do souboru… (ideálně na OneDrive nebo síťový disk – soubor pak zálohuje IT). Appka do něj od té doby ukládá automaticky pár sekund po každé změně. Prohlížeč drží jen pracovní kopii a zálohy. Nic se neposílá na internet – appka má zakázané veškeré síťové spojení.",
+          a: "Primárně v pracovním souboru (.pmw, .xlsx, .txt nebo .pmw.json – formát si vybereš), který si jednou uložíš přes 💾 Soubor → Uložit do souboru… (ideálně na OneDrive nebo síťový disk – soubor pak zálohuje IT). Appka do něj od té doby ukládá automaticky pár sekund po každé změně. Prohlížeč drží jen pracovní kopii a zálohy. Nic se neposílá na internet – appka má zakázané veškeré síťové spojení.",
         },
         {
           q: "Co znamená stav v hlavičce (Uloženo / Neuloženo / Jen v prohlížeči…)?",
@@ -63,6 +63,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         {
           q: "Jde vrátit omylem provedená změna?",
           a: "Ano – tlačítka ↶ ↷ v hlavičce nebo Ctrl+Z / Ctrl+Y (mimo textová pole). Pamatuje se posledních 100 kroků od otevření appky.",
+        },
+        {
+          q: "SharePoint nechce uložit soubor .json. Co s tím?",
+          a: "Ulož pracovní soubor v jiném formátu: 💾 Soubor → Uložit do souboru… → vyber .pmw (doporučeno), .xlsx nebo .txt. Všechny obsahují stejná kompletní data, automatické ukládání i hlídání kolizí funguje stejně. Varianta .xlsx je navíc čitelná v Excelu (listy TASKS, BUDGET…); úpravy udělané v Excelu se ale zpět nenačtou – data appky jsou ve skrytém listu PM_DATA.",
+        },
+        {
+          q: "Jak načtu data z původní excelové šablony (.xlsm)?",
+          a: "💾 Soubor → Import… a vyber sešit .xlsm nebo .xlsx. Appka najde listy TASKS, MILESTONES, BUDGET a RISKS (i když je záhlaví až pod titulky), údaje projektu z listu DASHBOARD a číselníky z CONFIG. Před zápisem ukáže, co se přidá a změní. Makra se nečtou ani nespouštějí.",
         },
         {
           q: "Mám starší export projektu (.json) z dřívější verze appky. Jde načíst?",
@@ -335,7 +343,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
       items: [
         {
           q: "Where is my data?",
-          a: "Primarily in a working file (.pmw.json) you save once via 💾 File → Save to file… (ideally on OneDrive or a network drive, so IT backs it up). From then on the app saves into it automatically a few seconds after each change. The browser only keeps a working copy and backups. Nothing is sent to the internet - all network access is blocked.",
+          a: "Primarily in a working file (.pmw, .xlsx, .txt or .pmw.json - you pick the format) you save once via 💾 File → Save to file… (ideally on OneDrive or a network drive, so IT backs it up). From then on the app saves into it automatically a few seconds after each change. The browser only keeps a working copy and backups. Nothing is sent to the internet - all network access is blocked.",
         },
         {
           q: "What does the status in the header mean (Saved / Unsaved / Browser only…)?",
@@ -356,6 +364,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         {
           q: "Can I undo a mistake?",
           a: "Yes - the ↶ ↷ buttons in the header or Ctrl+Z / Ctrl+Y (outside text fields). The last 100 steps since opening the app are kept.",
+        },
+        {
+          q: "SharePoint refuses the .json file. What now?",
+          a: "Save the working file in another format: 💾 File → Save to file… → pick .pmw (recommended), .xlsx or .txt. All of them hold the same complete data; autosave and conflict detection work the same. The .xlsx variant is also readable in Excel (sheets TASKS, BUDGET…), but edits made in Excel are not read back - the app data lives in the hidden sheet PM_DATA.",
+        },
+        {
+          q: "How do I load data from the original Excel template (.xlsm)?",
+          a: "💾 File → Import… and pick the .xlsm or .xlsx workbook. The app finds the sheets TASKS, MILESTONES, BUDGET and RISKS (even when the header row sits under title rows), the project card from DASHBOARD and the lists from CONFIG. It shows what will be added and changed before writing. Macros are neither read nor run.",
         },
         {
           q: "I have an older project export (.json). Can I load it?",

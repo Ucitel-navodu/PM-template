@@ -1,10 +1,10 @@
 import { useState } from 'react'
+import { requestSaveAs } from './FileMenu'
 import { useApp } from '../context/AppContext'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import {
   downloadCopy,
   fileAccessSupported,
-  linkNewFile,
   reconnect,
   reloadReadOnly,
   resolveOverwrite,
@@ -42,7 +42,7 @@ export function SyncBanner() {
         <>
           <span className="flex-1">{fileAccessSupported ? tr('banner_local_only') : tr('banner_local_only_fallback')}</span>
           {fileAccessSupported ? (
-            <button className={btn} onClick={() => void linkNewFile()}>
+            <button className={btn} onClick={requestSaveAs}>
               💾 {tr('file_link_new')}
             </button>
           ) : (
