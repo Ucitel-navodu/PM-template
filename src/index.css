@@ -158,6 +158,19 @@ html.dark select {
   color-scheme: dark;
 }
 
+/* Drop-down lists: the opened list takes its own colours from the system (white on Windows),
+   while the text colour is inherited from the dark page - set both explicitly so it stays readable. */
+select option,
+select optgroup {
+  background-color: #ffffff;
+  color: #1a1d23;
+}
+html.dark select option,
+html.dark select optgroup {
+  background-color: rgb(var(--pm-card));
+  color: #e7e6f0;
+}
+
 /* Printed status report: A4 landscape, light, app chrome hidden (print:hidden). */
 @page {
   size: A4 landscape;

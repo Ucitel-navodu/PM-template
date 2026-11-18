@@ -101,6 +101,17 @@ if (shots) await page.screenshot({ path: `${shots}/palette-light.png` })
 await page.getByRole('button', { name: /^Tmavý$/ }).click()
 check('toggle returns to the last dark palette', (await theme()) === 'emerald')
 
+// opened drop-down lists stay readable on a dark palette (text vs. list background)
+await page.locator('nav button', { hasText: 'Úkoly' }).first().click()
+await page.waitForSelector('tbody tr select')
+const opt = await page.evaluate(() => {
+  const lum = (c) => c.match(/\d+/g).slice(0, 3).map((v) => v / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((a, c, i) => a + c * [0.2126, 0.7152, 0.0722][i], 0)
+  const cs = getComputedStyle(document.querySelector('tbody tr select option'))
+  const [a, b] = [lum(cs.color), lum(cs.backgroundColor)].sort((x, y) => y - x)
+  return { ratio: (a + 0.05) / (b + 0.05), color: cs.color, bg: cs.backgroundColor }
+})
+check('drop-down options are readable in dark mode (contrast >= 7)', opt.ratio >= 7, JSON.stringify(opt))
+
 // every page renders in a non-default palette (visual smoke + no errors)
 for (const tab of ['Úkoly', 'Gantt', 'Kanban', 'RAID', 'Report', 'Portfolio']) {
   await page.locator('nav button', { hasText: tab }).first().click()
