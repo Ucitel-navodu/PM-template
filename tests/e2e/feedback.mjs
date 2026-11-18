@@ -78,16 +78,52 @@ const tb = await page.locator('tr[data-task-no="2"]').boundingBox()
 await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2)
 await page.mouse.down()
 await page.mouse.move(hb.x + 8, hb.y - 8, { steps: 4 })
-await page.mouse.move(tb.x + 80, tb.y + tb.height / 2, { steps: 15 })
+await page.mouse.move(tb.x + 80, tb.y + 6, { steps: 15 })
+await page.waitForTimeout(100)
+check('an insertion line shows where the task lands (above the row)', (await page.locator('tr[data-task-no="2"]').getAttribute('data-drop')) === 'before')
+await page.mouse.move(tb.x + 80, tb.y + tb.height - 5, { steps: 4 })
+await page.waitForTimeout(100)
+check('…and below the row in its lower half', (await page.locator('tr[data-task-no="2"]').getAttribute('data-drop')) === 'after')
+if (shots) await page.screenshot({ path: `${shots}/drag-line.png` })
+await page.mouse.move(tb.x + 80, tb.y + 6, { steps: 4 })
 await page.mouse.up()
 await page.waitForTimeout(300)
 const after = await order()
 const a = after.split(',')
 check('drag & drop moves the task before the drop target', after !== before && a.indexOf('5') === a.indexOf('2') - 1, `${before} -> ${after}`)
+check('the line disappears after the drop', (await page.locator('tr[data-drop]').count()) === 0)
 await page.mouse.click(3, 300)
 await page.keyboard.press('Control+z')
 await page.waitForTimeout(200)
 check('Ctrl+Z reverts the move', (await order()) === before, await order())
+
+// 3b) the table scrolls inside its own box: header and horizontal scrollbar stay within reach
+await page.setViewportSize({ width: 1600, height: 620 })
+const box = await page.getByTestId('tasks-scroll').evaluate((w) => {
+  w.scrollTop = 200
+  const th = w.querySelector('thead th[data-col="name"]').getBoundingClientRect()
+  const r = w.getBoundingClientRect()
+  const out = { fits: r.height <= innerHeight, scrolls: w.scrollHeight > w.clientHeight, headerStuck: Math.abs(th.top - r.top) < 3, wide: w.scrollWidth > w.clientWidth }
+  w.scrollTop = 0
+  return out
+})
+await page.setViewportSize({ width: 1600, height: 950 })
+check('long task list scrolls inside the table box with a sticky header', box.fits && box.scrolls && box.headerStuck && box.wide, JSON.stringify(box))
+
+// 3c) selection mode: bulk delete in one undo step
+const n0 = await page.locator('tbody tr[data-task-no]').count()
+check('no checkboxes until selection mode is on', (await page.locator('[data-select]').count()) === 0)
+await page.getByTestId('select-mode').click()
+await page.locator('tr[data-task-no="14"] [data-select]').click()
+await page.locator('tr[data-task-no="16"] [data-select]').click({ modifiers: ['Shift'] })
+check('Shift+click selects a range', (await page.getByTestId('select-bar').innerText()).includes('Vybráno: 3'), await page.getByTestId('select-bar').innerText())
+await page.getByTestId('delete-selected').click()
+await page.waitForTimeout(200)
+check('selected tasks are deleted and the mode switches off', (await page.locator('tbody tr[data-task-no]').count()) === n0 - 3 && (await page.locator('[data-select]').count()) === 0)
+await page.mouse.click(3, 300)
+await page.keyboard.press('Control+z')
+await page.waitForTimeout(200)
+check('Ctrl+Z brings them all back', (await page.locator('tbody tr[data-task-no]').count()) === n0)
 
 // 4) add a subtask from the row
 const count = await page.locator('tbody tr[data-task-no]').count()

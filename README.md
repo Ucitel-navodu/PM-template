@@ -141,3 +141,6 @@ tests/e2e/                 Playwright scénáře
   tlačítkem lze barvu palety použít i pro report a PPTX.
 - **Nastavení v panelech** s levým menu a hledáním; tlačítka na stránkách otevírají rovnou svůj panel
   (Úkoly → Fáze projektu, Rozpočet → Kategorie rozpočtu).
+- **Úkoly – doplnění**: při přetahování ukazuje čára, kam úkol dopadne (nad / pod řádek); tabulka má vlastní
+  posuvníky a lepivé záhlaví, takže vodorovný posuvník je vždy po ruce; režim **☑ Vybrat** pro hromadné mazání
+  (Shift+klik = rozsah, jeden krok Zpět).

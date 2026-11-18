@@ -83,8 +83,12 @@ const DEFAULT_SIZES: Record<string, number> = { actions: 150, no: 44, wbs: 60, n
 // The row tools stay visible while the table scrolls sideways on narrow screens.
 const STICKY = 'sticky left-0 z-10 bg-white dark:bg-[rgb(var(--pm-card))]'
 
+// Insertion line while dragging: where the task lands (above / below the row under the pointer).
+const DROP_BEFORE = '[&>td]:shadow-[inset_0_3px_0_0_rgb(var(--pm-primary))]'
+const DROP_AFTER = '[&>td]:shadow-[inset_0_-3px_0_0_rgb(var(--pm-primary))]'
+
 /** A table row that can be dragged by its handle and is a drop target for other rows. */
-function TaskRow({ row, className, dnd, onKeyDown, renderCell }: { row: Row<Task>; className: string; dnd: boolean; onKeyDown: (e: React.KeyboardEvent) => void; renderCell: (c: Cell<Task, unknown>) => React.ReactNode }) {
+function TaskRow({ row, className, dnd, hint, select, onKeyDown, renderCell }: { row: Row<Task>; className: string; dnd: boolean; hint?: 'before' | 'after'; select?: { on: boolean; toggle: (shift: boolean) => void }; onKeyDown: (e: React.KeyboardEvent) => void; renderCell: (c: Cell<Task, unknown>) => React.ReactNode }) {
   const drag = useDraggable({ id: row.id, disabled: !dnd })
   const drop = useDroppable({ id: row.id, disabled: !dnd })
   return (
@@ -92,13 +96,17 @@ function TaskRow({ row, className, dnd, onKeyDown, renderCell }: { row: Row<Task
       ref={drop.setNodeRef}
       data-task-no={row.original.no}
       onKeyDown={onKeyDown}
-      className={`${className} ${drag.isDragging ? 'opacity-40' : ''} ${drop.isOver && !drag.isDragging ? 'outline outline-2 -outline-offset-2 outline-brand-500' : ''}`}
+      data-drop={hint}
+      className={`${className} ${drag.isDragging ? 'opacity-40' : ''} ${hint === 'before' ? DROP_BEFORE : hint === 'after' ? DROP_AFTER : ''} ${select?.on ? 'bg-brand-50 dark:bg-white/10' : ''}`}
     >
       {row.getVisibleCells().map((cell) => (
         <td key={cell.id} className={`overflow-hidden px-2 py-1 ${cell.column.id === 'actions' ? STICKY : ''}`}>
           {cell.column.id === 'actions' ? (
             <div className="flex items-center gap-0.5">
-              {dnd && (
+              {select && (
+                <input type="checkbox" data-select checked={select.on} onChange={() => undefined} onClick={(e) => select.toggle(e.shiftKey)} aria-label="select" className="mx-1 h-4 w-4 accent-[rgb(var(--pm-primary))]" />
+              )}
+              {dnd && !select && (
                 <button ref={drag.setNodeRef} {...drag.listeners} {...drag.attributes} data-drag-handle className="cursor-grab touch-none px-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" aria-label="drag">
                   ⠿
                 </button>
@@ -182,6 +190,11 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [sizing, setSizing] = useState<ColumnSizingState>(() => ({ ...DEFAULT_SIZES, ...loadPref<ColumnSizingState>('taskColumnSizes', {}) }))
   useEffect(() => savePref('taskColumnSizes', sizing), [sizing])
   const [dragId, setDragId] = useState<string | null>(null)
+  const [dropHint, setDropHint] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
+  // Selection mode (bulk delete): off by default so the grid stays calm.
+  const [selecting, setSelecting] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [lastPicked, setLastPicked] = useState<string | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
   const [viewId, setViewId] = useState('')
   const [baselinesOpen, setBaselinesOpen] = useState(false)
@@ -592,6 +605,26 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
     return typeof def === 'function' ? def(cell.getContext()) : def
   }
   // Reordering by drag & drop only makes sense in the natural outline order.
+  const pick = (id: string, shift: boolean) => {
+    const ids = table.getRowModel().rows.map((r) => r.id)
+    setSelected((cur) => {
+      const next = new Set(cur)
+      const [a, b] = [ids.indexOf(lastPicked ?? id), ids.indexOf(id)].sort((x, y) => x - y)
+      // Shift+click selects the whole range from the previously clicked row.
+      if (shift && lastPicked && a >= 0) ids.slice(a, b + 1).forEach((x) => next.add(x))
+      else if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+    setLastPicked(id)
+  }
+  const removeSelected = () => {
+    const all = new Set([...selected].flatMap((id) => subtreeIds(tasks, id)))
+    if (!window.confirm(tr('tasks_delete_selected_confirm').replace('{n}', String(all.size)))) return
+    store.deleteTasks([...selected])
+    setSelected(new Set())
+    setSelecting(false)
+  }
   const canDrag = !readOnly && sorting.length === 0 && !Object.values(filters).some(Boolean)
 
   // --- saved views ----------------------------------------------------------
@@ -761,11 +794,41 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
           <button onClick={exportCsv} className={btnSecondary}>
             {tr('tasks_export_csv')}
           </button>
+          <button
+            onClick={() => {
+              setSelecting((v) => !v)
+              setSelected(new Set())
+            }}
+            className={`${btnSecondary} ${selecting ? 'ring-2 ring-brand-500' : ''}`}
+            aria-pressed={selecting}
+            disabled={readOnly}
+            data-testid="select-mode"
+          >
+            ☑ {tr('tasks_select')}
+          </button>
           <button onClick={() => addTask({ phase: filters.phase || settings.phases[0] || '' })} className={btnPrimary} disabled={readOnly}>
             {tr('tasks_add')}
           </button>
         </div>
       </div>
+
+      {selecting && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-brand-500/40 bg-brand-50 px-3 py-2 text-sm text-gray-800 dark:bg-white/5 dark:text-gray-100" data-testid="select-bar">
+          <b>{tr('tasks_selected').replace('{n}', String(selected.size))}</b>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{tr('tasks_select_hint')}</span>
+          <span className="ml-auto flex flex-wrap gap-2">
+            <button className={btnSecondary} onClick={() => setSelected(new Set(table.getRowModel().rows.map((r) => r.id)))}>
+              {tr('tasks_select_all')}
+            </button>
+            <button className={btnSecondary} onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
+              {tr('tasks_select_none')}
+            </button>
+            <button className="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-40" onClick={removeSelected} disabled={selected.size === 0} data-testid="delete-selected">
+              🗑 {tr('tasks_delete_selected')}
+            </button>
+          </span>
+        </div>
+      )}
 
       {sched.cycle.length > 0 && (
         <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
@@ -777,19 +840,32 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={(e) => setDragId(String(e.active.id))}
-        onDragCancel={() => setDragId(null)}
-        onDragEnd={(e) => {
+        onDragMove={(e) => {
+          // Upper half of the row under the pointer = insert above it, lower half = below it.
+          const start = e.activatorEvent as PointerEvent
+          const y = start.clientY + e.delta.y
+          const hint = e.over && e.over.id !== e.active.id ? { id: String(e.over.id), pos: y < e.over.rect.top + e.over.rect.height / 2 ? ('before' as const) : ('after' as const) } : null
+          setDropHint((h) => (h?.id === hint?.id && h?.pos === hint?.pos ? h : hint))
+        }}
+        onDragCancel={() => {
           setDragId(null)
-          if (e.over && e.over.id !== e.active.id) store.setTasks((ts) => moveSubtree(ts, String(e.active.id), String(e.over!.id)))
+          setDropHint(null)
+        }}
+        onDragEnd={(e) => {
+          const hint = dropHint
+          setDragId(null)
+          setDropHint(null)
+          if (hint && hint.id !== e.active.id) store.setTasks((ts) => moveSubtree(ts, String(e.active.id), hint.id, hint.pos))
         }}
       >
-        <div className={tableWrap}>
+        {/* Own scroll area: the header row and the horizontal scrollbar are always within reach. */}
+        <div className={`${tableWrap} max-h-[calc(100vh-11rem)] min-h-[16rem] overflow-y-auto`} data-testid="tasks-scroll">
           <table className="text-sm" style={{ width: table.getTotalSize(), tableLayout: 'fixed' }}>
             <thead>
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id} className={theadRow}>
                   {hg.headers.map((h) => (
-                    <th key={h.id} className={`overflow-hidden whitespace-nowrap px-2 py-2 ${h.id === 'actions' ? `${STICKY} z-20` : 'relative'}`} style={{ width: h.getSize() }} data-col={h.id}>
+                    <th key={h.id} className={`sticky top-0 overflow-hidden whitespace-nowrap bg-gray-50 px-2 py-2 dark:bg-[rgb(var(--pm-card))] ${h.id === 'actions' ? 'left-0 z-30' : 'z-20'}`} style={{ width: h.getSize() }} data-col={h.id}>
                       {h.column.getCanSort() ? (
                         <button className="max-w-full truncate uppercase" onClick={h.column.getToggleSortingHandler()} title={h.id === 'variance' ? tr('plan_variance_help') : String(h.column.columnDef.header)}>
                           {flexRender(h.column.columnDef.header, h.getContext())}
@@ -822,6 +898,8 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
                     key={row.id}
                     row={row}
                     dnd={canDrag}
+                    hint={dropHint?.id === row.id ? dropHint.pos : undefined}
+                    select={selecting ? { on: selected.has(row.id), toggle: (shift) => pick(row.id, shift) } : undefined}
                     onKeyDown={(e) => onRowKey(e, row.id)}
                     renderCell={renderCell}
                     className={`${tbodyRow} ${summary ? 'bg-gray-50/70 dark:bg-white/[0.03]' : ''} ${critical ? 'shadow-[inset_3px_0_0_#e11d48]' : ''}`}
@@ -832,7 +910,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
           </table>
         </div>
         <DragOverlay>
-          {dragId ? <div className="rounded-md border border-brand-500 bg-white px-3 py-1.5 text-sm shadow-lg dark:bg-[rgb(var(--pm-card))] dark:text-gray-100">{tasks.find((t) => t.id === dragId)?.name || '—'}</div> : null}
+          {dragId ? <div className="w-max max-w-md truncate whitespace-nowrap rounded-md border border-brand-500 bg-white px-3 py-1.5 text-sm shadow-lg dark:bg-[rgb(var(--pm-card))] dark:text-gray-100">{tasks.find((t) => t.id === dragId)?.name || '—'}</div> : null}
         </DragOverlay>
       </DndContext>
       {baselinesOpen && <BaselinesDialog onClose={() => setBaselinesOpen(false)} />}

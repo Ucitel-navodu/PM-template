@@ -48,6 +48,8 @@ interface WorkspaceState {
   updateTask: (id: string, patch: Partial<Task>) => void
   /** Delete a task with its subtask and remove links pointing to them. */
   deleteTask: (id: string) => void
+  /** Delete several tasks (with their subtasks) as one undo step. */
+  deleteTasks: (ids: string[]) => void
   /** Structural edits (indent/outdent/move) on the ordered task list. */
   setTasks: (fn: (tasks: Task[]) => Task[]) => void
   saveBaseline: (name: string, primary: boolean) => void
@@ -237,9 +239,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             }),
           )
         },
-        deleteTask: (id) =>
+        deleteTask: (id) => get().deleteTasks([id]),
+        deleteTasks: (ids) => {
+          lastTrackedAt = 0 // deleting is always its own undo step
           setTaskList((tasks) => {
-            const gone = new Set(subtreeIds(tasks, id))
+            const gone = new Set(ids.flatMap((id) => subtreeIds(tasks, id)))
             return tasks
               .filter((t) => !gone.has(t.id))
               .map((t) =>
@@ -247,7 +251,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
                   ? { ...t, dependencies: t.dependencies.filter((d) => !gone.has(d.predId)) }
                   : t,
               )
-          }),
+          })
+        },
         setTasks: (fn) => setTaskList(fn),
         saveBaseline: (name, primary) =>
           setProject((p) => {
