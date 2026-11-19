@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   createColumnHelper,
   flexRender,
@@ -78,7 +79,7 @@ function DraftInput({ value, onCommit, className, list, label }: { value: string
   )
 }
 
-const DEFAULT_SIZES: Record<string, number> = { actions: 150, no: 44, wbs: 60, name: 320, mode: 120, duration: 84, start: 132, finish: 132, predecessors: 130, percent: 96, status: 140, owner: 150, phase: 130, area: 130, priority: 110, milestone: 70, float: 84, freeFloat: 90, critical: 70, health: 90, baselineStart: 104, baselineFinish: 104, variance: 90, expected: 96, mgmtExport: 80, notes: 240 }
+const DEFAULT_SIZES: Record<string, number> = { actions: 84, no: 44, wbs: 60, name: 320, mode: 120, duration: 84, start: 132, finish: 132, predecessors: 130, percent: 96, status: 140, owner: 150, phase: 130, area: 130, priority: 110, milestone: 70, float: 84, freeFloat: 90, critical: 70, health: 90, baselineStart: 104, baselineFinish: 104, variance: 90, expected: 96, mgmtExport: 80, notes: 240 }
 
 // The row tools stay visible while the table scrolls sideways on narrow screens.
 const STICKY = 'sticky left-0 z-10 bg-white dark:bg-[rgb(var(--pm-card))]'
@@ -87,8 +88,88 @@ const STICKY = 'sticky left-0 z-10 bg-white dark:bg-[rgb(var(--pm-card))]'
 const DROP_BEFORE = '[&>td]:shadow-[inset_0_3px_0_0_rgb(var(--pm-primary))]'
 const DROP_AFTER = '[&>td]:shadow-[inset_0_-3px_0_0_rgb(var(--pm-primary))]'
 
+interface MenuItem {
+  id: string
+  icon: string
+  label: string
+  hint?: string
+  run: () => void
+  disabled?: boolean
+  danger?: boolean
+  separated?: boolean
+}
+
+/**
+ * Row tools as a menu (the \u22ef button or a right click). Rendered into <body>:
+ * the table scrolls in its own box and would clip it. Closes on outside click,
+ * Esc, scroll or after an action; arrow keys move between items.
+ */
+function RowMenu({ x, y, items, onClose }: { x: number; y: number; items: MenuItem[]; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: x, top: y })
+  // Keep the whole menu inside the window (rows at the bottom / right edge).
+  useLayoutEffect(() => {
+    const r = ref.current!.getBoundingClientRect()
+    setPos({ left: Math.max(4, Math.min(x, window.innerWidth - r.width - 4)), top: y + r.height > window.innerHeight - 4 ? Math.max(4, y - r.height - 4) : y })
+    ref.current!.querySelector<HTMLElement>('[role=menuitem]:not(:disabled)')?.focus()
+  }, [x, y])
+  useEffect(() => {
+    const away = (e: Event) => !ref.current?.contains(e.target as Node) && !(e.target as HTMLElement).closest?.('[data-row-menu]') && onClose()
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    document.addEventListener('mousedown', away)
+    document.addEventListener('scroll', onClose, true)
+    window.addEventListener('resize', onClose)
+    window.addEventListener('keydown', key)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      document.removeEventListener('scroll', onClose, true)
+      window.removeEventListener('resize', onClose)
+      window.removeEventListener('keydown', key)
+    }
+  }, [onClose])
+  const step = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    e.preventDefault()
+    const els = [...ref.current!.querySelectorAll<HTMLElement>('[role=menuitem]:not(:disabled)')]
+    const i = els.indexOf(document.activeElement as HTMLElement)
+    els[(i + (e.key === 'ArrowDown' ? 1 : -1) + els.length) % els.length]?.focus()
+  }
+  return createPortal(
+    <div
+      ref={ref}
+      role="menu"
+      data-testid="row-menu"
+      onKeyDown={step}
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ left: pos.left, top: pos.top }}
+      className="fixed z-50 min-w-[15rem] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]"
+    >
+      {items.map((it) => (
+        <button
+          key={it.id}
+          role="menuitem"
+          data-menu-item={it.id}
+          disabled={it.disabled}
+          onClick={() => {
+            onClose()
+            it.run()
+          }}
+          className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left outline-none hover:bg-gray-100 focus:bg-gray-100 disabled:opacity-40 dark:hover:bg-white/10 dark:focus:bg-white/10 ${it.separated ? 'mt-1 border-t border-gray-100 pt-2 dark:border-white/10' : ''} ${it.danger ? 'text-rose-600 dark:text-rose-400' : 'text-gray-700 dark:text-gray-200'}`}
+        >
+          <span aria-hidden className="w-4 text-center">
+            {it.icon}
+          </span>
+          <span className="flex-1 whitespace-nowrap">{it.label}</span>
+          {it.hint && <kbd className="ml-4 whitespace-nowrap font-sans text-[11px] text-gray-400">{it.hint}</kbd>}
+        </button>
+      ))}
+    </div>,
+    document.body,
+  )
+}
+
 /** A table row that can be dragged by its handle and is a drop target for other rows. */
-function TaskRow({ row, className, dnd, hint, select, onKeyDown, renderCell }: { row: Row<Task>; className: string; dnd: boolean; hint?: 'before' | 'after'; select?: { on: boolean; toggle: (shift: boolean) => void }; onKeyDown: (e: React.KeyboardEvent) => void; renderCell: (c: Cell<Task, unknown>) => React.ReactNode }) {
+function TaskRow({ row, className, dnd, hint, select, onKeyDown, onMenu, renderCell }: { onMenu: (x: number, y: number) => void; row: Row<Task>; className: string; dnd: boolean; hint?: 'before' | 'after'; select?: { on: boolean; toggle: (shift: boolean) => void }; onKeyDown: (e: React.KeyboardEvent) => void; renderCell: (c: Cell<Task, unknown>) => React.ReactNode }) {
   const drag = useDraggable({ id: row.id, disabled: !dnd })
   const drop = useDroppable({ id: row.id, disabled: !dnd })
   return (
@@ -96,6 +177,12 @@ function TaskRow({ row, className, dnd, hint, select, onKeyDown, renderCell }: {
       ref={drop.setNodeRef}
       data-task-no={row.original.no}
       onKeyDown={onKeyDown}
+      onContextMenu={(e) => {
+        // Fields keep the browser's own menu (copy / paste / spelling).
+        if ((e.target as HTMLElement).closest('input, select, textarea')) return
+        e.preventDefault()
+        onMenu(e.clientX, e.clientY)
+      }}
       data-drop={hint}
       className={`${className} ${drag.isDragging ? 'opacity-40' : ''} ${hint === 'before' ? DROP_BEFORE : hint === 'after' ? DROP_AFTER : ''} ${select?.on ? 'bg-brand-50 dark:bg-white/10' : ''}`}
     >
@@ -187,7 +274,8 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [visibility, setVisibility] = useState<VisibilityState>(() => Object.fromEntries(DEFAULT_HIDDEN.map((c) => [c, false])))
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   // Column widths: per device, also stored in saved views.
-  const [sizing, setSizing] = useState<ColumnSizingState>(() => ({ ...DEFAULT_SIZES, ...loadPref<ColumnSizingState>('taskColumnSizes', {}) }))
+  const [sizing, setSizing] = useState<ColumnSizingState>(() => ({ ...DEFAULT_SIZES, ...loadPref<ColumnSizingState>('taskColumnSizes', {}), actions: DEFAULT_SIZES.actions }))
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   useEffect(() => savePref('taskColumnSizes', sizing), [sizing])
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropHint, setDropHint] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
@@ -253,6 +341,22 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
     e.preventDefault()
   }
 
+  const menuTask = menu ? tasks.find((t) => t.id === menu.id) : undefined
+  const menuItems = (t: Task): MenuItem[] => {
+    // "Odsadit (Alt+Shift+→)" -> label + shortcut
+    const split = (text: string) => /^(.*?)\s*\((.+)\)$/.exec(text)?.slice(1) ?? [text, '']
+    const item = (id: string, icon: string, text: string, run: () => void, extra: Partial<MenuItem> = {}): MenuItem => ({ id, icon, label: split(text)[0], hint: split(text)[1], run, disabled: readOnly, ...extra })
+    return [
+      item('add-below', '＋', tr('plan_insert_below'), () => addTask({ phase: t.phase, projectArea: t.projectArea }, t.id)),
+      item('add-subtask', '↳', tr('plan_add_subtask'), () => addTask({ phase: t.phase, projectArea: t.projectArea, outlineLevel: t.outlineLevel + 1 }, t.id)),
+      item('indent', '⇥', tr('plan_indent'), () => store.setTasks((ts) => indent(ts, t.id)), { separated: true }),
+      item('outdent', '⇤', tr('plan_outdent'), () => store.setTasks((ts) => outdent(ts, t.id)), { disabled: readOnly || t.outlineLevel <= 1 }),
+      item('up', '↑', `${tr('plan_move_up')} (Alt+Shift+↑)`, () => store.setTasks((ts) => move(ts, t.id, -1))),
+      item('down', '↓', `${tr('plan_move_down')} (Alt+Shift+↓)`, () => store.setTasks((ts) => move(ts, t.id, 1))),
+      item('delete', '🗑', tr('tasks_delete'), () => removeTask(t), { separated: true, danger: true }),
+    ]
+  }
+
   const col = createColumnHelper<Task>()
   const columns = useMemo(
     () => [
@@ -261,29 +365,24 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         header: '',
         enableHiding: false,
         cell: ({ row: { original: t } }) => {
-          const b = 'rounded px-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-30 dark:hover:bg-white/10 dark:hover:text-gray-100'
+          const b = 'rounded px-1.5 py-0.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-30 dark:hover:bg-white/10 dark:hover:text-gray-100'
           return (
             <div className="flex gap-0.5 whitespace-nowrap">
-              <button className={b} title={tr('plan_outdent')} disabled={readOnly || t.outlineLevel <= 1} onClick={() => store.setTasks((ts) => outdent(ts, t.id))}>
-                ⇤
-              </button>
-              <button className={b} title={tr('plan_indent')} disabled={readOnly} onClick={() => store.setTasks((ts) => indent(ts, t.id))}>
-                ⇥
-              </button>
-              <button className={b} title={tr('plan_move_up')} disabled={readOnly} onClick={() => store.setTasks((ts) => move(ts, t.id, -1))}>
-                ↑
-              </button>
-              <button className={b} title={tr('plan_move_down')} disabled={readOnly} onClick={() => store.setTasks((ts) => move(ts, t.id, 1))}>
-                ↓
-              </button>
-              <button className={`${b} font-bold text-brand-600 dark:text-brand-300`} title={tr('plan_insert_below')} disabled={readOnly} onClick={() => addTask({ phase: t.phase, projectArea: t.projectArea }, t.id)}>
+              <button className={`${b} font-bold text-brand-600 dark:text-brand-300`} title={tr('plan_insert_below')} aria-label={tr('plan_insert_below')} data-add-below disabled={readOnly} onClick={() => addTask({ phase: t.phase, projectArea: t.projectArea }, t.id)}>
                 ＋
               </button>
-              <button className={`${b} text-brand-600 dark:text-brand-300`} title={tr('plan_add_subtask')} data-add-subtask disabled={readOnly} onClick={() => addTask({ phase: t.phase, projectArea: t.projectArea, outlineLevel: t.outlineLevel + 1 }, t.id)}>
-                ↳＋
-              </button>
-              <button className={`${b} hover:text-rose-600`} title={tr('tasks_delete')} disabled={readOnly} onClick={() => removeTask(t)}>
-                ✕
+              <button
+                className={b}
+                title={tr('plan_row_menu')}
+                aria-label={tr('plan_row_menu')}
+                aria-haspopup="menu"
+                data-row-menu
+                onClick={(e) => {
+                  const r = e.currentTarget.getBoundingClientRect()
+                  setMenu((m) => (m?.id === t.id ? null : { id: t.id, x: r.left, y: r.bottom + 2 }))
+                }}
+              >
+                ⋯
               </button>
             </div>
           )
@@ -636,7 +735,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
     setSorting(v?.sort ? [v.sort] : [])
     const hidden = v ? v.hiddenColumns : DEFAULT_HIDDEN
     setVisibility(Object.fromEntries(hidden.map((c) => [c, false])))
-    if (v?.columnSizes) setSizing({ ...DEFAULT_SIZES, ...v.columnSizes })
+    if (v?.columnSizes) setSizing({ ...DEFAULT_SIZES, ...v.columnSizes, actions: DEFAULT_SIZES.actions })
   }
   const saveView = () => {
     const name = window.prompt(tr('plan_view_name'), views.find((v) => v.id === viewId)?.name ?? '')?.trim()
@@ -901,6 +1000,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
                     hint={dropHint?.id === row.id ? dropHint.pos : undefined}
                     select={selecting ? { on: selected.has(row.id), toggle: (shift) => pick(row.id, shift) } : undefined}
                     onKeyDown={(e) => onRowKey(e, row.id)}
+                    onMenu={(x, y) => setMenu({ id: row.id, x, y })}
                     renderCell={renderCell}
                     className={`${tbodyRow} ${summary ? 'bg-gray-50/70 dark:bg-white/[0.03]' : ''} ${critical ? 'shadow-[inset_3px_0_0_#e11d48]' : ''}`}
                   />
@@ -913,6 +1013,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
           {dragId ? <div className="w-max max-w-md truncate whitespace-nowrap rounded-md border border-brand-500 bg-white px-3 py-1.5 text-sm shadow-lg dark:bg-[rgb(var(--pm-card))] dark:text-gray-100">{tasks.find((t) => t.id === dragId)?.name || '—'}</div> : null}
         </DragOverlay>
       </DndContext>
+      {menu && menuTask && <RowMenu x={menu.x} y={menu.y} items={menuItems(menuTask)} onClose={() => setMenu(null)} />}
       {baselinesOpen && <BaselinesDialog onClose={() => setBaselinesOpen(false)} />}
     </div>
   )

@@ -36,6 +36,7 @@ const dict = {
   plan_pred_invalid: { CZ: 'Neznámý zápis nebo úkol', EN: 'Unknown notation or task' },
   plan_constraint: { CZ: 'Nezačít dříve než {date} (posunuto ručně). Kliknutím zrušíš.', EN: 'Start no earlier than {date} (moved manually). Click to remove.' },
   plan_cycle: { CZ: 'Cyklická vazba – úkoly na sebe navzájem čekají: {tasks}. Oprav předchůdce.', EN: 'Circular dependency - tasks wait for each other: {tasks}. Fix the predecessors.' },
+  plan_row_menu: { CZ: 'Další akce (také pravé tlačítko myši)', EN: 'More actions (also right click)' },
   plan_indent: { CZ: 'Odsadit (Alt+Shift+→)', EN: 'Indent (Alt+Shift+→)' },
   plan_outdent: { CZ: 'Předsadit (Alt+Shift+←)', EN: 'Outdent (Alt+Shift+←)' },
   plan_move_up: { CZ: 'Posunout nahoru', EN: 'Move up' },

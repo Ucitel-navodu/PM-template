@@ -71,7 +71,8 @@ await page.waitForTimeout(200)
 check('undo restores the previous schedule', (await cellInput(b, C.start).inputValue()) === '2026-10-29', await cellInput(b, C.start).inputValue())
 
 // Hierarchy: indent B under A -> A becomes a summary with rolled-up dates
-await row(b).getByTitle(/Odsadit/).click()
+await row(b).locator('[data-row-menu]').click()
+await page.locator('[data-menu-item=indent]').click()
 await page.waitForTimeout(200)
 const wbsB = await row(b).locator('td').nth(C.wbs).innerText()
 check('indent creates a subtask (outline number)', /\.1$/.test(wbsB), wbsB)

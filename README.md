@@ -144,3 +144,5 @@ tests/e2e/                 Playwright scénáře
 - **Úkoly – doplnění**: při přetahování ukazuje čára, kam úkol dopadne (nad / pod řádek); tabulka má vlastní
   posuvníky a lepivé záhlaví, takže vodorovný posuvník je vždy po ruce; režim **☑ Vybrat** pro hromadné mazání
   (Shift+klik = rozsah, jeden krok Zpět).
+- **Nástroje řádku jako menu**: v řádku zůstalo jen ⠿ (přetažení), ＋ (úkol pod) a **⋯** – menu s popisky a
+  klávesovými zkratkami (podúkol, odsadit, předsadit, nahoru, dolů, smazat). Stejné menu otevře pravé tlačítko myši.
