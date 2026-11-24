@@ -157,3 +157,12 @@ tests/e2e/                 Playwright scénáře
 - **PowerPoint** podle firemní šablony: červený titulní a závěrečný slide s bílým logem a symbolem, bílé obsahové
   slidy s červeným nadpisem, logem vlevo dole a symbolem vpravo dole, tabulky s červeným záhlavím.
 - Report / PDF s logem a symbolem; export do Excelu s červeným záhlavím a písmem Arial.
+
+## SharePoint a sdílení (v0.10.1)
+
+- Pracovní soubor patří do knihovny SharePointu **synchronizované přes OneDrive** („Synchronizovat“ / „Přidat zástupce
+  do Mých souborů“); aplikace pak ukládá do běžné složky a OneDrive soubor nahraje. Síťová jednotka (WebDAV) ani ruční
+  nahrávání nejsou podporované.
+- HTML je jen program: každý ho spouští ve svém prohlížeči. Společná data jsou jen ve společném pracovním souboru –
+  jeden zapisující, ostatní „jen pro čtení“; kolize se pozná, ale neslučuje; nejsou práva po projektech.
+- Report a PPTX používají vždy firemní červenou (volba barvy byla odebrána).

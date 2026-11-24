@@ -62,6 +62,8 @@ await page.locator('[data-palette="orlen-dark"]').click()
 await page.waitForTimeout(250) // body background has a short transition
 check('dark ORLEN look', (await theme()) === 'orlen-dark' && (await bodyBg()) === 'rgb(43, 48, 53)', `${await theme()} ${await bodyBg()}`)
 check('primary button: white on the brand red', (await page.getByRole('button', { name: 'Zavřít', exact: true }).last().evaluate((b) => getComputedStyle(b).backgroundColor)) === 'rgb(216, 30, 4)')
+await page.locator('[data-settings-nav=report]').click()
+check('report colour cannot be changed (corporate red only)', (await page.getByRole('dialog').locator('input[type=color]').count()) === 0)
 await page.keyboard.press('Escape')
 check('dark header shows the white negative logo (manual 2.5)', (await headerLogo().getAttribute('data-variant')) === 'negative')
 if (shots) await page.screenshot({ path: `${shots}/orlen-dark.png` })

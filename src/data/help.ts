@@ -65,6 +65,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: "Ano – tlačítka ↶ ↷ v hlavičce nebo Ctrl+Z / Ctrl+Y (mimo textová pole). Pamatuje se posledních 100 kroků od otevření appky.",
         },
         {
+          q: "Jak uložit pracovní soubor na SharePoint, aby to fungovalo?",
+          a: "Prohlížeč umí zapisovat jen do složek v počítači, ne přímo na adresu SharePointu. Podporovaná cesta je synchronizace přes OneDrive: v knihovně dokumentů na SharePointu klikni na „Synchronizovat“ (nebo „Přidat zástupce do Mých souborů“). Knihovna se objeví v Průzkumníku jako běžná složka (např. „ORLEN Unipetrol\\Název webu – Dokumenty“). Pak v aplikaci 💾 Soubor → Uložit do souboru… → formát .pmw → vyber tuto složku. Aplikace do souboru ukládá automaticky a OneDrive ho nahraje na SharePoint. Nepoužívej připojení SharePointu jako síťové jednotky (WebDAV) ani ruční nahrávání přes prohlížeč – to je nestandardní cesta a autosave tam nefunguje.",
+        },
+        {
+          q: "Co uvidí kolegové, když otevřou stejné HTML nebo stejný soubor?",
+          a: "Samotné HTML je jen program bez dat – každý ho spustí ve svém prohlížeči a vidí svá data, dokud neotevře společný pracovní soubor. Pokud dva lidé otevřou stejný soubor (.pmw) ve synchronizované složce, platí jeden zapisující: kdo soubor upravuje, otevře ho normálně, ostatní přes 💾 Soubor → Otevřít jen pro čtení (tlačítkem Načíst znovu uvidí poslední uloženou verzi). Když zapisují dva současně, aplikace kolizi pozná a nic nepřepíše, ale změny neslučuje – vybereš, čí verze platí. OneDrive synchronizuje se zpožděním; při souběžném ukládání může vytvořit kopii souboru s názvem počítače. Aplikace nemá přístupová práva po projektech: kdo má přístup ke složce, vidí celý soubor. Ukládání do souboru funguje v Edge a Chrome.",
+        },
+        {
           q: "SharePoint nechce uložit soubor .json. Co s tím?",
           a: "Ulož pracovní soubor v jiném formátu: 💾 Soubor → Uložit do souboru… → vyber .pmw (doporučeno), .xlsx nebo .txt. Všechny obsahují stejná kompletní data, automatické ukládání i hlídání kolizí funguje stejně. Varianta .xlsx je navíc čitelná v Excelu (listy TASKS, BUDGET…); úpravy udělané v Excelu se ale zpět nenačtou – data appky jsou ve skrytém listu PM_DATA.",
         },
@@ -194,7 +202,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: "Co obsahuje PowerPoint?",
-          a: "8 slidů: titulní, manažerské shrnutí (RAG, KPI, eskalace), RoadMapa, milníky, hotovo/další kroky, top rizika a issues, změny a rozhodnutí, rozpočet s grafem. Vše jsou normální textová pole, tabulky a graf PowerPointu – můžeš je dál upravit. Logo, barvu, organizaci a patičku nastavíš v ⚙️ Nastavení → Report a prezentace.",
+          a: "9 slidů ve firemní šabloně ORLEN Unipetrol: titulní, manažerské shrnutí (RAG, KPI, eskalace), RoadMapa, milníky, hotovo/další kroky, top rizika a issues, změny a rozhodnutí, rozpočet s grafem a závěrečný slide. Vše jsou normální textová pole, tabulky a graf PowerPointu – můžeš je dál upravit. Barvy jsou firemní (podle manuálu se nemění); další logo, organizaci a patičku nastavíš v ⚙️ Nastavení → Report a prezentace.",
         },
         {
           q: "Jak řídím, co je na RoadMapě?",
@@ -366,6 +374,14 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: "Yes - the ↶ ↷ buttons in the header or Ctrl+Z / Ctrl+Y (outside text fields). The last 100 steps since opening the app are kept.",
         },
         {
+          q: "How do I keep the working file on SharePoint so that it works?",
+          a: "The browser can only write to folders on the computer, not straight to a SharePoint address. The supported way is OneDrive sync: in the SharePoint document library click \"Sync\" (or \"Add shortcut to My files\"). The library appears in Explorer as a normal folder (e.g. \"ORLEN Unipetrol\\\\Site name - Documents\"). Then in the app 💾 File → Save to file… → format .pmw → pick that folder. The app saves into the file automatically and OneDrive uploads it to SharePoint. Do not map SharePoint as a network drive (WebDAV) or upload by hand in the browser - that is the non-standard way and autosave does not work there.",
+        },
+        {
+          q: "What do colleagues see when they open the same HTML or the same file?",
+          a: "The HTML itself is only the program, with no data - everyone runs it in their own browser and sees their own data until they open a shared working file. When two people open the same file (.pmw) in a synced folder, there is one writer: whoever edits opens it normally, the others via 💾 File → Open read-only (Reload shows the last saved version). If two people write at the same time, the app detects the conflict and overwrites nothing, but does not merge - you choose which version counts. OneDrive syncs with a delay; with simultaneous saves it may create a copy named after the computer. There are no per-project permissions: whoever can open the folder sees the whole file. Saving into a file works in Edge and Chrome.",
+        },
+        {
           q: "SharePoint refuses the .json file. What now?",
           a: "Save the working file in another format: 💾 File → Save to file… → pick .pmw (recommended), .xlsx or .txt. All of them hold the same complete data; autosave and conflict detection work the same. The .xlsx variant is also readable in Excel (sheets TASKS, BUDGET…), but edits made in Excel are not read back - the app data lives in the hidden sheet PM_DATA.",
         },
@@ -483,7 +499,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: "What is in the PowerPoint?",
-          a: "8 slides: title, executive summary (RAG, KPIs, escalations), roadmap, milestones, achieved/next, top risks and issues, changes and decisions, budget with a chart. All are normal PowerPoint text boxes, tables and a chart you can still edit. Logo, colour, organisation and footer are in ⚙️ Settings → Reports & slides.",
+          a: "9 slides in the ORLEN Unipetrol template: title, executive summary (RAG, KPIs, escalations), roadmap, milestones, achieved/next, top risks and issues, changes and decisions, budget with a chart and a closing slide. All are normal PowerPoint text boxes, tables and a chart you can still edit. The colours are the corporate ones (fixed by the manual); an extra logo, organisation and footer are in ⚙️ Settings → Reports & slides.",
         },
         {
           q: "How do I control what is on the roadmap?",

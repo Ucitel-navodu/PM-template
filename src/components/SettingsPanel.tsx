@@ -8,7 +8,6 @@ import { usePrefsStore } from '../store/prefsStore'
 import { useActiveProject, useWorkspaceStore } from '../store/workspaceStore'
 import { STATUS_KINDS } from '../data/settings'
 import { PALETTES, type PaletteId } from '../lib/palettes'
-import { BRAND } from '../lib/brand'
 import { BrandSymbol, Logo } from './Brand'
 import { STATUS_ICON } from '../data/config'
 import type { Status, StatusDef } from '../types'
@@ -270,8 +269,7 @@ function PersonalSection() {
 
 /** ORLEN Unipetrol look: light (default) or dark; colours follow the brand manual and cannot be changed. */
 function AppearanceSection() {
-  const { tr, readOnly } = useApp()
-  const reportAccent = useWorkspaceStore((s) => s.workspace.reportSettings.accentColor)
+  const { tr } = useApp()
   const { palette, setPalette } = usePrefsStore()
   const move = (id: PaletteId) => {
     const next = PALETTES.find((p) => p.id !== id)!.id
@@ -313,16 +311,6 @@ function AppearanceSection() {
         })}
       </div>
       <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">{tr('settings_brand_note')}</p>
-      {reportAccent.toLowerCase() !== BRAND.red && (
-        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 dark:border-white/10">
-          <button className={btnSecondary} data-testid="report-use-palette" disabled={readOnly} onClick={() => useWorkspaceStore.getState().updateReportSettings({ accentColor: BRAND.red })}>
-            {tr('settings_report_use_palette')}
-          </button>
-          <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            {tr('settings_report_accent_now')} <i className="inline-block h-4 w-4 rounded border border-black/10" style={{ background: reportAccent }} /> {reportAccent}
-          </span>
-        </div>
-      )}
     </Section>
   )
 }
@@ -350,10 +338,6 @@ function ReportSection() {
         <label className={label}>
           {tr('report_footer')}
           <input className={inputBox} value={rs.footer} onChange={(e) => update({ footer: e.target.value })} disabled={readOnly} />
-        </label>
-        <label className={label}>
-          {tr('report_color')}
-          <input type="color" className="h-8 w-16 rounded border border-gray-300 dark:border-white/15" value={rs.accentColor} onChange={(e) => update({ accentColor: e.target.value })} disabled={readOnly} />
         </label>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3">

@@ -134,3 +134,15 @@ describe('schema 4 migration (scheduling)', () => {
     expect(tasks.find((t) => t.id === 't1')!.wbs).toBe('1.1')
   })
 })
+
+describe('corporate report colour', () => {
+  it('any saved report colour is replaced by the ORLEN Unipetrol red on load', () => {
+    for (const color of ['#4f46e5', '#00ff00', '']) {
+      const ws = createSampleWorkspace()
+      ws.reportSettings = { ...ws.reportSettings, accentColor: color }
+      const parsed = parseAnyFile(serializeWorkspace(ws))
+      if (parsed.kind !== 'workspace') throw new Error('not a workspace')
+      expect(parsed.workspace.reportSettings.accentColor, color).toBe('#d81e04')
+    }
+  })
+})

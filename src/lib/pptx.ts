@@ -198,7 +198,7 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
   const p = data.project
   const cur = p.info.currency
   const pptx = await newDeck(settings, `${p.info.projectName} – ${tr('report_title')}`)
-  const accent = hex(settings.accentColor || RED)
+  const accent = RED // corporate red only (manual 4.1)
   const ragLabel = (r: string) => tr(`report_rag_${r}`)
 
   // 1 Title
@@ -343,7 +343,7 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
 /** One-slide portfolio overview for management (plus a title slide). */
 export async function downloadPortfolioDeck(rows: { name: string; itpm: string; summary: ProjectSummary; currency: string; budget: number; trend?: string }[], settings: ReportSettings, tr: Tr, date: string): Promise<string> {
   const pptx = await newDeck(settings, tr('report_portfolio_title'))
-  const accent = hex(settings.accentColor || RED)
+  const accent = RED
   redSlide(pptx, tr('report_portfolio_title'), [formatDate(date)])
 
   const s2 = pptx.addSlide({ masterName: 'PM' })
