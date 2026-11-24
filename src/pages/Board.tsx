@@ -69,7 +69,7 @@ function Column({ status, tasks, disabled }: { status: StatusDef; tasks: Task[];
     >
       <h3 className="mb-2 flex items-center justify-between px-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
         <span>
-          {STATUS_ICON[status.kind]} {status.name}
+          {status.icon || STATUS_ICON[status.kind]} {status.name}
         </span>
         <span className="rounded-full bg-gray-200 px-2 text-xs dark:bg-white/10">{tasks.length}</span>
       </h3>

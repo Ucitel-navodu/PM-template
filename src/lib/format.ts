@@ -1,4 +1,8 @@
+import { MASK, sensitiveHidden } from './sensitive'
+
+/** Money; masked in the "hide for suppliers" mode (screen and exports alike). */
 export function formatMoney(value: number, currency = 'CZK'): string {
+  if (sensitiveHidden()) return MASK
   return new Intl.NumberFormat('cs-CZ', { style: 'currency', currency, maximumFractionDigits: 0 }).format(value)
 }
 

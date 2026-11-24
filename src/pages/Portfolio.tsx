@@ -139,7 +139,7 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
               <th className="px-3 py-2">{tr('portfolio_tasks_health')}</th>
               <th className="px-3 py-2">{tr('portfolio_next_milestone')}</th>
               <th className="px-3 py-2">{tr('portfolio_open_risks')}</th>
-              <th className="px-3 py-2">{tr('portfolio_budget_used')}</th>
+              <th className="px-3 py-2" data-sensitive>{tr('portfolio_budget_used')}</th>
               <th className="px-3 py-2">{tr('portfolio_finish')}</th>
               <th className="px-3 py-2 print:hidden" />
             </tr>
@@ -186,7 +186,7 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
                   {s.openRisks}
                   {s.highRisks > 0 && <span className="ml-1 rounded bg-rose-50 px-1 text-rose-600 dark:bg-rose-500/15">{s.highRisks}× {tr('portfolio_high')}</span>}
                 </td>
-                <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
+                <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300" data-sensitive>
                   {s.budgetUsedPct === null ? '—' : `${Math.round(s.budgetUsedPct * 100)} % ${tr('portfolio_of')} ${formatMoney(p.info.budget, p.info.currency)}`}
                 </td>
                 <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{formatDate(s.finish) || '—'}</td>

@@ -19,9 +19,13 @@ import { SyncBanner } from './components/SyncBanner'
 import { HelpPanel } from './components/HelpPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { ThemedLogo } from './components/Brand'
+import { usePrefsStore } from './store/prefsStore'
 import { closeSettings, openSettings, useSettingsNav } from './lib/settingsNav'
 
 type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'changes' | 'team' | 'audit' | 'report'
+
+/** Tabs hidden for suppliers (the eye): finance, change requests, history. */
+const SENSITIVE_PAGES: PageKey[] = ['budget', 'changes', 'audit']
 
 const TABS: { key: PageKey; label: TKey }[] = [
   { key: 'portfolio', label: 'nav_portfolio' },
@@ -87,6 +91,10 @@ export default function App() {
   const [page, setPage] = useHashPage()
   const [helpOpen, setHelpOpen] = useState(false)
   const settingsPanel = useSettingsNav((s) => s.panel)
+  const hidden = usePrefsStore((s) => s.hideSensitive)
+  const tabs = TABS.filter((t) => !hidden || !SENSITIVE_PAGES.includes(t.key))
+  // A hidden tab (Budget, Changes, History) shows the dashboard while the eye is on.
+  const shown: PageKey = hidden && SENSITIVE_PAGES.includes(page) ? 'dashboard' : page
 
   return (
     <div className="min-h-full bg-gray-50 print:bg-white dark:bg-[rgb(var(--pm-bg))]">
@@ -102,6 +110,16 @@ export default function App() {
           <div className="flex items-center gap-2">
             <FileMenu />
             <div className="h-5 w-px bg-gray-200 dark:bg-white/10" />
+            <button
+              onClick={() => usePrefsStore.getState().setHideSensitive(!hidden)}
+              aria-pressed={hidden}
+              aria-label={tr(hidden ? 'sensitive_show' : 'sensitive_hide')}
+              title={tr(hidden ? 'sensitive_show' : 'sensitive_hide')}
+              data-testid="sensitive-toggle"
+              className={`${iconBtn} ${hidden ? '!border-brand-600 !bg-brand-600 !text-white' : ''}`}
+            >
+              {hidden ? '🙈' : '👁️'}
+            </button>
             <button onClick={() => openSettings()} aria-label={tr('settings_button')} title={tr('settings_button')} className={iconBtn}>
               ⚙️
             </button>
@@ -125,13 +143,13 @@ export default function App() {
           </div>
         </div>
         <nav className="mx-auto flex max-w-[90rem] flex-wrap items-center gap-1 px-4 pb-2 pt-2 sm:px-6">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setPage(tab.key)}
-              aria-current={page === tab.key ? 'page' : undefined}
+              aria-current={shown === tab.key ? 'page' : undefined}
               className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                page === tab.key
+                shown === tab.key
                   ? 'bg-brand-600 text-white shadow-sm'
                   : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-100'
               } ${tab.key === 'portfolio' ? 'mr-2' : ''}`}
@@ -140,22 +158,27 @@ export default function App() {
             </button>
           ))}
         </nav>
+        {hidden && (
+          <div className="border-t border-brand-600/30 bg-brand-600 px-4 py-1 text-center text-xs font-semibold text-white print:hidden" data-testid="sensitive-banner">
+            🙈 {tr('sensitive_banner')}
+          </div>
+        )}
         <SyncBanner />
       </header>
 
       <main className={`mx-auto max-w-[90rem] px-4 py-6 sm:px-6 print:max-w-none print:p-0 ${readOnly ? 'read-only' : ''}`}>
-        {page === 'portfolio' && <PortfolioPage onOpenProject={() => setPage('dashboard')} />}
-        {page === 'dashboard' && <Dashboard />}
-        {page === 'tasks' && <TasksPage onOpenSettings={() => openSettings('phases')} />}
-        {page === 'gantt' && <GanttPage />}
-        {page === 'board' && <BoardPage />}
-        {page === 'milestones' && <MilestonesPage />}
-        {page === 'budget' && <BudgetPage />}
-        {page === 'risks' && <RisksPage />}
-        {page === 'changes' && <ChangesPage />}
-        {page === 'team' && <TeamPage />}
-        {page === 'audit' && <AuditPage />}
-        {page === 'report' && <ReportPage />}
+        {shown === 'portfolio' && <PortfolioPage onOpenProject={() => setPage('dashboard')} />}
+        {shown === 'dashboard' && <Dashboard />}
+        {shown === 'tasks' && <TasksPage onOpenSettings={() => openSettings('phases')} />}
+        {shown === 'gantt' && <GanttPage />}
+        {shown === 'board' && <BoardPage />}
+        {shown === 'milestones' && <MilestonesPage />}
+        {shown === 'budget' && <BudgetPage />}
+        {shown === 'risks' && <RisksPage />}
+        {shown === 'changes' && <ChangesPage />}
+        {shown === 'team' && <TeamPage />}
+        {shown === 'audit' && <AuditPage />}
+        {shown === 'report' && <ReportPage />}
       </main>
 
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}

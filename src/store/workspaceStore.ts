@@ -46,6 +46,8 @@ interface WorkspaceState {
   /** Edit a task the way MS Project does: moving an auto task's start sets a
    *  "start no earlier than" constraint, changing its finish changes the duration. */
   updateTask: (id: string, patch: Partial<Task>) => void
+  /** Same change for several tasks (bulk edit of the selection) as one undo step. */
+  bulkUpdateTasks: (ids: string[], patch: Partial<Task>) => void
   /** Delete a task with its subtask and remove links pointing to them. */
   deleteTask: (id: string) => void
   /** Delete several tasks (with their subtasks) as one undo step. */
@@ -120,6 +122,32 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           }),
         }))
       const setTaskList = (fn: (tasks: Task[]) => Task[]) => setProject((p) => ({ ...p, tasks: fn(p.tasks) }))
+
+      // Field edits of one or more tasks with the knock-on rules of the grid (milestone <-> duration 0,
+      // Done -> 100 %, dates of auto-scheduled tasks become constraints / durations).
+      const patchTasks = (ids: Set<string>, patch: Partial<Task>) => {
+        const statuses = get().workspace.projects.find((p) => p.id === get().activeProjectId)?.lists.statuses
+        setTaskList((tasks) =>
+          tasks.map((t) => {
+            if (!ids.has(t.id)) return t
+            const next: Task = { ...t, ...patch }
+            if ('milestone' in patch) next.duration = patch.milestone ? 0 : Math.max(1, t.duration ?? 1)
+            if ('duration' in patch && patch.duration !== undefined) next.milestone = patch.duration === 0
+            if (patch.status && statusKind(patch.status, statuses) === 'Done') next.percentComplete = 1
+            if (t.schedulingMode === 'auto') {
+              if (patch.currentStart && patch.currentStart !== t.currentStart) {
+                next.constraint = { type: 'SNET', date: patch.currentStart }
+              }
+              if (patch.currentFinish && patch.currentFinish !== t.currentFinish) {
+                const cal = new WorkCalendar(get().workspace.calendar, '2000-01-01')
+                const start = next.currentStart ?? patch.currentFinish
+                next.duration = next.milestone ? 0 : Math.max(1, cal.workdaysBetween(start, patch.currentFinish))
+              }
+            }
+            return next
+          }),
+        )
+      }
 
       return {
         workspace: { fileType: 'pm-web-workspace', schemaVersion: 3, id: '', revision: 0, calendar: { holidays: [], workingDays: [], orangeTolerance: 0.1, redTolerance: 0.25 }, absences: [], reportSettings: { organization: '', accentColor: '#d81e04', footer: '' }, projects: [] },
@@ -216,28 +244,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           })
           return id
         },
-        updateTask: (id, patch) => {
-          const statuses = get().workspace.projects.find((p) => p.id === get().activeProjectId)?.lists.statuses
-          setTaskList((tasks) =>
-            tasks.map((t) => {
-              if (t.id !== id) return t
-              const next: Task = { ...t, ...patch }
-              if ('milestone' in patch) next.duration = patch.milestone ? 0 : Math.max(1, t.duration ?? 1)
-              if ('duration' in patch && patch.duration !== undefined) next.milestone = patch.duration === 0
-              if (patch.status && statusKind(patch.status, statuses) === 'Done') next.percentComplete = 1
-              if (t.schedulingMode === 'auto') {
-                if (patch.currentStart && patch.currentStart !== t.currentStart) {
-                  next.constraint = { type: 'SNET', date: patch.currentStart }
-                }
-                if (patch.currentFinish && patch.currentFinish !== t.currentFinish) {
-                  const cal = new WorkCalendar(get().workspace.calendar, '2000-01-01')
-                  const start = next.currentStart ?? patch.currentFinish
-                  next.duration = next.milestone ? 0 : Math.max(1, cal.workdaysBetween(start, patch.currentFinish))
-                }
-              }
-              return next
-            }),
-          )
+        updateTask: (id, patch) => patchTasks(new Set([id]), patch),
+        bulkUpdateTasks: (ids, patch) => {
+          lastTrackedAt = 0 // a deliberate bulk operation is always its own undo step
+          patchTasks(new Set(ids), patch)
         },
         deleteTask: (id) => get().deleteTasks([id]),
         deleteTasks: (ids) => {

@@ -18,15 +18,19 @@ export function Card({
   accent = 'slate',
   children,
   className = '',
+  sensitive = false,
 }: {
   title?: string
   icon?: string
   accent?: Accent
   children: ReactNode
   className?: string
+  /** Hidden by the eye (supplier mode). */
+  sensitive?: boolean
 }) {
   return (
     <div
+      data-sensitive={sensitive || undefined}
       className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[rgb(var(--pm-card))] ${className}`}
     >
       {title && (

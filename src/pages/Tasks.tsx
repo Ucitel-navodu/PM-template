@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { usePrefsStore } from '../store/prefsStore'
 import { createPortal } from 'react-dom'
 import {
   createColumnHelper,
@@ -19,8 +20,7 @@ import { HealthBadge } from '../components/HealthBadge'
 import { BaselinesDialog } from '../components/BaselinesDialog'
 import { formatDate, formatPercent } from '../lib/format'
 import { downloadCsv } from '../lib/csv'
-import { STATUS_ICON } from '../data/config'
-import { statusKind } from '../lib/status'
+import { statusIcon } from '../lib/status'
 import { btnPrimary, btnSecondary, inputGhost, selectFilter, selectGhost, tableWrap, tbodyRow, theadRow } from '../lib/ui'
 import { useSchedule } from '../lib/schedule/useSchedule'
 import { formatDependencies, parseDependencies } from '../lib/schedule/predecessors'
@@ -168,6 +168,107 @@ function RowMenu({ x, y, items, onClose }: { x: number; y: number; items: MenuIt
   )
 }
 
+type BulkField = 'status' | 'phase' | 'projectArea' | 'owner' | 'priority' | 'mgmtExport' | 'schedulingMode' | 'milestone' | 'percentComplete'
+
+/** Set one attribute on all selected tasks (one undo step). */
+function BulkEdit({ count, onApply }: { count: number; onApply: (patch: Partial<Task>) => void }) {
+  const { tr, settings, tasks } = useApp()
+  const [field, setField] = useState<BulkField>('status')
+  const [value, setValue] = useState('')
+  const yesNo = [
+    ['true', tr('common_yes')],
+    ['false', tr('common_no')],
+  ]
+  const choices: Record<BulkField, string[][] | null> = {
+    status: settings.statuses.map((x) => [x.name, `${statusIcon(x.name, settings.statuses)} ${x.name}`]),
+    phase: settings.phases.map((x) => [x, x]),
+    projectArea: settings.projectAreas.map((x) => [x, x]),
+    priority: settings.priorities.map((x) => [x, x]),
+    mgmtExport: yesNo,
+    milestone: yesNo,
+    schedulingMode: [
+      ['auto', `⚙ ${tr('plan_auto')}`],
+      ['manual', `✋ ${tr('plan_manual')}`],
+    ],
+    owner: null,
+    percentComplete: null,
+  }
+  const labels: Record<BulkField, string> = {
+    status: tr('common_status'),
+    phase: tr('tasks_phase'),
+    projectArea: tr('common_project_area'),
+    owner: tr('common_owner'),
+    priority: tr('plan_priority'),
+    mgmtExport: tr('common_mgmt_export'),
+    schedulingMode: tr('plan_mode'),
+    milestone: tr('gantt_milestone'),
+    percentComplete: tr('tasks_percent_complete'),
+  }
+  const opts = choices[field]
+  const current = value || opts?.[0]?.[0] || ''
+  const patch = (): Partial<Task> | null => {
+    if (field === 'mgmtExport' || field === 'milestone') return { [field]: current === 'true' }
+    if (field === 'percentComplete') {
+      const n = Number(value)
+      return Number.isFinite(n) && value !== '' && n >= 0 && n <= 100 ? { percentComplete: n / 100 } : null
+    }
+    if (field === 'owner') return { owner: value.trim() }
+    return current ? ({ [field]: current } as Partial<Task>) : null
+  }
+  const box = 'rounded-md border border-gray-300 bg-white px-2 py-1 text-sm dark:border-white/15 dark:bg-[rgb(var(--pm-bg))] dark:text-gray-100'
+  return (
+    <span className="flex flex-wrap items-center gap-2" data-testid="bulk-edit">
+      <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{tr('tasks_bulk_set')}</span>
+      <select
+        value={field}
+        onChange={(e) => {
+          setField(e.target.value as BulkField)
+          setValue('')
+        }}
+        className={box}
+        aria-label={tr('tasks_bulk_field')}
+      >
+        {(Object.keys(labels) as BulkField[]).map((f) => (
+          <option key={f} value={f}>
+            {labels[f]}
+          </option>
+        ))}
+      </select>
+      {opts ? (
+        <select value={current} onChange={(e) => setValue(e.target.value)} className={box} aria-label={tr('tasks_bulk_value')}>
+          {opts.map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </select>
+      ) : field === 'owner' ? (
+        <>
+          <input value={value} onChange={(e) => setValue(e.target.value)} list="bulk-owners" className={`w-40 ${box}`} aria-label={tr('tasks_bulk_value')} />
+          <datalist id="bulk-owners">
+            {[...new Set(tasks.map((t) => t.owner).filter(Boolean))].map((o) => (
+              <option key={o} value={o} />
+            ))}
+          </datalist>
+        </>
+      ) : (
+        <input type="number" min={0} max={100} value={value} onChange={(e) => setValue(e.target.value)} className={`w-20 ${box}`} aria-label={tr('tasks_bulk_value')} placeholder="%" />
+      )}
+      <button
+        className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-40"
+        disabled={count === 0 || !patch()}
+        data-testid="bulk-apply"
+        onClick={() => {
+          const p = patch()
+          if (p) onApply(p)
+        }}
+      >
+        {tr('tasks_bulk_apply').replace('{n}', String(count))}
+      </button>
+    </span>
+  )
+}
+
 /** A table row that can be dragged by its handle and is a drop target for other rows. */
 function TaskRow({ row, className, dnd, hint, select, onKeyDown, onMenu, renderCell }: { onMenu: (x: number, y: number) => void; row: Row<Task>; className: string; dnd: boolean; hint?: 'before' | 'after'; select?: { on: boolean; toggle: (shift: boolean) => void }; onKeyDown: (e: React.KeyboardEvent) => void; renderCell: (c: Cell<Task, unknown>) => React.ReactNode }) {
   const drag = useDraggable({ id: row.id, disabled: !dnd })
@@ -235,7 +336,7 @@ function PredecessorsInput({ task, tasks, onCommit }: { task: Task; tasks: Task[
   )
 }
 
-function ColumnsMenu({ columns, visibility, onToggle }: { columns: { id: string; label: string }[]; visibility: VisibilityState; onToggle: (id: string) => void }) {
+function ColumnsMenu({ columns, visibility, onToggle, onResetOrder }: { columns: { id: string; label: string }[]; visibility: VisibilityState; onToggle: (id: string) => void; onResetOrder?: () => void }) {
   const { tr } = useApp()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -257,6 +358,12 @@ function ColumnsMenu({ columns, visibility, onToggle }: { columns: { id: string;
               {c.label}
             </label>
           ))}
+          <div className="mt-1 border-t border-gray-100 px-3 pt-1 text-[11px] text-gray-400 dark:border-white/10">{tr('plan_columns_drag_hint')}</div>
+          {onResetOrder && (
+            <button className="block w-full px-3 py-1 text-left text-sm text-brand-600 hover:bg-gray-50 dark:text-brand-300 dark:hover:bg-white/5" onClick={onResetOrder} data-testid="reset-column-order">
+              {tr('plan_columns_reset_order')}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -271,12 +378,24 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const sched = useSchedule()
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const [sorting, setSorting] = useState<SortingState>([])
+  const hideSensitive = usePrefsStore((s) => s.hideSensitive)
   const [visibility, setVisibility] = useState<VisibilityState>(() => Object.fromEntries(DEFAULT_HIDDEN.map((c) => [c, false])))
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   // Column widths: per device, also stored in saved views.
   const [sizing, setSizing] = useState<ColumnSizingState>(() => ({ ...DEFAULT_SIZES, ...loadPref<ColumnSizingState>('taskColumnSizes', {}), actions: DEFAULT_SIZES.actions }))
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   useEffect(() => savePref('taskColumnSizes', sizing), [sizing])
+  // Column order (drag a header); the row tools stay first.
+  const [order, setOrder] = useState<string[]>(() => loadPref<string[]>('taskColumnOrder', []))
+  useEffect(() => savePref('taskColumnOrder', order), [order])
+  const [colDrag, setColDrag] = useState<{ id: string; over?: string; after?: boolean } | null>(null)
+  const moveColumn = (id: string, target: string, after: boolean) => {
+    if (id === target || id === 'actions' || target === 'actions') return
+    const ids = table.getAllLeafColumns().map((c) => c.id).filter((c) => c !== id)
+    const at = ids.indexOf(target) + (after ? 1 : 0)
+    ids.splice(at, 0, id)
+    setOrder(ids)
+  }
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropHint, setDropHint] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
   // Selection mode (bulk delete): off by default so the grid stays calm.
@@ -531,7 +650,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
             <select value={t.status} onChange={(e) => updateTask(t.id, { status: e.target.value as Task['status'] })} className={selectGhost}>
               {listOptions(settings.statuses.map((s) => s.name), t.status).map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_ICON[statusKind(s, settings.statuses)]} {s}
+                  {statusIcon(s, settings.statuses)} {s}
                 </option>
               ))}
             </select>
@@ -685,7 +804,8 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const table = useReactTable({
     data: rows,
     columns,
-    state: { sorting, columnVisibility: visibility, columnSizing: sizing },
+    // the eye (supplier mode) always hides the notes column
+    state: { columnOrder: order.length ? ['actions', ...order.filter((c) => c !== 'actions')] : undefined, sorting, columnVisibility: hideSensitive ? { ...visibility, notes: false } : visibility, columnSizing: sizing },
     onSortingChange: setSorting,
     onColumnSizingChange: setSizing,
     columnResizeMode: 'onChange',
@@ -736,6 +856,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
     const hidden = v ? v.hiddenColumns : DEFAULT_HIDDEN
     setVisibility(Object.fromEntries(hidden.map((c) => [c, false])))
     if (v?.columnSizes) setSizing({ ...DEFAULT_SIZES, ...v.columnSizes, actions: DEFAULT_SIZES.actions })
+    setOrder(v?.columnOrder ?? [])
   }
   const saveView = () => {
     const name = window.prompt(tr('plan_view_name'), views.find((v) => v.id === viewId)?.name ?? '')?.trim()
@@ -748,6 +869,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
       hiddenColumns: Object.entries(visibility).filter(([, on]) => on === false).map(([c]) => c),
       sort: sorting[0],
       columnSizes: sizing,
+      columnOrder: order.length ? order : undefined,
     }
     store.saveView(view)
     setViewId(view.id)
@@ -780,7 +902,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         ExpectedProgress: expectedProgress(t.currentStart, t.currentFinish) ?? '',
         MgmtExport: t.mgmtExport ? 'YES' : 'NO',
         Health: computeHealth(t, settings),
-        Notes: t.notes ?? '',
+        ...(hideSensitive ? {} : { Notes: t.notes ?? '' }),
       })),
     )
   }
@@ -872,6 +994,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
             columns={hideable.map((c) => ({ id: c.id, label: String(c.columnDef.header) }))}
             visibility={visibility}
             onToggle={(id) => setVisibility((v) => ({ ...v, [id]: v[id] === false }))}
+            onResetOrder={order.length ? () => setOrder([]) : undefined}
           />
         </div>
       </div>
@@ -915,6 +1038,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-brand-500/40 bg-brand-50 px-3 py-2 text-sm text-gray-800 dark:bg-white/5 dark:text-gray-100" data-testid="select-bar">
           <b>{tr('tasks_selected').replace('{n}', String(selected.size))}</b>
           <span className="text-xs text-gray-500 dark:text-gray-400">{tr('tasks_select_hint')}</span>
+          <BulkEdit count={selected.size} onApply={(patch) => store.bulkUpdateTasks([...selected].filter((id) => !isSummary(id) || !('status' in patch || 'percentComplete' in patch || 'milestone' in patch)), patch)} />
           <span className="ml-auto flex flex-wrap gap-2">
             <button className={btnSecondary} onClick={() => setSelected(new Set(table.getRowModel().rows.map((r) => r.id)))}>
               {tr('tasks_select_all')}
@@ -964,7 +1088,32 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id} className={theadRow}>
                   {hg.headers.map((h) => (
-                    <th key={h.id} className={`sticky top-0 overflow-hidden whitespace-nowrap bg-gray-50 px-2 py-2 dark:bg-[rgb(var(--pm-card))] ${h.id === 'actions' ? 'left-0 z-30' : 'z-20'}`} style={{ width: h.getSize() }} data-col={h.id}>
+                    <th
+                      key={h.id}
+                      className={`sticky top-0 overflow-hidden whitespace-nowrap bg-gray-50 px-2 py-2 dark:bg-[rgb(var(--pm-card))] ${h.id === 'actions' ? 'left-0 z-30' : 'z-20 cursor-grab'} ${colDrag?.id === h.id ? 'opacity-40' : ''} ${colDrag?.over === h.id ? (colDrag.after ? 'shadow-[inset_-3px_0_0_rgb(var(--pm-primary))]' : 'shadow-[inset_3px_0_0_rgb(var(--pm-primary))]') : ''}`}
+                      style={{ width: h.getSize() }}
+                      data-col={h.id}
+                      draggable={h.id !== 'actions' && !h.column.getIsResizing()}
+                      onDragStart={(e) => {
+                        if ((e.target as HTMLElement).closest('[data-resizer]')) return e.preventDefault()
+                        e.dataTransfer.effectAllowed = 'move'
+                        e.dataTransfer.setData('text/plain', h.id)
+                        setColDrag({ id: h.id })
+                      }}
+                      onDragOver={(e) => {
+                        if (!colDrag || h.id === 'actions' || h.id === colDrag.id) return
+                        e.preventDefault()
+                        const r = e.currentTarget.getBoundingClientRect()
+                        const after = e.clientX > r.left + r.width / 2
+                        if (colDrag.over !== h.id || colDrag.after !== after) setColDrag({ ...colDrag, over: h.id, after })
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        if (colDrag?.over) moveColumn(colDrag.id, colDrag.over, Boolean(colDrag.after))
+                        setColDrag(null)
+                      }}
+                      onDragEnd={() => setColDrag(null)}
+                    >
                       {h.column.getCanSort() ? (
                         <button className="max-w-full truncate uppercase" onClick={h.column.getToggleSortingHandler()} title={h.id === 'variance' ? tr('plan_variance_help') : String(h.column.columnDef.header)}>
                           {flexRender(h.column.columnDef.header, h.getContext())}

@@ -48,15 +48,15 @@ export function MilestonesPage() {
               <th className={th}>ID</th>
               <th className={th}>{tr('milestones_name')}</th>
               <th className={th}>{tr('milestones_linked_task')}</th>
-              <th className={th}>{tr('milestones_trigger')}</th>
-              <th className={`${th} text-right`}>{tr('milestones_amount')}</th>
-              <th className={th}>{tr('milestones_payment_status')}</th>
+              <th className={th} data-sensitive>{tr('milestones_trigger')}</th>
+              <th className={`${th} text-right`} data-sensitive>{tr('milestones_amount')}</th>
+              <th className={th} data-sensitive>{tr('milestones_payment_status')}</th>
               <th className={th}>{tr('milestones_planned_date')}</th>
               <th className={th}>{tr('milestones_baseline_date')}</th>
               <th className={th}>{tr('milestones_actual_date')}</th>
               <th className={th}>{tr('milestones_variance')}</th>
-              <th className={th}>{tr('common_invoice_no')}</th>
-              <th className={th}>{tr('common_notes')}</th>
+              <th className={th} data-sensitive>{tr('common_invoice_no')}</th>
+              <th className={th} data-sensitive>{tr('common_notes')}</th>
               <th className={th} />
             </tr>
           </thead>
@@ -88,7 +88,7 @@ export function MilestonesPage() {
                       ))}
                     </select>
                   </td>
-                  <td className={td}>
+                  <td className={td} data-sensitive>
                     <input
                       type="number"
                       min={0}
@@ -99,10 +99,10 @@ export function MilestonesPage() {
                     />
                     <span className="text-xs text-gray-400">%</span>
                   </td>
-                  <td className={`${td} text-right text-gray-700 dark:text-gray-200`}>
+                  <td className={`${td} text-right text-gray-700 dark:text-gray-200`} data-sensitive>
                     {formatMoney(milestoneAmount(m, projectInfo.budget), projectInfo.currency)}
                   </td>
-                  <td className={td}>
+                  <td className={td} data-sensitive>
                     <select
                       value={m.paymentStatus}
                       onChange={(e) => updateMilestone(m.id, { paymentStatus: e.target.value as PaymentStatus })}
@@ -130,14 +130,14 @@ export function MilestonesPage() {
                   >
                     {variance === null ? '' : `${variance > 0 ? '+' : ''}${variance} d`}
                   </td>
-                  <td className={td}>
+                  <td className={td} data-sensitive>
                     <input
                       value={m.invoiceNo ?? ''}
                       onChange={(e) => updateMilestone(m.id, { invoiceNo: e.target.value || undefined })}
                       className={`w-24 ${inputGhost}`}
                     />
                   </td>
-                  <td className={td}>
+                  <td className={td} data-sensitive>
                     <input
                       value={m.notes ?? ''}
                       onChange={(e) => updateMilestone(m.id, { notes: e.target.value || undefined })}
@@ -153,7 +153,7 @@ export function MilestonesPage() {
               )
             })}
           </tbody>
-          <tfoot>
+          <tfoot data-sensitive>
             <tr className={tfootRow}>
               <td className="px-3 py-2" colSpan={3}>
                 {tr('common_total')}

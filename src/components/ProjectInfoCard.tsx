@@ -53,7 +53,7 @@ export function ProjectInfoCard() {
           }}
         >
           {FIELDS.map((f) => (
-            <label key={f.key} className={f.wide ? 'col-span-2' : ''}>
+            <label key={f.key} className={f.wide ? 'col-span-2' : ''} data-sensitive={f.key === 'budget' || f.key === 'currency' || undefined}>
               <span className="text-xs text-gray-500 dark:text-gray-400">{label(f.label)}</span>
               <input
                 type={f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'}
@@ -100,7 +100,9 @@ export function ProjectInfoCard() {
           <Stat label="ITPM" value={projectInfo.itpm || '—'} />
           <Stat label={tr('dash_start')} value={formatDate(projectInfo.start) || '—'} />
           <Stat label={tr('dash_planned_finish')} value={formatDate(projectInfo.plannedFinish) || '—'} />
-          <Stat label={tr('dash_budget_label')} value={formatMoney(projectInfo.budget, projectInfo.currency)} />
+          <div data-sensitive>
+            <Stat label={tr('dash_budget_label')} value={formatMoney(projectInfo.budget, projectInfo.currency)} />
+          </div>
         </div>
       </Card>
     </div>

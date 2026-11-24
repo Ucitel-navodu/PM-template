@@ -15,6 +15,8 @@ export type Priority = string
 export interface StatusDef {
   name: string
   kind: Status
+  /** Icon (emoji) shown with the status; default by meaning (STATUS_ICON). */
+  icon?: string
 }
 
 // Phases are user-defined in Settings (CONFIG sheet equivalent).
@@ -260,6 +262,8 @@ export interface TaskView {
   hiddenColumns: string[]
   sort?: { id: string; desc: boolean }
   columnSizes?: Record<string, number>
+  /** Order of the grid columns (drag a header). */
+  columnOrder?: string[]
 }
 
 export type Rag = 'Green' | 'Amber' | 'Red'

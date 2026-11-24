@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { redactProject } from '../lib/sensitive'
 import { RiskMatrix } from '../components/RiskMatrix'
 import { BrandSymbol, ThemedLogo } from '../components/Brand'
 import { useApp } from '../context/AppContext'
@@ -57,9 +58,9 @@ function EditableText({ value, onChange, rows = 5, label }: { value: string; onC
   )
 }
 
-function Section({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
+function Section({ title, children, className = '', sensitive = false }: { title: string; children: React.ReactNode; className?: string; sensitive?: boolean }) {
   return (
-    <section className={`break-inside-avoid rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-gray-300 ${className}`}>
+    <section data-sensitive={sensitive || undefined} className={`break-inside-avoid rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-gray-300 ${className}`}>
       <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-brand-600 dark:text-brand-300">{title}</h3>
       {children}
     </section>
@@ -79,7 +80,9 @@ export function ReportPage() {
   const [notice, setNotice] = useState('')
   const [reportId, setReportId] = useState<string>()
 
-  const data = useMemo(() => buildStatusReport(project, calendar, { ...period, today: new Date(), lang }), [project, calendar, period, lang])
+  const hideSensitive = usePrefsStore((s) => s.hideSensitive)
+  // supplier mode: the report (screen, PDF, PPTX) is built from the project without finance, changes and notes
+  const data = useMemo(() => buildStatusReport(hideSensitive ? redactProject(project) : project, calendar, { ...period, today: new Date(), lang }), [project, calendar, period, lang, hideSensitive])
   const roadmap = useMemo(() => buildRoadmap(project, calendar, groupBy), [project, calendar, groupBy])
   const autoRag: Rag | 'Grey' = data.summary.rag
   const fill = (): Form => ({
@@ -191,8 +194,8 @@ export function ReportPage() {
 
       {/* The report document (this is what gets printed) */}
       <article className="report-doc space-y-4" data-testid="report">
-        <header className="relative flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-4 pr-32 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-0 print:p-0 print:pr-32">
-          <BrandSymbol size={150} corner="top-right" />
+        <header className="relative flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-4 pr-32 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-0 print:p-0">
+          <BrandSymbol size={150} corner="top-right" className="print:hidden" />
           <div>
             <ThemedLogo height={28} className="-ml-2 -mt-2 mb-1" />
             <div className="text-xs font-bold uppercase tracking-wide text-brand-600 dark:text-brand-300">{[reportSettings.organization, tr('report_title')].filter(Boolean).join(' · ')}</div>
@@ -204,7 +207,6 @@ export function ReportPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {reportSettings.logoDataUrl && <img src={reportSettings.logoDataUrl} alt="" className="h-12 max-w-[10rem] object-contain" />}
             <div className="text-right">
               <div className="text-xs text-gray-500">{tr('report_rag')}</div>
               <select
@@ -228,13 +230,15 @@ export function ReportPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 print:grid-cols-4">
+        <div className={`grid grid-cols-2 gap-3 ${hideSensitive ? 'lg:grid-cols-3 print:grid-cols-3' : 'lg:grid-cols-4 print:grid-cols-4'}`}>
           {[
             [tr('portfolio_progress'), formatPercent(data.summary.progress), ''],
             [tr('plan_finish'), formatDate(data.finish) || '—', data.finishVariance ? `${data.finishVariance > 0 ? '+' : ''}${data.finishVariance} ${tr('report_wd_vs_baseline')}` : ''],
             [tr('report_budget_forecast'), formatMoney(b.forecast, cur), `${tr('budget_current')}: ${formatMoney(b.current, cur)}`],
             [tr('report_open_raid'), `${data.summary.openRisks} / ${data.summary.openIssues}`, `${tr('cr_open')}: ${data.changes.open.length}`],
-          ].map(([label, value, sub]) => (
+          ]
+            .filter(([label]) => !hideSensitive || label !== tr('report_budget_forecast'))
+            .map(([label, value, sub]) => (
             <div key={label} className="rounded-xl border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-gray-300">
               <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
               <div className="text-xl font-bold text-gray-900 dark:text-gray-50">{value}</div>
@@ -254,11 +258,6 @@ export function ReportPage() {
           </Section>
         </div>
 
-        <Section title={tr('report_roadmap')}>
-          <p className="mb-2 text-xs text-gray-400 print:hidden">{tr('report_roadmap_help')}</p>
-          <Roadmap data={roadmap} colorBy={colorBy} phases={project.lists.phases} lang={lang} />
-        </Section>
-
         <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-2">
           <Section title={tr('report_achievements')}>
             <EditableText label={tr('report_achievements')} value={form.achievements} onChange={(v) => set({ achievements: v })} rows={8} />
@@ -267,6 +266,12 @@ export function ReportPage() {
             <EditableText label={tr('report_next_steps')} value={form.nextSteps} onChange={(v) => set({ nextSteps: v })} rows={8} />
           </Section>
         </div>
+
+        <Section title={tr('report_roadmap')} className="print:break-before-page">
+          <p className="mb-2 text-xs text-gray-400 print:hidden">{tr('report_roadmap_help')}</p>
+          <Roadmap data={roadmap} colorBy={colorBy} phases={project.lists.phases} lang={lang} />
+        </Section>
+
 
         <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-2">
           <Section title={tr('nav_milestones')}>
@@ -322,7 +327,7 @@ export function ReportPage() {
                 <thead>
                   <tr className="bg-brand-600 text-left text-white print:bg-[#d81e04]">
                     {['ID', tr('risks_type'), tr('raid_title'), tr('common_project_area'), 'P', tr('report_impact_short'), 'P×I', tr('common_owner'), tr('raid_detail'), tr('risks_due_date'), tr('common_status')].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-2 py-1 font-bold">
+                      <th key={h} className="whitespace-nowrap px-2 py-1 font-bold" data-sensitive={h === tr('raid_detail') || undefined}>
                         {h}
                       </th>
                     ))}
@@ -341,7 +346,7 @@ export function ReportPage() {
                         <span className={`inline-block min-w-[2rem] rounded px-1 text-center font-semibold ${scoreClass(riskScore(r))}`}>{riskScore(r)}</span>
                       </td>
                       <td className={td}>{r.owner}</td>
-                      <td className={`${td} text-gray-600 dark:text-gray-300`}>{r.type === 'Issue' ? r.resolution || r.mitigation : r.mitigation}</td>
+                      <td className={`${td} text-gray-600 dark:text-gray-300`} data-sensitive>{r.type === 'Issue' ? r.resolution || r.mitigation : r.mitigation}</td>
                       <td className={`${td} whitespace-nowrap`}>{formatDate(r.dueDate)}</td>
                       <td className={td}>{r.status}</td>
                     </tr>
@@ -360,7 +365,7 @@ export function ReportPage() {
         </Section>
 
         <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-2">
-          <Section title={tr('report_changes_decisions')}>
+          <Section title={hideSensitive ? tr('raid_Decision') : tr('report_changes_decisions')}>
             <ul className="space-y-1 text-sm">
               {[...data.changes.open, ...data.changes.decided].map((c) => (
                 <li key={c.id}>
@@ -375,7 +380,7 @@ export function ReportPage() {
               {data.changes.open.length + data.changes.decided.length + data.decisions.length === 0 && <li className="text-gray-400">—</li>}
             </ul>
           </Section>
-          <Section title={tr('nav_budget')}>
+          <Section title={tr('nav_budget')} sensitive>
             <table className="w-full text-sm">
               <tbody>
                 {[

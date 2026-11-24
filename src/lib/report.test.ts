@@ -92,9 +92,9 @@ describe('risk register page', () => {
     expect(m.Low.High).toBe(5)
   })
 
-  it('slides: 8 rows next to the map, then 12 per continuation slide', () => {
-    expect(paginate(r.riskRegister, 8, 12).map((x) => x.length)).toEqual([8, 5])
-    expect(paginate([], 8, 12)).toEqual([[]])
-    expect(paginate(Array(30).fill(0), 8, 12).map((x) => x.length)).toEqual([8, 12, 10])
+  it('register slides: 12 rows each, none when nothing is open', () => {
+    expect(paginate(r.riskRegister, 12).map((x) => x.length)).toEqual([12, 1])
+    expect(paginate([], 12)).toEqual([])
+    expect(paginate(Array(30).fill(0), 12).map((x) => x.length)).toEqual([12, 12, 6])
   })
 })

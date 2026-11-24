@@ -141,3 +141,14 @@ describe('import in the store', () => {
     expect(active().tasks.find((t) => t.id === 't11')!.owner).toBe('Hned předtím') // the earlier edit stays
   })
 })
+
+describe('bulk edit of selected tasks', () => {
+  it('sets one attribute on several tasks as a single undo step', () => {
+    const store = useWorkspaceStore.getState()
+    const ids = active().tasks.slice(0, 3).map((t) => t.id)
+    store.bulkUpdateTasks(ids, { mgmtExport: true, priority: 'High' })
+    expect(active().tasks.slice(0, 3).every((t) => t.mgmtExport && t.priority === 'High')).toBe(true)
+    useWorkspaceStore.temporal.getState().undo()
+    expect(active().tasks.slice(0, 3).some((t) => t.mgmtExport && t.priority === 'High')).toBe(false)
+  })
+})

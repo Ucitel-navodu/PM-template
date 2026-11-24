@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Lang, Theme } from '../types'
 import { loadPref, savePref } from '../lib/storage'
 import { isDark, validPalette, PALETTES, type PaletteId } from '../lib/palettes'
+import { setSensitiveHidden } from '../lib/sensitive'
 
 // Per-device preferences: not part of the workspace file (each colleague
 // opening the same file keeps their own language, palette and name).
@@ -16,6 +17,9 @@ interface PrefsState {
   saveFormat: 'pmw' | 'xlsx' | 'txt' | 'json'
   setSaveFormat: (f: 'pmw' | 'xlsx' | 'txt' | 'json') => void
   maxBackups: number
+  /** Eye: hide finance, Budget / Changes / History and notes for suppliers (screen + exports). */
+  hideSensitive: boolean
+  setHideSensitive: (v: boolean) => void
   setLang: (l: Lang) => void
   setPalette: (p: PaletteId) => void
   toggleTheme: () => void
@@ -42,6 +46,8 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
   saveFormat: loadPref<'pmw' | 'xlsx' | 'txt' | 'json'>('saveFormat', 'pmw'),
   setSaveFormat: (saveFormat) => set({ saveFormat }),
   maxBackups: loadPref<number>('maxBackups', 20),
+  hideSensitive: loadPref<boolean>('hideSensitive', false),
+  setHideSensitive: (hideSensitive) => set({ hideSensitive }),
   setLang: (lang) => set({ lang }),
   setPalette: (palette) => {
     const p = validPalette(palette)
@@ -72,6 +78,9 @@ usePrefsStore.subscribe((s) => {
   savePref('autosaveDelayMs', s.autosaveDelayMs)
   savePref('saveFormat', s.saveFormat)
   savePref('maxBackups', s.maxBackups)
+  savePref('hideSensitive', s.hideSensitive)
+  setSensitiveHidden(s.hideSensitive)
   applyAppearance(s.palette)
 })
 applyAppearance(initial)
+setSensitiveHidden(usePrefsStore.getState().hideSensitive)

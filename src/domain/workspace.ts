@@ -38,7 +38,7 @@ const listsSchema = z.object({
   budgetCategories: strList.catch(defaultLists.budgetCategories),
   // schema 5: user-defined task statuses (each with a fixed meaning) and priorities
   statuses: z
-    .array(z.object({ name: z.string().min(1), kind: z.enum(STATUS_KINDS as [Status, ...Status[]]) }))
+    .array(z.object({ name: z.string().min(1), kind: z.enum(STATUS_KINDS as [Status, ...Status[]]), icon: z.string().max(16).optional() }))
     .min(1)
     .catch(defaultLists.statuses),
   priorities: z.array(z.string()).min(1).catch(defaultLists.priorities),
@@ -192,7 +192,8 @@ export function migrateWorkspace(ws: Workspace): Workspace {
     ...ws,
     schemaVersion: WORKSPACE_SCHEMA_VERSION,
     // The report colour is fixed to the corporate red (kept in the file for older versions).
-    reportSettings: { ...defaultReportSettings, ...(ws.reportSettings ?? {}), accentColor: defaultReportSettings.accentColor },
+    // Fixed corporate colour and the built-in ORLEN Unipetrol logo: an uploaded logo of older versions is dropped.
+    reportSettings: (({ logoDataUrl: _logo, ...rs }) => ({ ...rs, accentColor: defaultReportSettings.accentColor }))({ ...defaultReportSettings, ...(ws.reportSettings ?? {}) }),
     projects: ws.projects.map((p) => migrateProject(p, ws.calendar)) }
 }
 

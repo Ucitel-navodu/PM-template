@@ -166,3 +166,15 @@ tests/e2e/                 Playwright scénáře
   dočasný soubor. Aplikace pak nabídne „Uložit jinam…“ a „Stáhnout kopii“. Spolehlivé: místní / OneDrive složka
   a kopírování na SharePoint, případně synchronizace knihovny přes OneDrive (SharePoint Server 2019+).
 - Report a PPTX používají vždy firemní červenou (volba barvy byla odebrána).
+
+## Novinky ve verzi 0.12.0
+
+- **PowerPoint**: pevná mřížka slidu (nic mimo slide, nic přes sebe – hlídá to e2e test), symbol O + U oříznutý
+  uvnitř slidu, rizika na slidu „mapa“ (mapa, počty podle závažnosti, top 5) a celostránkových slidech „registr“.
+- **PDF**: A4 na šířku, patička s firmou a čísly stran, roadmapa na vlastní straně, tabulky se nelámou uprostřed řádku.
+- **Oko 👁️ – režim pro dodavatele**: skryje finance, záložky Rozpočet / Změny / Historie a poznámky na obrazovce
+  i ve všech exportech (PDF, PPTX, Excel, CSV, stažená kopie).
+- **Hromadné úpravy** vybraných úkolů (stav, fáze, oblast, vlastník, priorita, Export pro vedení, …), jeden krok Zpět.
+- **Pořadí sloupců** v Úkolech tažením záhlaví (pamatuje se, i v pohledech).
+- **Ikony stavů** volitelné z ~90 ikon ve skupinách.
+- Vlastní logo v nastavení odebráno – logo ORLEN Unipetrol je vestavěné.

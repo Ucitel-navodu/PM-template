@@ -7,6 +7,7 @@ import { useWorkspaceStore } from '../../store/workspaceStore'
 import { addBackup, clearFileHandle, loadFileHandle, saveCachedWorkspace, saveFileHandle } from './cache'
 import { loadState } from '../storage'
 import { usePrefsStore } from '../../store/prefsStore'
+import { redactWorkspace, sensitiveHidden } from '../sensitive'
 
 /*
  * Workspace file sync ("the file is the source of truth, the browser is a cache").
@@ -196,7 +197,9 @@ export async function openFile(readOnly: boolean): Promise<OpenResult> {
 
 /** Download a copy (always works, also without File System Access). */
 export async function downloadCopy(format: FileFormat = usePrefsStore.getState().saveFormat): Promise<void> {
-  const { workspace: ws, activeProjectId } = useWorkspaceStore.getState()
+  const { workspace: full, activeProjectId } = useWorkspaceStore.getState()
+  // supplier mode: the downloaded copy leaves out finance, changes, history and notes (the working file stays complete)
+  const ws = sensitiveHidden() ? redactWorkspace(full) : full
   try {
     await fileSave(await encodeWorkspace(ws, format, activeProjectId), { ...saveOptions(format), fileName: suggestedName(ws, format) })
   } catch (e) {

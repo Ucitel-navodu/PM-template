@@ -64,8 +64,56 @@ print(json.dumps({'colors':sorted(c.upper() for c in cols),'fonts':sorted(fonts)
       { encoding: 'utf8' },
     ),
   )
+/**
+ * Geometry of every slide (with its layout): objects outside the 13.333 x 7.5 in slide, and tables /
+ * charts / pictures overlapping another object (text over its own shape - KPI tiles, map cells, labels
+ * in bars - is intended and not reported).
+ */
+const layoutAudit = (file) =>
+  JSON.parse(
+    execFileSync(
+      'python3',
+      [
+        '-I',
+        '-c',
+        `import sys,json,re,zipfile
+z=zipfile.ZipFile(sys.argv[1])
+W,H=12192000,6858000
+def objs(x):
+  out=[]
+  for kind,body in re.findall(r'<p:(sp|pic|graphicFrame)>(.*?)</p:\\1>',x,re.S):
+    m=re.search(r'<a:off x="(-?\\d+)" y="(-?\\d+)"/><a:ext cx="(\\d+)" cy="(\\d+)"/>',body)
+    if not m: continue
+    x0,y0,w,h=map(int,m.groups())
+    name=re.search(r'name="([^"]*)"',body); txt=''.join(re.findall(r'<a:t>([^<]*)</a:t>',body))[:30]
+    out.append((kind,x0,y0,w,h,(name.group(1) if name else kind)+':'+txt))
+  return out
+outside=[];overlaps=[]
+slides=sorted([n for n in z.namelist() if re.match(r'ppt/slides/slide\\d+\\.xml$',n)],key=lambda n:int(re.findall(r'\\d+',n)[0]))
+for n in slides:
+  rel=z.read(n.replace('slides/','slides/_rels/')+'.rels').decode()
+  layout='ppt/slideLayouts/'+re.search(r'slideLayouts/([^"]+)',rel).group(1)
+  lo=[o for o in objs(z.read(layout).decode()) if o[0]=='pic']
+  so=objs(z.read(n).decode())
+  for o in lo+so:
+    k,x0,y0,w,h,lab=o
+    if x0<0 or y0<0 or x0+w>W+1 or y0+h>H+1: outside.append(n.split('/')[-1]+' '+lab)
+  allo=lo+so
+  for i,a in enumerate(allo):
+    for b in allo[i+1:]:
+      if not (a[0] in ('graphicFrame','pic') or b[0] in ('graphicFrame','pic')): continue
+      if a[0]=='sp' and b[0]=='sp': continue
+      ix=min(a[1]+a[3],b[1]+b[3])-max(a[1],b[1]); iy=min(a[2]+a[4],b[2]+b[4])-max(a[2],b[2])
+      if ix>9144 and iy>9144: overlaps.append(n.split('/')[-1]+' '+a[5]+' x '+b[5])
+print(json.dumps({'outside':outside,'overlaps':overlaps}))`,
+        file,
+      ],
+      { encoding: 'utf8' },
+    ),
+  )
+
 // Manual 4.1 / 4.2 (+ white, black text fallback and light tints of grey 429 C for lines and stripes)
-const BRAND_COLORS = new Set(['D81E04', '676D6F', 'AEAFAB', 'FBBA00', 'E84E0F', '791307', 'F8F6F6', '00B1EB', '00779C', '00404A', '90A3B2', 'C8D300', '689425', '163D14', '2B3035', 'FFFFFF', '000000', 'E2E2E0', 'CBCCC9', 'EFEEED'])
+const BRAND_COLORS = new Set(['D81E04', '676D6F', 'AEAFAB', 'FBBA00', 'E84E0F', '791307', 'F8F6F6', '00B1EB', '00779C', '00404A', '90A3B2', 'C8D300', '689425', '163D14', '2B3035', 'FFFFFF', '000000', 'E2E2E0', 'CBCCC9', 'EFEEED', 'FBDED9', 'FFEFB8', 'E0EBCD'])
 const slideTexts = (file) => {
   const [entries] = unzip(file, '')
   return entries
@@ -93,11 +141,15 @@ const pptx = join(out, download.suggestedFilename())
 await download.saveAs(pptx)
 const [entries, slide2] = unzip(pptx, 'ppt/slides/slide2.xml')
 const slides = entries.filter((e) => /^ppt\/slides\/slide\d+\.xml$/.test(e))
-check('PPTX has 9 slides (8 + closing)', slides.length === 9, `${slides.length} slides, ${download.suggestedFilename()}`)
+check('PPTX has 10 slides (2 risk slides + closing)', slides.length === 10, `${slides.length} slides, ${download.suggestedFilename()}`)
 check('PPTX contains the commentary', [...slide2.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1]).join('').includes('Tendr se blíží rozhodnutí'))
 check('PPTX budget slide has a native chart', entries.some((e) => /^ppt\/charts\/chart\d+\.xml$/.test(e)))
 const texts = slideTexts(pptx)
-check('PPTX risk slide has the map and the register', texts.some((t) => t.includes('Rizika a issues – mapa a registr') && t.includes('Pravděpodobnost') && t.includes('R-001') && t.includes('R-002')))
+check('PPTX has a risk map slide (map, counts, top 5)', texts.some((t) => t.includes('Rizika a issues – mapa') && t.includes('Pravděpodobnost') && t.includes('Top 5') && t.includes('R-001')))
+check('PPTX has a full-width risk register slide', texts.some((t) => t.includes('Registr rizik a issues') && t.includes('R-002') && t.includes('Opatření')))
+const layout = layoutAudit(pptx)
+check('PPTX: every object lies inside the slide', layout.outside.length === 0, layout.outside.slice(0, 5).join(' | '))
+check('PPTX: tables, charts and pictures do not overlap other objects', layout.overlaps.length === 0, layout.overlaps.slice(0, 5).join(' | '))
 const audit = brandAudit(pptx)
 const offBrand = audit.colors.filter((c) => !BRAND_COLORS.has(c))
 check('PPTX uses only the colours of the brand manual', offBrand.length === 0, offBrand.join(', '))
@@ -116,7 +168,7 @@ await page.emulateMedia({ media: 'screen' })
 // Many risks: the register continues on more slides
 await page.locator('nav button', { hasText: 'RAID' }).click()
 await page.getByRole('tab', { name: /Rizika/ }).click()
-for (let i = 0; i < 10; i++) await page.getByRole('button', { name: /\+ Přidat/ }).click()
+for (let i = 0; i < 18; i++) await page.getByRole('button', { name: /\+ Přidat/ }).click()
 await page.locator('nav button', { hasText: 'Report' }).click()
 await page.waitForSelector('[data-testid=report]')
 const regRows = await register.locator('tbody tr').count()
@@ -124,9 +176,11 @@ const [dl2] = await Promise.all([page.waitForEvent('download'), page.getByRole('
 const pptx2 = join(out, 'many-risks.pptx')
 await dl2.saveAs(pptx2)
 const texts2 = slideTexts(pptx2)
-const riskSlides = texts2.filter((t) => t.includes('Rizika a issues – mapa a registr'))
-check('the report lists every open risk', regRows === 12, String(regRows))
-check('12 risks: map slide with 8 rows + continuation slide', riskSlides.length === 2 && riskSlides[1].includes('pokračování 2/2') && texts2.length === 10, `${riskSlides.length} risk slides, ${texts2.length} slides`)
+const riskSlides = texts2.filter((t) => t.includes('Registr rizik a issues'))
+check('the report lists every open risk', regRows === 20, String(regRows))
+check('20 risks: map slide + 2 register slides (12 + 8 rows)', riskSlides.length === 2 && riskSlides[1].includes('(2/2)') && texts2.length === 11, `${riskSlides.length} register slides, ${texts2.length} slides`)
+const layout2 = layoutAudit(pptx2)
+check('PPTX with 20 risks: nothing outside the slide or overlapping', layout2.outside.length + layout2.overlaps.length === 0, [...layout2.outside, ...layout2.overlaps].slice(0, 5).join(' | '))
 
 // Portfolio deck
 await page.locator('nav button', { hasText: 'Portfolio' }).click()

@@ -73,6 +73,18 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: "HTML je jen program bez dat. Když ho kolegové otevřou z odkazu na SharePointu, běží jim v Edge přímo z adresy SharePointu, ale každý vidí svá data uložená v prohlížeči – dokud neotevře společný pracovní soubor. Pokud dva lidé otevřou stejný soubor (.pmw), platí jeden zapisující: kdo soubor upravuje, otevře ho normálně, ostatní přes 💾 Soubor → Otevřít jen pro čtení (tlačítkem Načíst znovu uvidí poslední uloženou verzi). Když zapisují dva současně, aplikace kolizi pozná a nic nepřepíše, ale změny neslučuje – vybereš, čí verze platí. Aplikace nemá přístupová práva po projektech: kdo má přístup k souboru, vidí celý jeho obsah. Ukládání do souboru funguje v Edge a Chrome.",
         },
         {
+          q: "Jak skrýt citlivá data před dodavatelem (oko)?",
+          a: "Tlačítko 👁️ v hlavičce zapne režim pro dodavatele (🙈). Skryje finance (rozpočet, CAPEX/OPEX, platby a faktury u milníků, náklady změn), záložky Rozpočet, Změny a Historie a poznámky a komentáře (poznámky úkolů, opatření a řešení u rizik). Platí i pro exporty: PDF, PowerPoint (bez slidu rozpočtu a změn), Excel (bez listů BUDGET a CHANGES), CSV a Stáhnout kopii. Tvůj pracovní soubor se dál ukládá kompletní. Texty, které do reportu napíšeš ručně, aplikace nehlídá – zkontroluj je před odesláním.",
+        },
+        {
+          q: "Jak upravit víc úkolů najednou?",
+          a: "V Úkolech klikni na ☑ Vybrat, zaškrtni řádky (Shift+klik vybere rozsah) a v liště nahoře zvol atribut (stav, fáze, oblast, vlastník, priorita, Export pro vedení, režim plánování, milník, % dokončení) a hodnotu → Použít. Je to jeden krok Zpět (Ctrl+Z). Stejnou lištou vybrané úkoly smažeš.",
+        },
+        {
+          q: "Jak změnit pořadí sloupců a ikony stavů?",
+          a: "Sloupec přesuneš tažením jeho záhlaví (modrá čára ukáže, kam dopadne); pořadí se pamatuje i v uložených pohledech, vrátíš ho v menu Sloupce ▾ → Obnovit výchozí pořadí. Ikonu stavu vybereš v ⚙️ Nastavení → Stavy úkolů tlačítkem s ikonou – nabídka je rozdělená do skupin (průběh, čekání, kontrola, hotovo, problémy, lidé, dokumenty, termíny, barvy).",
+        },
+        {
           q: "SharePoint nechce uložit soubor .json. Co s tím?",
           a: "Ulož pracovní soubor v jiném formátu: 💾 Soubor → Uložit do souboru… → vyber .pmw (doporučeno), .xlsx nebo .txt. Všechny obsahují stejná kompletní data, automatické ukládání i hlídání kolizí funguje stejně. Varianta .xlsx je navíc čitelná v Excelu (listy TASKS, BUDGET…); úpravy udělané v Excelu se ale zpět nenačtou – data appky jsou ve skrytém listu PM_DATA.",
         },
@@ -202,7 +214,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: "Co obsahuje PowerPoint?",
-          a: "9 slidů ve firemní šabloně ORLEN Unipetrol: titulní, manažerské shrnutí (RAG, KPI, eskalace), RoadMapa, milníky, hotovo/další kroky, top rizika a issues, změny a rozhodnutí, rozpočet s grafem a závěrečný slide. Vše jsou normální textová pole, tabulky a graf PowerPointu – můžeš je dál upravit. Barvy jsou firemní (podle manuálu se nemění); další logo, organizaci a patičku nastavíš v ⚙️ Nastavení → Report a prezentace.",
+          a: "Slidy ve firemní šabloně ORLEN Unipetrol: titulní, manažerské shrnutí (RAG, KPI, eskalace), RoadMapa, milníky, hotovo/další kroky, mapa rizik s top 5 a registr všech otevřených rizik a issues (12 řádků na slide), změny a rozhodnutí, rozpočet s grafem a závěrečný slide. Vše jsou normální textová pole, tabulky a graf PowerPointu – můžeš je dál upravit. Barvy a logo jsou firemní (podle manuálu se nemění); organizaci a patičku nastavíš v ⚙️ Nastavení → Report a prezentace.",
         },
         {
           q: "Jak řídím, co je na RoadMapě?",
@@ -382,6 +394,18 @@ export const helpContent: Record<Lang, HelpSection[]> = {
           a: "The HTML is only the program, with no data. When colleagues open it from a link on SharePoint it runs in Edge straight from the SharePoint address, but everyone sees the data stored in their own browser - until they open a shared working file. When two people open the same file (.pmw), there is one writer: whoever edits opens it normally, the others via 💾 File → Open read-only (Reload shows the last saved version). If two people write at the same time, the app detects the conflict and overwrites nothing, but does not merge - you choose which version counts. There are no per-project permissions: whoever can open the file sees all of it. Saving into a file works in Edge and Chrome.",
         },
         {
+          q: "How do I hide sensitive data from a supplier (the eye)?",
+          a: "The 👁️ button in the header turns on the supplier mode (🙈). It hides finance (budget, CAPEX/OPEX, milestone payments and invoices, change costs), the Budget, Changes and History tabs and notes and comments (task notes, risk mitigations and resolutions). Exports follow it too: PDF, PowerPoint (no budget and change slides), Excel (no BUDGET and CHANGES sheets), CSV and Download a copy. Your working file is still saved complete. Texts you type into the report yourself are not checked - review them before sending.",
+        },
+        {
+          q: "How do I edit several tasks at once?",
+          a: "In Tasks click ☑ Select, tick the rows (Shift+click selects a range) and in the bar pick an attribute (status, phase, area, owner, priority, management export, scheduling mode, milestone, % complete) and a value → Apply. It is one undo step (Ctrl+Z). The same bar deletes the selected tasks.",
+        },
+        {
+          q: "How do I reorder columns and change status icons?",
+          a: "Drag a column header (a line shows where it lands); the order is remembered, also in saved views, and Columns ▾ → Reset the column order brings back the default. Pick a status icon in ⚙️ Settings → Task statuses with the icon button - the choice is grouped (progress, waiting, review, done, problems, people, documents, dates, colours).",
+        },
+        {
           q: "SharePoint refuses the .json file. What now?",
           a: "Save the working file in another format: 💾 File → Save to file… → pick .pmw (recommended), .xlsx or .txt. All of them hold the same complete data; autosave and conflict detection work the same. The .xlsx variant is also readable in Excel (sheets TASKS, BUDGET…), but edits made in Excel are not read back - the app data lives in the hidden sheet PM_DATA.",
         },
@@ -499,7 +523,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: "What is in the PowerPoint?",
-          a: "9 slides in the ORLEN Unipetrol template: title, executive summary (RAG, KPIs, escalations), roadmap, milestones, achieved/next, top risks and issues, changes and decisions, budget with a chart and a closing slide. All are normal PowerPoint text boxes, tables and a chart you can still edit. The colours are the corporate ones (fixed by the manual); an extra logo, organisation and footer are in ⚙️ Settings → Reports & slides.",
+          a: "Slides in the ORLEN Unipetrol template: title, executive summary (RAG, KPIs, escalations), roadmap, milestones, achieved/next, risk map with the top 5 and the register of all open risks and issues (12 rows per slide), changes and decisions, budget with a chart and a closing slide. All are normal PowerPoint text boxes, tables and a chart you can still edit. The colours and the logo are the corporate ones (fixed by the manual); organisation and footer are in ⚙️ Settings → Reports & slides.",
         },
         {
           q: "How do I control what is on the roadmap?",

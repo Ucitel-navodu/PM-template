@@ -7,6 +7,7 @@ import { formatDependencies } from '../schedule/predecessors'
 import { schedule } from '../schedule/cpm'
 import { outline } from '../schedule/tree'
 import { riskScore } from '../raid'
+import { redactProject, sensitiveHidden } from '../sensitive'
 import type { CalendarSettings } from '../../types'
 
 /** What an uploaded .xlsx / .csv contains, and what importing it would change. */
@@ -159,10 +160,23 @@ const toDate = (key?: string) => (key ? new Date(Number(key.slice(0, 4)), Number
 
 /** Whole project as a workbook: TASKS, MILESTONES, BUDGET, RAID, CHANGES, CONFIG. Column names match what the import reads. */
 export async function exportWorkbook(project: Project, calendar: Pick<CalendarSettings, 'workingDays' | 'holidays'>): Promise<Uint8Array> {
-  return writeXlsx(projectSheets(project, calendar))
+  return writeXlsx(projectSheets(project, calendar, sensitiveHidden()))
 }
 
-export function projectSheets(project: Project, calendar: Pick<CalendarSettings, 'workingDays' | 'holidays'>): OutSheet[] {
+/** Supplier mode: no BUDGET / CHANGES sheets, no money, payment or note columns. */
+const SENSITIVE_SHEETS = ['BUDGET', 'CHANGES']
+const SENSITIVE_COLUMNS = ['Payment Trigger %', 'Amount', 'Invoice No', 'Payment Status', 'Notes', 'Mitigation', 'Comment']
+function withoutSensitive(sheets: OutSheet[]): OutSheet[] {
+  return sheets
+    .filter((s) => !SENSITIVE_SHEETS.includes(s.name))
+    .map((s) => {
+      const keep = s.headers.map((h, i) => (SENSITIVE_COLUMNS.includes(h) ? -1 : i)).filter((i) => i >= 0)
+      return { ...s, headers: keep.map((i) => s.headers[i]), widths: s.widths && keep.map((i) => s.widths![i]), rows: s.rows.map((r) => keep.map((i) => r[i])) }
+    })
+}
+
+export function projectSheets(project: Project, calendar: Pick<CalendarSettings, 'workingDays' | 'holidays'>, hideSensitive = false): OutSheet[] {
+  if (hideSensitive) return withoutSensitive(projectSheets(redactProject(project), calendar))
   const res = schedule(project.tasks, calendar, project.info.start || undefined, project.lists.statuses)
   const tree = outline(project.tasks)
   const tasks: OutSheet = {

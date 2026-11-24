@@ -21,6 +21,7 @@ import { WorkspaceFileError } from '../domain/workspace'
 import type { TKey } from '../i18n'
 import { FORMATS, FORMAT_ORDER, type FileFormat } from '../lib/persistence/formats'
 import { usePrefsStore } from '../store/prefsStore'
+import { sensitiveHidden } from '../lib/sensitive'
 
 const STATUS_LABEL: Record<SyncStatus, TKey> = {
   'local-only': 'sync_local_only',
@@ -212,6 +213,7 @@ export function FileMenu() {
             onPick={(f) => {
               const mode = saveAs
               setSaveAs(null)
+              if (mode === 'copy' && sensitiveHidden() && !window.confirm(tr('sensitive_copy_confirm'))) return
               void run(() => (mode === 'link' ? linkNewFile(f) : downloadCopy(f)))
             }}
           />,

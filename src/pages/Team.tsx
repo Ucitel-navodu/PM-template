@@ -88,7 +88,7 @@ export function TeamPage() {
               <th className={th} title={tr('team_conflicts_help')}>
                 {tr('team_conflicts')} ⓘ
               </th>
-              <th className={th}>{tr('common_notes')}</th>
+              <th className={th} data-sensitive>{tr('common_notes')}</th>
               <th className={th} />
             </tr>
           </thead>
@@ -144,7 +144,7 @@ export function TeamPage() {
                       </span>
                     )}
                   </td>
-                  <td className={td}>
+                  <td className={td} data-sensitive>
                     <input
                       value={a.note ?? ''}
                       onChange={(e) => updateAbsence(a.id, { note: e.target.value || undefined })}

@@ -162,15 +162,15 @@ export function RisksPage() {
               {show('Risk', 'Issue', 'Assumption', 'Dependency') && <th className={th}>{tr('risks_impact')}</th>}
               {show('Risk', 'Issue') && <th className={th}>P×I</th>}
               {show('Risk') && <th className={th}>{tr('raid_response')}</th>}
-              {show('Risk', 'Dependency') && <th className={th}>{tr('risks_mitigation')}</th>}
-              {tab === 'Risk' && <th className={th}>{tr('raid_contingency')}</th>}
-              {tab === 'Risk' && <th className={th}>{tr('raid_trigger')}</th>}
+              {show('Risk', 'Dependency') && <th className={th} data-sensitive>{tr('risks_mitigation')}</th>}
+              {tab === 'Risk' && <th className={th} data-sensitive>{tr('raid_contingency')}</th>}
+              {tab === 'Risk' && <th className={th} data-sensitive>{tr('raid_trigger')}</th>}
               {show('Issue') && tab !== 'all' && <th className={th}>{tr('plan_priority')}</th>}
-              {show('Issue') && tab !== 'all' && <th className={th}>{tr('raid_resolution')}</th>}
+              {show('Issue') && tab !== 'all' && <th className={th} data-sensitive>{tr('raid_resolution')}</th>}
               {show('Assumption') && tab !== 'all' && <th className={th}>{tr('raid_validated')}</th>}
               {show('Decision') && tab !== 'all' && <th className={th}>{tr('raid_decided_by')}</th>}
               {show('Decision') && tab !== 'all' && <th className={th}>{tr('raid_decision_date')}</th>}
-              {show('Decision') && tab !== 'all' && <th className={th}>{tr('raid_rationale')}</th>}
+              {show('Decision') && tab !== 'all' && <th className={th} data-sensitive>{tr('raid_rationale')}</th>}
               <th className={th}>{tr('common_owner')}</th>
               <th className={th}>{tr('risks_linked_task')}</th>
               <th className={th}>{tr('risks_due_date')}</th>
@@ -244,7 +244,7 @@ export function RisksPage() {
                     </td>
                   )}
                   {show('Risk', 'Dependency') && (
-                    <td className={td}>
+                    <td className={td} data-sensitive>
                       {type === 'Risk' || type === 'Dependency'
                         ? textInput(r, 'mitigation')
                         : type === 'Issue'
@@ -254,8 +254,8 @@ export function RisksPage() {
                             : null}
                     </td>
                   )}
-                  {tab === 'Risk' && <td className={td}>{textInput(r, 'contingency')}</td>}
-                  {tab === 'Risk' && <td className={td}>{textInput(r, 'trigger', 'w-40')}</td>}
+                  {tab === 'Risk' && <td className={td} data-sensitive>{textInput(r, 'contingency')}</td>}
+                  {tab === 'Risk' && <td className={td} data-sensitive>{textInput(r, 'trigger', 'w-40')}</td>}
                   {show('Issue') && tab !== 'all' && (
                     <td className={td}>
                       <select value={r.priority ?? ''} onChange={(e) => edit(r.id, { priority: e.target.value || undefined })} className={selectGhost}>
@@ -268,7 +268,7 @@ export function RisksPage() {
                       </select>
                     </td>
                   )}
-                  {show('Issue') && tab !== 'all' && <td className={td}>{textInput(r, 'resolution', 'w-56')}</td>}
+                  {show('Issue') && tab !== 'all' && <td className={td} data-sensitive>{textInput(r, 'resolution', 'w-56')}</td>}
                   {show('Assumption') && tab !== 'all' && (
                     <td className={`${td} text-center`}>
                       <input type="checkbox" checked={Boolean(r.validated)} onChange={(e) => edit(r.id, { validated: e.target.checked })} />
@@ -281,7 +281,7 @@ export function RisksPage() {
                     </td>
                   )}
                   {show('Decision') && tab !== 'all' && (
-                    <td className={td}>
+                    <td className={td} data-sensitive>
                       {textInput(r, 'rationale', 'w-56')}
                       {r.linkedChangeId && <div className="px-1 text-[11px] text-gray-400">↳ {changes.find((c) => c.id === r.linkedChangeId)?.id ?? r.linkedChangeId}</div>}
                     </td>

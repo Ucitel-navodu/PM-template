@@ -163,7 +163,7 @@ export function Dashboard() {
         )}
       </Card>
 
-      <Card title={tr('dash_milestones')} icon="💰" accent="amber">
+      <Card title={tr('dash_milestones')} icon="💰" accent="amber" sensitive>
         <div className="grid grid-cols-2 gap-3">
           <Stat label={tr('common_total')} value={formatMoney(milestonePayments.total, projectInfo.currency)} />
           <Stat label="Paid" value={formatMoney(milestonePayments.paid, projectInfo.currency)} />
@@ -172,7 +172,7 @@ export function Dashboard() {
         </div>
       </Card>
 
-      <Card title={tr('dash_budget')} icon="💳" accent="emerald">
+      <Card title={tr('dash_budget')} icon="💳" accent="emerald" sensitive>
         <div className="grid grid-cols-2 gap-3">
           <Stat label={tr('budget_approved')} value={formatMoney(projectInfo.budget, projectInfo.currency)} />
           <Stat label={tr('budget_summary_planned')} value={formatMoney(budgetSummary.planned, projectInfo.currency)} />

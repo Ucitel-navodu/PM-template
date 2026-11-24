@@ -91,11 +91,32 @@ html.dark select optgroup {
   color: rgb(var(--pm-text));
 }
 
+/* Eye (hide for suppliers): marked cells and blocks disappear on screen and in print / PDF. */
+html.hide-sensitive [data-sensitive] {
+  display: none !important;
+}
+
 /* Printed status report: A4 landscape, light, app chrome hidden (print:hidden). */
 @page {
   size: A4 landscape;
   margin: 10mm;
 }
+/* Paper: A4 landscape, fixed margins, a footer with the company name and page numbers (Edge / Chrome 131+). */
+@page {
+  size: A4 landscape;
+  margin: 11mm 12mm 13mm;
+  @bottom-left {
+    content: 'ORLEN Unipetrol · Project Manager';
+    font: 8pt Arial, sans-serif;
+    color: #676d6f;
+  }
+  @bottom-right {
+    content: counter(page) ' / ' counter(pages);
+    font: 8pt Arial, sans-serif;
+    color: #676d6f;
+  }
+}
+
 @media print {
   html,
   body,
@@ -118,5 +139,11 @@ html.dark select optgroup {
   }
   .report-doc thead {
     display: table-header-group;
+  }
+  .report-doc tr {
+    break-inside: avoid;
+  }
+  .report-doc h3 {
+    break-after: avoid;
   }
 }

@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { STATUS_ICON_GROUPS } from '../lib/status'
 import type { SettingsPanelId } from '../lib/settingsNav'
 import { useApp, type ListKey } from '../context/AppContext'
 import { defaultSettings } from '../data/settings'
@@ -119,6 +121,67 @@ function ListEditor({ list }: { list: ListKey }) {
   )
 }
 
+/** Icon choice for a status: emoji grouped by category, or the default of the meaning. */
+function IconPicker({ value, fallback, disabled, onChange }: { value?: string; fallback: string; disabled?: boolean; onChange: (icon: string | undefined) => void }) {
+  const { tr } = useApp()
+  const [at, setAt] = useState<{ x: number; y: number } | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!at) return
+    const away = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setAt(null)
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && (e.stopImmediatePropagation(), setAt(null))
+    document.addEventListener('mousedown', away)
+    window.addEventListener('keydown', key, true)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      window.removeEventListener('keydown', key, true)
+    }
+  }, [at])
+  const pick = (icon: string | undefined) => {
+    onChange(icon)
+    setAt(null)
+  }
+  return (
+    <>
+      <button
+        type="button"
+        disabled={disabled}
+        data-icon-picker
+        title={tr('settings_status_icon')}
+        aria-label={tr('settings_status_icon')}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          setAt(at ? null : { x: Math.min(r.left, window.innerWidth - 330), y: r.bottom + 4 + 360 > window.innerHeight ? Math.max(8, r.top - 364) : r.bottom + 4 })
+        }}
+        className="h-8 w-9 shrink-0 rounded-md border border-gray-300 text-base hover:bg-gray-50 disabled:opacity-40 dark:border-white/15 dark:hover:bg-white/10"
+      >
+        {value || fallback}
+      </button>
+      {at &&
+        createPortal(
+          <div ref={ref} role="dialog" aria-label={tr('settings_status_icon')} data-testid="icon-picker" style={{ left: at.x, top: at.y }} className="fixed z-[60] max-h-[360px] w-[320px] overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-[rgb(var(--pm-card))]">
+            <button className="mb-1 w-full rounded px-2 py-1 text-left text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10" onClick={() => pick(undefined)}>
+              {fallback} {tr('settings_status_icon_default')}
+            </button>
+            {STATUS_ICON_GROUPS.map((g) => (
+              <div key={g.key} className="mt-1">
+                <div className="px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">{tr(`icons_${g.key}` as TKey)}</div>
+                <div className="grid grid-cols-10 gap-0.5">
+                  {g.icons.map((ic) => (
+                    <button key={ic} data-icon={ic} onClick={() => pick(ic)} className={`h-7 rounded text-base hover:bg-gray-100 dark:hover:bg-white/10 ${ic === value ? 'ring-2 ring-brand-600' : ''}`}>
+                      {ic}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </>
+  )
+}
+
 /** Task statuses: a user-visible name plus one of the fixed meanings Health and the scheduler use. */
 function StatusEditor() {
   const { tr, readOnly } = useApp()
@@ -150,6 +213,7 @@ function StatusEditor() {
             className={`flex-1 text-sm ${inputGhost}`}
             disabled={readOnly}
           />
+          <IconPicker value={st.icon} fallback={STATUS_ICON[st.kind]} disabled={readOnly} onChange={(icon) => set(statuses.map((x, j) => (j === i ? { ...x, icon } : x)))} />
           <select
             value={st.kind}
             onChange={(e) => set(statuses.map((x, j) => (j === i ? { ...x, kind: e.target.value as Status } : x)))}
@@ -321,16 +385,9 @@ function ReportSection() {
   const rs = useWorkspaceStore((s) => s.workspace.reportSettings)
   const update = useWorkspaceStore.getState().updateReportSettings
   const label = 'flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400'
-  const onLogo = (file?: File) => {
-    if (!file) return
-    if (file.size > 300_000) return window.alert(tr('report_logo_too_big'))
-    const reader = new FileReader()
-    reader.onload = () => typeof reader.result === 'string' && update({ logoDataUrl: reader.result })
-    reader.readAsDataURL(file)
-  }
   return (
     <Section title={tr('report_settings')} help={tr('report_settings_help')}>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <label className={label}>
           {tr('report_org')}
           <input className={inputBox} value={rs.organization} onChange={(e) => update({ organization: e.target.value })} disabled={readOnly} />
@@ -339,20 +396,6 @@ function ReportSection() {
           {tr('report_footer')}
           <input className={inputBox} value={rs.footer} onChange={(e) => update({ footer: e.target.value })} disabled={readOnly} />
         </label>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <label className={label}>
-          {tr('report_logo')}
-          <input type="file" accept="image/png,image/jpeg" onChange={(e) => onLogo(e.target.files?.[0])} disabled={readOnly} className="text-xs" />
-        </label>
-        {rs.logoDataUrl && (
-          <>
-            <img src={rs.logoDataUrl} alt="" className="h-10 max-w-[8rem] object-contain" />
-            <button className={btnSecondary} onClick={() => update({ logoDataUrl: undefined })} disabled={readOnly}>
-              {tr('report_logo_remove')}
-            </button>
-          </>
-        )}
       </div>
     </Section>
   )
