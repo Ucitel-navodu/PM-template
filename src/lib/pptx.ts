@@ -5,6 +5,7 @@ import type { ProjectSummary } from './portfolio'
 import { riskScore } from './raid'
 import { formatDate, formatMoney, formatPercent } from './format'
 import { itemColor, timeline, type ColorBy } from '../components/Roadmap'
+import { LOGO_RATIO, logoSvg, symbolSvg } from './brand'
 
 /*
  * PowerPoint decks built with pptxgenjs (MIT): native, editable text boxes,
@@ -15,59 +16,112 @@ import { itemColor, timeline, type ColorBy } from '../components/Roadmap'
 
 type Tr = (key: string) => string
 
-const RAG_HEX: Record<string, string> = { Green: '16A34A', Amber: 'F59E0B', Red: 'E11D48', Grey: '9CA3AF' }
-const GREY = '6B7280'
-const DARK = '111827'
+// ORLEN Unipetrol PPT template (manual 6.1): red title / closing slides with the white logo and the
+// graphic symbol, white content slides with a red heading, the logo bottom left and the symbol cut
+// bottom right; Arial; tables with a red header; charts in the supplementary colours.
+const RAG_HEX: Record<string, string> = { Green: '689425', Amber: 'FBBA00', Red: 'D81E04', Grey: '90A3B2' }
+/** Text on a RAG / score fill: the yellow needs dark text. */
+const onFill = (fill: string) => (fill === 'FBBA00' ? '2B3035' : 'FFFFFF')
+const RED = 'D81E04'
+const GREY = '676D6F'
+const DARK = '2B3035'
+const LINE = 'E2E2E0'
+const FONT = 'Arial'
 const hex = (c: string) => c.replace('#', '').toUpperCase()
+
+/** SVG -> PNG data URL in the browser (PowerPoint versions without SVG support still show the image). */
+async function png(svg: string, w: number, h: number): Promise<string> {
+  const img = new Image()
+  img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`
+  await img.decode()
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+  return canvas.toDataURL('image/png')
+}
+
+async function brandImages() {
+  const logoH = 200
+  const logoW = Math.round(logoH * LOGO_RATIO)
+  return {
+    logo: await png(logoSvg('color'), logoW, logoH),
+    logoNegative: await png(logoSvg('negative'), logoW, logoH),
+    symbol: await png(symbolSvg(false), 600, 600),
+    symbolOnRed: await png(symbolSvg(true), 600, 600),
+  }
+}
+type BrandImages = Awaited<ReturnType<typeof brandImages>>
+
+/** Red title slide (also the closing slide). */
+function redSlide(pptx: PptxGenJS, title: string, lines: string[] = []) {
+  const slide = pptx.addSlide({ masterName: 'RED' })
+  slide.addText(title, { x: 0.8, y: 2.2, w: 8.6, h: 1.4, fontSize: 38, bold: true, color: 'FFFFFF', fontFace: FONT, valign: 'bottom' })
+  lines.forEach((t, i) => slide.addText(t, { x: 0.8, y: 3.7 + i * 0.45, w: 8.6, h: 0.42, fontSize: i ? 13 : 18, color: 'FFFFFF', fontFace: FONT }))
+  return slide
+}
 
 async function newDeck(settings: ReportSettings, title: string): Promise<PptxGenJS> {
   const { default: Pptx } = await import('pptxgenjs')
+  const img: BrandImages = await brandImages()
   const pptx = new Pptx()
   pptx.layout = 'LAYOUT_WIDE'
   pptx.title = title
-  pptx.company = settings.organization || ''
-  const accent = hex(settings.accentColor || '#4f46e5')
+  pptx.company = settings.organization || 'ORLEN Unipetrol'
+  pptx.theme = { headFontFace: FONT, bodyFontFace: FONT }
+  const logoH = 0.34
+  const logoW = logoH * LOGO_RATIO
   pptx.defineSlideMaster({
     title: 'PM',
     background: { color: 'FFFFFF' },
     objects: [
-      { rect: { x: 0, y: 0, w: 13.33, h: 0.12, fill: { color: accent } } },
+      // symbol always cut by the slide edge (manual 5.4)
+      { image: { data: img.symbol, x: 12.35, y: 6.45, w: 1.6, h: 1.6 } },
+      { image: { data: img.logo, x: 0.5, y: 6.92, w: logoW, h: logoH } },
       {
         text: {
           text: [settings.organization, settings.footer].filter(Boolean).join(' · '),
-          options: { x: 0.5, y: 7.05, w: 9, h: 0.3, fontSize: 9, color: GREY },
+          options: { x: 0.6 + logoW + 0.3, y: 6.95, w: 8, h: 0.3, fontSize: 9, color: GREY, fontFace: FONT },
         },
       },
-      ...(settings.logoDataUrl ? [{ image: { data: settings.logoDataUrl, x: 11.6, y: 0.3, w: 1.2, h: 0.6, sizing: { type: 'contain' as const, w: 1.2, h: 0.6 } } }] : []),
+      ...(settings.logoDataUrl ? [{ image: { data: settings.logoDataUrl, x: 10.9, y: 0.3, w: 1.2, h: 0.6, sizing: { type: 'contain' as const, w: 1.2, h: 0.6 } } }] : []),
     ],
-    slideNumber: { x: 12.5, y: 7.05, fontSize: 9, color: GREY },
+    slideNumber: { x: 11.55, y: 6.95, w: 0.6, fontSize: 9, color: GREY, fontFace: FONT },
+  })
+  pptx.defineSlideMaster({
+    title: 'RED',
+    background: { color: RED },
+    objects: [
+      { image: { data: img.symbolOnRed, x: 8.9, y: -1.9, w: 5.4, h: 5.4 } },
+      { image: { data: img.logoNegative, x: 0.8, y: 6.3, w: 0.5 * LOGO_RATIO, h: 0.5 } },
+    ],
   })
   return pptx
 }
 
 function heading(slide: PptxGenJS.Slide, text: string, sub?: string) {
-  slide.addText(text, { x: 0.5, y: 0.3, w: 10.8, h: 0.6, fontSize: 24, bold: true, color: DARK })
-  if (sub) slide.addText(sub, { x: 0.5, y: 0.85, w: 10.8, h: 0.35, fontSize: 12, color: GREY })
+  slide.addText(text, { x: 0.5, y: 0.3, w: 10.3, h: 0.6, fontSize: 24, bold: true, color: RED, fontFace: FONT })
+  if (sub) slide.addText(sub, { x: 0.5, y: 0.85, w: 10.3, h: 0.35, fontSize: 12, color: GREY, fontFace: FONT })
 }
 
 function ragPill(slide: PptxGenJS.Slide, rag: string, x: number, y: number, label: string) {
   slide.addShape('roundRect', { x, y, w: 1.6, h: 0.5, fill: { color: RAG_HEX[rag] ?? RAG_HEX.Grey }, rectRadius: 0.1, line: { color: RAG_HEX[rag] ?? RAG_HEX.Grey } })
-  slide.addText(label, { x, y, w: 1.6, h: 0.5, fontSize: 14, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle' })
+  slide.addText(label, { x, y, w: 1.6, h: 0.5, fontSize: 14, bold: true, color: onFill(RAG_HEX[rag] ?? RAG_HEX.Grey), align: 'center', valign: 'middle' })
 }
 
 function kpi(slide: PptxGenJS.Slide, x: number, label: string, value: string, sub = '') {
-  slide.addShape('rect', { x, y: 1.55, w: 2.95, h: 1.15, fill: { color: 'F3F4F6' }, line: { color: 'E5E7EB' } })
+  slide.addShape('rect', { x, y: 1.55, w: 2.95, h: 1.15, fill: { color: 'F8F6F6' }, line: { color: LINE } })
   slide.addText(label, { x: x + 0.15, y: 1.6, w: 2.7, h: 0.3, fontSize: 10, color: GREY })
   slide.addText(value, { x: x + 0.15, y: 1.9, w: 2.7, h: 0.45, fontSize: 20, bold: true, color: DARK })
   if (sub) slide.addText(sub, { x: x + 0.15, y: 2.33, w: 2.7, h: 0.3, fontSize: 10, color: GREY })
 }
 
 const headerRow = (cells: string[], accent: string): PptxGenJS.TableRow =>
-  cells.map((text) => ({ text, options: { bold: true, color: 'FFFFFF', fill: { color: accent }, fontSize: 10 } }))
+  cells.map((text) => ({ text, options: { bold: true, color: 'FFFFFF', fill: { color: accent }, fontSize: 10, fontFace: FONT } }))
 
 const textBox = (slide: PptxGenJS.Slide, title: string, body: string, x: number, y: number, w: number, h: number) => {
   slide.addText(title, { x, y, w, h: 0.35, fontSize: 13, bold: true, color: DARK })
-  slide.addText(body || '—', { x, y: y + 0.38, w, h: h - 0.38, fontSize: 11, color: '374151', valign: 'top', paraSpaceAfter: 2 })
+  slide.addText(body || '—', { x, y: y + 0.38, w, h: h - 0.38, fontSize: 11, color: DARK, valign: 'top', paraSpaceAfter: 2 })
 }
 
 /** RoadMap as native shapes: one slide, swimlanes, bars, milestone diamonds, today line. */
@@ -78,7 +132,7 @@ export function addRoadmapSlide(pptx: PptxGenJS, roadmap: Roadmap, title: string
   const labelW = 1.7
   const right = 12.85
   const top = 1.35
-  const bottom = 6.85
+  const bottom = 6.45 // above the logo / symbol band of the master
   const tl = timeline(roadmap.start, roadmap.end)
   const X = (key: string) => left + labelW + tl.x(key) * (right - left - labelW)
   const lanes = roadmap.lanes.map((l) => ({ ...l, rows: l.items.map((i) => [i]) }))
@@ -88,14 +142,14 @@ export function addRoadmapSlide(pptx: PptxGenJS, roadmap: Roadmap, title: string
   tl.months.forEach((m, i) => {
     const x = left + labelW + m.x * (right - left - labelW)
     const q = m.date.getMonth() % 3 === 0
-    slide.addShape('line', { x, y: top + 0.3, w: 0, h: bottom - top - 0.3, line: { color: q ? 'D1D5DB' : 'F3F4F6', width: 0.75 } })
+    slide.addShape('line', { x, y: top + 0.3, w: 0, h: bottom - top - 0.3, line: { color: q ? 'CBCCC9' : 'EFEEED', width: 0.75 } })
     const label = tl.quarterly ? (q ? `Q${m.date.getMonth() / 3 + 1} ${m.date.getFullYear()}` : '') : m.date.toLocaleDateString(locale, { month: 'short' })
     if (label && i < tl.months.length - 1) slide.addText(label, { x, y: top, w: 1.2, h: 0.28, fontSize: 9, color: GREY })
   })
   let y = top + 0.35
   lanes.forEach((lane, li) => {
     const h = Math.max(1, lane.rows.length) * rowH + 0.08
-    if (li % 2) slide.addShape('rect', { x: left, y, w: right - left, h, fill: { color: 'F9FAFB' }, line: { color: 'F9FAFB' } })
+    if (li % 2) slide.addShape('rect', { x: left, y, w: right - left, h, fill: { color: 'F8F6F6' }, line: { color: 'F8F6F6' } })
     slide.addText(lane.name, { x: left + 0.05, y, w: labelW - 0.1, h, fontSize: 10, bold: true, color: DARK, valign: 'middle' })
     lane.rows.forEach((row, ri) =>
       row.forEach((it) => {
@@ -126,7 +180,7 @@ export function addRoadmapSlide(pptx: PptxGenJS, roadmap: Roadmap, title: string
   })
   const today = new Date()
   const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  if (key >= roadmap.start && key <= roadmap.end) slide.addShape('line', { x: X(key), y: top + 0.3, w: 0, h: y - top - 0.3, line: { color: 'E11D48', width: 1.25, dashType: 'dash' } })
+  if (key >= roadmap.start && key <= roadmap.end) slide.addShape('line', { x: X(key), y: top + 0.3, w: 0, h: y - top - 0.3, line: { color: RED, width: 1.25, dashType: 'dash' } })
 }
 
 export interface DeckInput {
@@ -139,20 +193,21 @@ export interface DeckInput {
   lang: 'CZ' | 'EN'
 }
 
-/** Status report / SteCo deck (8 slides). Returns the file name. */
+/** Status report / SteCo deck (8 slides + closing slide). Returns the file name. */
 export async function downloadStatusDeck({ data, report, roadmap, colorBy, settings, tr, lang }: DeckInput): Promise<string> {
   const p = data.project
   const cur = p.info.currency
   const pptx = await newDeck(settings, `${p.info.projectName} – ${tr('report_title')}`)
-  const accent = hex(settings.accentColor || '#4f46e5')
+  const accent = hex(settings.accentColor || RED)
   const ragLabel = (r: string) => tr(`report_rag_${r}`)
 
   // 1 Title
-  const s1 = pptx.addSlide({ masterName: 'PM' })
-  s1.addText(p.info.projectName, { x: 0.8, y: 2.3, w: 11, h: 1, fontSize: 38, bold: true, color: DARK })
-  s1.addText(`${tr('report_title')} · ${formatDate(report.date)}`, { x: 0.8, y: 3.3, w: 11, h: 0.5, fontSize: 18, color: GREY })
-  s1.addText([p.info.projectId, p.info.itpm && `ITPM: ${p.info.itpm}`, p.info.businessOwner && `Business owner: ${p.info.businessOwner}`].filter(Boolean).join('   ·   '), { x: 0.8, y: 3.9, w: 11, h: 0.4, fontSize: 12, color: GREY })
-  ragPill(s1, report.rag, 0.8, 4.6, ragLabel(report.rag))
+  const s1 = redSlide(pptx, p.info.projectName, [
+    `${tr('report_title')} · ${formatDate(report.date)}`,
+    [p.info.projectId, p.info.itpm && `ITPM: ${p.info.itpm}`, p.info.businessOwner && `Business owner: ${p.info.businessOwner}`].filter(Boolean).join('   ·   '),
+  ])
+  s1.addShape('roundRect', { x: 0.8, y: 4.75, w: 1.6, h: 0.5, fill: { color: 'FFFFFF' }, rectRadius: 0.1, line: { color: 'FFFFFF' } })
+  s1.addText(ragLabel(report.rag), { x: 0.8, y: 4.75, w: 1.6, h: 0.5, fontSize: 14, bold: true, color: RAG_HEX[report.rag] === 'FBBA00' ? '7D5700' : RAG_HEX[report.rag] ?? DARK, align: 'center', valign: 'middle' })
 
   // 2 Executive summary
   const s2 = pptx.addSlide({ masterName: 'PM' })
@@ -180,14 +235,14 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
             const overdue = data.milestones.overdue.includes(m)
             return [
               { text: m.name },
-              { text: formatDate(m.plannedDate), options: overdue ? { color: 'E11D48', bold: true } : {} },
+              { text: formatDate(m.plannedDate), options: overdue ? { color: RED, bold: true } : {} },
               { text: formatDate(m.baselineDate) },
               { text: overdue ? tr('report_overdue') : m.paymentStatus },
             ]
           })
         : [[{ text: '—' }, { text: '' }, { text: '' }, { text: '' }]]),
     ],
-    { x: 0.5, y: 1.3, w: 12.3, colW: [6.3, 2, 2, 2], fontSize: 11, border: { type: 'solid', color: 'E5E7EB', pt: 0.75 } },
+    { x: 0.5, y: 1.3, w: 12.3, colW: [6.3, 2, 2, 2], fontSize: 11, border: { type: 'solid', color: LINE, pt: 0.75 } },
   )
 
   // 5 Done / next
@@ -209,14 +264,14 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
               { text: r.id },
               { text: r.type },
               { text: r.title || r.description },
-              { text: String(sc), options: { bold: true, align: 'center' as const, color: 'FFFFFF', fill: { color: sc >= 9 ? 'E11D48' : sc >= 4 ? 'F59E0B' : '16A34A' } } },
+              { text: String(sc), options: { bold: true, align: 'center' as const, color: sc >= 9 || sc < 4 ? 'FFFFFF' : DARK, fill: { color: sc >= 9 ? RED : sc >= 4 ? 'FBBA00' : '689425' } } },
               { text: r.owner },
               { text: r.type === 'Issue' ? r.resolution ?? '' : r.mitigation },
             ]
           })
         : [[{ text: '—' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }]]),
     ],
-    { x: 0.5, y: 1.3, w: 12.3, colW: [0.9, 1.1, 3.6, 0.7, 1.8, 4.2], fontSize: 10, border: { type: 'solid', color: 'E5E7EB', pt: 0.75 } },
+    { x: 0.5, y: 1.3, w: 12.3, colW: [0.9, 1.1, 3.6, 0.7, 1.8, 4.2], fontSize: 10, border: { type: 'solid', color: LINE, pt: 0.75 } },
   )
 
   // 7 Changes and decisions
@@ -230,7 +285,7 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
         ? crs.map((c) => [{ text: c.id }, { text: c.title }, { text: c.type }, { text: String(c.impactDays) }, { text: c.impactCost.toLocaleString('cs-CZ') }, { text: c.status }])
         : [[{ text: '—' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }]]),
     ],
-    { x: 0.5, y: 1.3, w: 12.3, colW: [1, 5.1, 1.4, 1.4, 2, 1.4], fontSize: 10, border: { type: 'solid', color: 'E5E7EB', pt: 0.75 } },
+    { x: 0.5, y: 1.3, w: 12.3, colW: [1, 5.1, 1.4, 1.4, 2, 1.4], fontSize: 10, border: { type: 'solid', color: LINE, pt: 0.75 } },
   )
   if (data.decisions.length) {
     textBox(
@@ -257,7 +312,7 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
         values: [b.current, b.planned, b.committed, b.actual, b.forecast],
       },
     ],
-    { x: 0.5, y: 1.3, w: 7.8, h: 5.5, barDir: 'col', chartColors: [accent], showValue: true, dataLabelFormatCode: '#,##0', valAxisLabelFormatCode: '#,##0', catAxisLabelFontSize: 10, valAxisLabelFontSize: 9, dataLabelFontSize: 9 },
+    { x: 0.5, y: 1.3, w: 7.8, h: 5.5, barDir: 'col', chartColors: ['00779C'], showValue: true, dataLabelFormatCode: '#,##0', valAxisLabelFormatCode: '#,##0', catAxisLabelFontSize: 10, valAxisLabelFontSize: 9, dataLabelFontSize: 9 },
   )
   s8.addTable(
     [
@@ -272,10 +327,13 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
             [{ text: '– OPEX' }, { text: formatMoney(b.opex, cur), options: { align: 'right' as const } }],
           ]
         : []),
-      [{ text: tr('report_variance'), options: { bold: true } }, { text: formatMoney(b.variance, cur), options: { bold: true, align: 'right', color: b.variance < 0 ? 'E11D48' : '16A34A' } }],
+      [{ text: tr('report_variance'), options: { bold: true } }, { text: formatMoney(b.variance, cur), options: { bold: true, align: 'right', color: b.variance < 0 ? RED : '567B1F' } }],
     ],
-    { x: 8.6, y: 1.5, w: 4.2, colW: [2.2, 2], fontSize: 11, border: { type: 'solid', color: 'E5E7EB', pt: 0.75 } },
+    { x: 8.6, y: 1.5, w: 4.2, colW: [2.2, 2], fontSize: 11, border: { type: 'solid', color: LINE, pt: 0.75 } },
   )
+
+  // 9 Closing
+  redSlide(pptx, tr('report_thanks'))
 
   const fileName = `${p.info.projectName.replace(/[\\/:*?"<>|]+/g, '-')} - status ${report.date}.pptx`
   await pptx.writeFile({ fileName, compression: true })
@@ -285,10 +343,8 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
 /** One-slide portfolio overview for management (plus a title slide). */
 export async function downloadPortfolioDeck(rows: { name: string; itpm: string; summary: ProjectSummary; currency: string; budget: number; trend?: string }[], settings: ReportSettings, tr: Tr, date: string): Promise<string> {
   const pptx = await newDeck(settings, tr('report_portfolio_title'))
-  const accent = hex(settings.accentColor || '#4f46e5')
-  const s1 = pptx.addSlide({ masterName: 'PM' })
-  s1.addText(tr('report_portfolio_title'), { x: 0.8, y: 2.6, w: 11, h: 1, fontSize: 36, bold: true, color: DARK })
-  s1.addText(formatDate(date), { x: 0.8, y: 3.6, w: 11, h: 0.5, fontSize: 18, color: GREY })
+  const accent = hex(settings.accentColor || RED)
+  redSlide(pptx, tr('report_portfolio_title'), [formatDate(date)])
 
   const s2 = pptx.addSlide({ masterName: 'PM' })
   heading(s2, tr('report_portfolio_title'))
@@ -296,7 +352,7 @@ export async function downloadPortfolioDeck(rows: { name: string; itpm: string; 
     [
       headerRow([tr('portfolio_rag'), tr('dash_project_name'), 'ITPM', tr('portfolio_progress'), tr('portfolio_next_milestone'), tr('report_open_raid'), tr('portfolio_budget_used'), tr('portfolio_finish')], accent),
       ...rows.map((r) => [
-        { text: `${r.summary.rag}${r.trend ? ` ${r.trend}` : ''}`, options: { bold: true, color: 'FFFFFF', fill: { color: RAG_HEX[r.summary.rag] }, align: 'center' as const } },
+        { text: `${r.summary.rag}${r.trend ? ` ${r.trend}` : ''}`, options: { bold: true, color: onFill(RAG_HEX[r.summary.rag]), fill: { color: RAG_HEX[r.summary.rag] }, align: 'center' as const } },
         { text: r.name, options: { bold: true } },
         { text: r.itpm },
         { text: formatPercent(r.summary.progress) },
@@ -306,7 +362,7 @@ export async function downloadPortfolioDeck(rows: { name: string; itpm: string; 
         { text: formatDate(r.summary.finish) },
       ]),
     ],
-    { x: 0.5, y: 1.3, w: 12.3, colW: [1, 2.8, 1.5, 1, 2.6, 1.2, 1.1, 1.1], fontSize: 10, border: { type: 'solid', color: 'E5E7EB', pt: 0.75 }, autoPage: true },
+    { x: 0.5, y: 1.3, w: 12.3, colW: [1, 2.8, 1.5, 1, 2.6, 1.2, 1.1, 1.1], fontSize: 10, border: { type: 'solid', color: LINE, pt: 0.75 }, autoPage: true },
   )
   const fileName = `Portfolio ${date}.pptx`
   await pptx.writeFile({ fileName, compression: true })

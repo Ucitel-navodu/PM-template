@@ -1,5 +1,5 @@
 import type { Health } from '../types'
-import { HEALTH_BG, HEALTH_BG_DARK, HEALTH_COLOR, HEALTH_COLOR_DARK } from '../data/config'
+import { HEALTH_BG, HEALTH_BG_DARK, HEALTH_COLOR, HEALTH_COLOR_DARK, HEALTH_TEXT } from '../data/config'
 import { useApp } from '../context/AppContext'
 import type { TKey } from '../i18n'
 
@@ -14,7 +14,8 @@ const LABEL_KEY: Record<Health, TKey> = {
 export function HealthBadge({ health }: { health: Health | '' }) {
   const { tr, theme } = useApp()
   if (!health) return null
-  const color = theme === 'dark' ? HEALTH_COLOR_DARK[health] : HEALTH_COLOR[health]
+  const color = theme === 'dark' ? HEALTH_COLOR_DARK[health] : HEALTH_TEXT[health]
+  const dot = theme === 'dark' ? HEALTH_COLOR_DARK[health] : HEALTH_COLOR[health]
   const bg = theme === 'dark' ? HEALTH_BG_DARK[health] : HEALTH_BG[health]
   return (
     <span
@@ -22,7 +23,7 @@ export function HealthBadge({ health }: { health: Health | '' }) {
       style={{ backgroundColor: bg, color }}
       title={tr(LABEL_KEY[health])}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dot }} />
       {health}
     </span>
   )

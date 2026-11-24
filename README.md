@@ -74,9 +74,10 @@ Etapa E4 – import a export:
   s výpisem nepřečtených sloupců; **export do Excelu** (round-trip). `.xlsx` se čte a píše přes jszip +
   fast-xml-parser (`src/lib/import/xlsx.ts`) – ExcelJS jsem nepoužil, protože jeho závislosti mají nepermisivní/neznámé licence.
 
-Vzhled: ⚙️ Nastavení → Vzhled nabízí **5 tmavých palet z Jarvise** (Nexus Cyan výchozí, Nebula Violet, Emerald Matrix,
-Sapphire Command, Titanium Graphite – hodnoty 1:1 z `ui2.css`, ADR-120) a **Světlý** vzhled, plus vlastní akcentovou
-barvu. Volba je per zařízení; barvy jsou CSS proměnné (`src/index.css`, `src/lib/palettes.ts`), tisk/PDF/PPTX zůstávají světlé.
+Vzhled: firemní vizuál **ORLEN Unipetrol** podle *Manuálu vizuálního stylu 2021* – světlý (výchozí) a tmavý
+vzhled, firemní červená `#d81e04` a šedé `#676d6f` / `#aeafab`, doplňkové barvy jen pro grafy a stavy, písmo Arial
+(Futura PT má jen desktopovou licenci), logo vyříznuté vektorově z manuálu (`src/lib/brand.ts`) s ochrannou zónou
+a bílou negativní variantou na tmavém podkladu. Volba je per zařízení; tisk/PDF/PPTX jsou vždy ve světlé firemní podobě.
 
 Všech pět plánovaných etap (základ, plánování, governance, reporting, import) je hotových. Důvody výběru
 knihoven a návrhová rozhodnutí jsou v [`docs/research.md`](docs/research.md).
@@ -146,3 +147,13 @@ tests/e2e/                 Playwright scénáře
   (Shift+klik = rozsah, jeden krok Zpět).
 - **Nástroje řádku jako menu**: v řádku zůstalo jen ⠿ (přetažení), ＋ (úkol pod) a **⋯** – menu s popisky a
   klávesovými zkratkami (podúkol, odsadit, předsadit, nahoru, dolů, smazat). Stejné menu otevře pravé tlačítko myši.
+
+## Novinky ve verzi 0.10.0 – firemní vizuál ORLEN Unipetrol
+
+- Celá aplikace podle *Manuálu vizuálního stylu 2021*: logo v hlavičce (barevné / bílé negativní, ochranná zóna,
+  min. 50 px), firemní červená a šedé, Arial, grafický symbol O + U uříznutý okrajem plochy (report, portfolio).
+- Zůstaly jen dvě palety: **ORLEN světlá** (výchozí) a **ORLEN tmavá**; dřívější volby se převedou automaticky.
+- Grafy, Gantt, RoadMapa a Health stavy v doplňkových barvách manuálu; kontrast textů ≥ 4,5 : 1 (testováno).
+- **PowerPoint** podle firemní šablony: červený titulní a závěrečný slide s bílým logem a symbolem, bílé obsahové
+  slidy s červeným nadpisem, logem vlevo dole a symbolem vpravo dole, tabulky s červeným záhlavím.
+- Report / PDF s logem a symbolem; export do Excelu s červeným záhlavím a písmem Arial.

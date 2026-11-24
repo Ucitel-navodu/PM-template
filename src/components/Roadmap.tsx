@@ -1,9 +1,10 @@
+import { CHART_COLORS } from '../lib/brand'
 import { useMemo } from 'react'
 import type { Roadmap as RoadmapData, RoadmapItem } from '../lib/report'
 import { parseDateKey } from '../lib/dates'
 import { HEALTH_COLOR } from '../data/config'
 
-export const PHASE_PALETTE = ['#4f46e5', '#0891b2', '#16a34a', '#d97706', '#db2777', '#7c3aed', '#0d9488', '#dc2626']
+export const PHASE_PALETTE = CHART_COLORS
 
 export type ColorBy = 'phase' | 'health'
 
@@ -109,7 +110,7 @@ export function Roadmap({ data, colorBy, phases, lang, today = new Date() }: { d
           </g>
         )
       })}
-      {todayX !== null && <line x1={todayX} x2={todayX} y1={HEAD_H - 6} y2={height} stroke="#e11d48" strokeWidth={1.5} strokeDasharray="4 3" />}
+      {todayX !== null && <line x1={todayX} x2={todayX} y1={HEAD_H - 6} y2={height} stroke="#d81e04" strokeWidth={1.5} strokeDasharray="4 3" />}
     </svg>
   )
 }

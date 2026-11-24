@@ -3,32 +3,33 @@
 @import '../../node_modules/frappe-gantt/dist/frappe-gantt.css';
 
 .gx-host {
-  --gx-weekend: #f6f6f9;
-  --gx-holiday: #fde7ea;
-  --g-bar-color: #c7d2fe;
-  --g-progress-color: #6366f1;
-  --g-today-highlight: #6366f1;
+  /* ORLEN Unipetrol: supplementary blues for bars, brand red for today and the critical path. */
+  --gx-weekend: #f8f6f6;
+  --gx-holiday: #fdf0ee;
+  --g-bar-color: #8fd8f4;
+  --g-progress-color: #00779c;
+  --g-today-highlight: #d81e04;
   --g-header-background: #ffffff;
 }
 html.dark .gx-host {
   --gx-weekend: color-mix(in srgb, rgb(var(--pm-bg)), white 4%);
-  --gx-holiday: #3a1f2a;
-  --g-arrow-color: #c9c9d6;
-  --g-bar-color: color-mix(in srgb, rgb(var(--pm-primary)), black 55%);
+  --gx-holiday: #4a3436;
+  --g-arrow-color: #aeafab;
+  --g-bar-color: #005f7d;
   --g-bar-border: #3a3a3a;
   --g-tick-color-thick: color-mix(in srgb, rgb(var(--pm-card)), white 12%);
   --g-tick-color: color-mix(in srgb, rgb(var(--pm-card)), white 7%);
   --g-actions-background: color-mix(in srgb, rgb(var(--pm-card)), white 8%);
   --g-border-color: color-mix(in srgb, rgb(var(--pm-card)), white 12%);
-  --g-text-muted: #9a9aab;
+  --g-text-muted: #aeafab;
   --g-text-light: #ffffff;
-  --g-text-dark: #ececf3;
-  --g-progress-color: rgb(var(--pm-primary));
+  --g-text-dark: #ececea;
+  --g-progress-color: #00b1eb;
   --g-handle-color: #d0d0d0;
   --g-header-background: rgb(var(--pm-card));
   --g-row-color: rgb(var(--pm-card));
   --g-row-border-color: color-mix(in srgb, rgb(var(--pm-card)), white 12%);
-  --g-today-highlight: rgb(var(--pm-primary));
+  --g-today-highlight: #ff8a78;
   --g-popup-actions: color-mix(in srgb, rgb(var(--pm-card)), white 8%);
 }
 .gx-host .gantt-container {
@@ -39,21 +40,21 @@ html.dark .gx-host {
 }
 /* Summary tasks: dark slim bar */
 .gx-host .gantt .bar-wrapper[class*='gx-sum'] .bar {
-  fill: #475569;
+  fill: #676d6f;
 }
 .gx-host .gantt .bar-wrapper[class*='gx-sum'] .bar-progress {
-  fill: #1e293b;
+  fill: #2b3035;
 }
 html.dark .gx-host .gantt .bar-wrapper[class*='gx-sum'] .bar {
-  fill: #64748b;
+  fill: #90a3b2;
 }
 /* Milestones */
 .gx-host .gantt .bar-wrapper[class*='gx-ms'] .bar {
-  fill: #7c3aed;
+  fill: #fbba00;
 }
 /* Critical path outline */
 .gx-host.gx-show-critical .gantt .bar-wrapper[class*='gx-crit'] .bar {
-  stroke: #e11d48;
+  stroke: #d81e04;
   stroke-width: 2px;
 }
 .gx-host .popup-wrapper .title {

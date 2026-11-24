@@ -184,13 +184,19 @@ export const defaultLinks = (): ProjectLink[] => [
   { id: 'sharepoint', label: 'SharePoint', url: '' },
 ]
 
-export const defaultReportSettings: ReportSettings = { organization: '', accentColor: '#4f46e5', footer: '' }
+/** Report / PPTX branding: the corporate red of the ORLEN Unipetrol manual. */
+export const defaultReportSettings: ReportSettings = { organization: '', accentColor: '#d81e04', footer: '' }
+/** Default report colour of versions before the corporate design (replaced on load). */
+const OLD_DEFAULT_ACCENT = '#4f46e5'
 
 export function migrateWorkspace(ws: Workspace): Workspace {
   return {
     ...ws,
     schemaVersion: WORKSPACE_SCHEMA_VERSION,
-    reportSettings: { ...defaultReportSettings, ...(ws.reportSettings ?? {}) },
+    reportSettings: (() => {
+      const rs = { ...defaultReportSettings, ...(ws.reportSettings ?? {}) }
+      return rs.accentColor?.toLowerCase() === OLD_DEFAULT_ACCENT ? { ...rs, accentColor: defaultReportSettings.accentColor } : rs
+    })(),
     projects: ws.projects.map((p) => migrateProject(p, ws.calendar)) }
 }
 

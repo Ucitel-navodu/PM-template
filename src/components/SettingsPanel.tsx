@@ -8,6 +8,8 @@ import { usePrefsStore } from '../store/prefsStore'
 import { useActiveProject, useWorkspaceStore } from '../store/workspaceStore'
 import { STATUS_KINDS } from '../data/settings'
 import { PALETTES, type PaletteId } from '../lib/palettes'
+import { BRAND } from '../lib/brand'
+import { BrandSymbol, Logo } from './Brand'
 import { STATUS_ICON } from '../data/config'
 import type { Status, StatusDef } from '../types'
 
@@ -266,23 +268,19 @@ function PersonalSection() {
   )
 }
 
-/** Colour palette (the JARVIS palettes + light) and an optional custom accent. */
+/** ORLEN Unipetrol look: light (default) or dark; colours follow the brand manual and cannot be changed. */
 function AppearanceSection() {
   const { tr, readOnly } = useApp()
   const reportAccent = useWorkspaceStore((s) => s.workspace.reportSettings.accentColor)
-  const { palette, accent, setPalette, setAccent } = usePrefsStore()
-  const current = PALETTES.find((p) => p.id === palette)!
-  const move = (id: PaletteId, key: string) => {
-    if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(key)) return
-    const i = PALETTES.findIndex((p) => p.id === id)
-    const step = key === 'ArrowRight' || key === 'ArrowDown' ? 1 : -1
-    const next = PALETTES[(i + step + PALETTES.length) % PALETTES.length].id
+  const { palette, setPalette } = usePrefsStore()
+  const move = (id: PaletteId) => {
+    const next = PALETTES.find((p) => p.id !== id)!.id
     setPalette(next)
     setTimeout(() => document.querySelector<HTMLElement>(`[data-palette="${next}"]`)?.focus())
   }
   return (
     <Section title={tr('settings_appearance')} help={tr('settings_appearance_help')}>
-      <div role="radiogroup" aria-label={tr('settings_appearance')} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div role="radiogroup" aria-label={tr('settings_appearance')} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {PALETTES.map((p) => {
           const on = p.id === palette
           return (
@@ -297,58 +295,34 @@ function AppearanceSection() {
               onKeyDown={(e) => {
                 if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(e.key)) {
                   e.preventDefault()
-                  move(p.id, e.key)
+                  move(p.id)
                 }
               }}
-              className={`flex min-h-[44px] items-center gap-2.5 rounded-md border px-2.5 py-2 text-left text-xs ${
-                on ? 'border-brand-500 ring-1 ring-brand-500' : 'border-gray-300 hover:border-gray-400 dark:border-white/15 dark:hover:border-white/30'
-              } text-gray-800 dark:text-gray-100`}
+              className={`overflow-hidden rounded-lg border text-left text-sm ${on ? 'border-brand-600 ring-2 ring-brand-600' : 'border-gray-300 hover:border-gray-400 dark:border-white/15 dark:hover:border-white/30'}`}
             >
-              <span aria-hidden className="flex shrink-0 overflow-hidden rounded border border-black/10 dark:border-white/20">
-                {p.swatch.map((c) => (
-                  <i key={c} className="block h-[22px] w-3" style={{ background: c }} />
-                ))}
+              <span className="relative flex h-20 items-center overflow-hidden px-2" style={{ background: p.swatch[0] }}>
+                <Logo height={22} variant={p.dark ? 'negative' : 'color'} />
+                <BrandSymbol size={96} corner="top-right" />
               </span>
-              <span>
-                {p.id === 'light' ? tr('palette_light') : p.id === 'corp-light' ? tr('palette_corp_light') : p.id === 'corp-dark' ? tr('palette_corp_dark') : p.name}
-                {p.note && <small className="ml-1 opacity-70">({tr('palette_default')})</small>}
+              <span className="flex items-center justify-between px-3 py-2 text-gray-800 dark:text-gray-100">
+                {tr(p.dark ? 'palette_orlen_dark' : 'palette_orlen_light')}
+                {!p.dark && <small className="opacity-70">{tr('palette_default')}</small>}
               </span>
             </button>
           )
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          {tr('settings_accent')}
-          <input
-            type="color"
-            data-testid="accent-input"
-            value={accent || current.swatch[2]}
-            onChange={(e) => setAccent(e.target.value)}
-            disabled={!current.dark || palette === 'corp-dark'}
-            className="h-8 w-14 rounded border border-gray-300 dark:border-white/15"
-          />
-        </label>
-        {accent && (
-          <button className={btnSecondary} onClick={() => setAccent('')}>
-            {tr('settings_accent_reset')}
+      <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">{tr('settings_brand_note')}</p>
+      {reportAccent.toLowerCase() !== BRAND.red && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 dark:border-white/10">
+          <button className={btnSecondary} data-testid="report-use-palette" disabled={readOnly} onClick={() => useWorkspaceStore.getState().updateReportSettings({ accentColor: BRAND.red })}>
+            {tr('settings_report_use_palette')}
           </button>
-        )}
-        {!current.dark && <span className="text-xs text-gray-400">{tr('settings_accent_dark_only')}</span>}
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 dark:border-white/10">
-        <button
-          className={btnSecondary}
-          data-testid="report-use-palette"
-          disabled={readOnly || reportAccent.toLowerCase() === (accent || current.swatch[2]).toLowerCase()}
-          onClick={() => useWorkspaceStore.getState().updateReportSettings({ accentColor: accent || current.swatch[2] })}
-        >
-          {tr('settings_report_use_palette')}
-        </button>
-        <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-          {tr('settings_report_accent_now')} <i className="inline-block h-4 w-4 rounded border border-black/10" style={{ background: reportAccent }} /> {reportAccent}
-        </span>
-      </div>
+          <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            {tr('settings_report_accent_now')} <i className="inline-block h-4 w-4 rounded border border-black/10" style={{ background: reportAccent }} /> {reportAccent}
+          </span>
+        </div>
+      )}
     </Section>
   )
 }
@@ -402,7 +376,7 @@ function ReportSection() {
 
 const GROUPS = ['settings_group_app', 'settings_group_project', 'settings_group_calendar'] as const
 const PANELS: { id: SettingsPanelId; group: (typeof GROUPS)[number]; icon: string; title: TKey; keywords: string }[] = [
-  { id: 'appearance', group: 'settings_group_app', icon: '🎨', title: 'settings_appearance', keywords: 'barvy paleta vzhled tmavy svetly korporatni colors palette theme dark light corporate accent' },
+  { id: 'appearance', group: 'settings_group_app', icon: '🎨', title: 'settings_appearance', keywords: 'barvy paleta vzhled tmavy svetly korporatni orlen unipetrol logo brand colors palette theme dark light corporate' },
   { id: 'personal', group: 'settings_group_app', icon: '👤', title: 'settings_personal', keywords: 'jmeno ukladani autosave zalohy name save backups soubor file' },
   { id: 'report', group: 'settings_group_app', icon: '📄', title: 'report_settings', keywords: 'report pptx pdf logo organizace paticka organization footer barva' },
   { id: 'phases', group: 'settings_group_project', icon: '🧭', title: 'settings_phases', keywords: 'faze projektu phases' },

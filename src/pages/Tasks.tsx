@@ -1002,7 +1002,7 @@ export function TasksPage({ onOpenSettings }: { onOpenSettings: () => void }) {
                     onKeyDown={(e) => onRowKey(e, row.id)}
                     onMenu={(x, y) => setMenu({ id: row.id, x, y })}
                     renderCell={renderCell}
-                    className={`${tbodyRow} ${summary ? 'bg-gray-50/70 dark:bg-white/[0.03]' : ''} ${critical ? 'shadow-[inset_3px_0_0_#e11d48]' : ''}`}
+                    className={`${tbodyRow} ${summary ? 'bg-gray-50/70 dark:bg-white/[0.03]' : ''} ${critical ? 'shadow-[inset_3px_0_0_#d81e04]' : ''}`}
                   />
                 )
               })}

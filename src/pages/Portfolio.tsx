@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { BrandSymbol } from '../components/Brand'
 import { useApp } from '../context/AppContext'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { createBlankProject } from '../domain/workspace'
@@ -121,8 +122,9 @@ export function PortfolioPage({ onOpenProject }: { onOpenProject: () => void }) 
         <Card>
           <Stat label={tr('portfolio_overdue')} value={totals.overdue} />
         </Card>
-        <Card>
+        <Card className="relative overflow-hidden">
           <Stat label={tr('portfolio_upcoming_milestones')} value={totals.milestones30} />
+          <BrandSymbol size={150} corner="bottom-right" />
         </Card>
       </div>
 

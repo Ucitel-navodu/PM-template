@@ -51,7 +51,7 @@ const pptx = join(out, download.suggestedFilename())
 await download.saveAs(pptx)
 const [entries, slide2] = unzip(pptx, 'ppt/slides/slide2.xml')
 const slides = entries.filter((e) => /^ppt\/slides\/slide\d+\.xml$/.test(e))
-check('PPTX has 8 slides', slides.length === 8, `${slides.length} slides, ${download.suggestedFilename()}`)
+check('PPTX has 9 slides (8 + closing)', slides.length === 9, `${slides.length} slides, ${download.suggestedFilename()}`)
 check('PPTX contains the commentary', [...slide2.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1]).join('').includes('Tendr se blíží rozhodnutí'))
 check('PPTX budget slide has a native chart', entries.some((e) => /^ppt\/charts\/chart\d+\.xml$/.test(e)))
 

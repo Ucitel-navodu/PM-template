@@ -18,6 +18,7 @@ import { FileMenu } from './components/FileMenu'
 import { SyncBanner } from './components/SyncBanner'
 import { HelpPanel } from './components/HelpPanel'
 import { SettingsPanel } from './components/SettingsPanel'
+import { ThemedLogo } from './components/Brand'
 import { closeSettings, openSettings, useSettingsNav } from './lib/settingsNav'
 
 type PageKey = 'portfolio' | 'dashboard' | 'tasks' | 'board' | 'gantt' | 'milestones' | 'budget' | 'risks' | 'changes' | 'team' | 'audit' | 'report'
@@ -62,7 +63,7 @@ function ProjectSwitcher() {
   const activeId = useWorkspaceStore((s) => s.activeProjectId)
   return (
     <label className="flex min-w-0 flex-col">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{tr('switcher_label')}</span>
+      <span className="text-[11px] font-bold uppercase tracking-wide text-brand-600 dark:text-brand-300">Project Manager · {tr('switcher_label')}</span>
       <select
         value={activeId}
         onChange={(e) => useWorkspaceStore.getState().setActiveProject(e.target.value)}
@@ -92,9 +93,9 @@ export default function App() {
       <header className="sticky top-0 z-20 print:hidden border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[rgb(var(--pm-bg)/0.95)]">
         <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-4 pt-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-fuchsia-500 text-sm font-bold text-white shadow-sm shadow-brand-500/30">
-              PM
-            </div>
+            {/* Trade mark with its exclusion zone (padding), then the app name and the project. */}
+            <ThemedLogo height={32} className="-m-2 hidden sm:inline-flex" />
+            <div className="hidden h-9 w-px shrink-0 bg-gray-200 sm:block dark:bg-white/15" />
             <ProjectSwitcher />
           </div>
 

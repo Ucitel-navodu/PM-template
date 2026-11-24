@@ -1,60 +1,69 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { CORPORATE, isDark, PALETTES, WHITE, accentVars, brandScale, contrast, hexToRgb, isHex, triplet, validPalette } from './palettes'
+import { PALETTES, WHITE, contrast, hexToRgb, isDark, validPalette, type RGB } from './palettes'
+import { BRAND, CHART_COLORS, LOGO_GREY_PATHS, LOGO_RED_PATHS, logoSvg } from './brand'
+// @ts-expect-error plain JS config
+import tailwind from '../../tailwind.config.js'
 
 const css = readFileSync('src/index.css', 'utf8')
-const block = (id: string) => new RegExp(`html\\[data-theme="${id}"\\]\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? ''
-const token = (b: string, name: string) => new RegExp(`--${name}:\\s*([^;]+);`).exec(b)?.[1].trim()
+const block = (sel: string) => new RegExp(`${sel.replace(/[[\]"]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? ''
+const token = (b: string, name: string): RGB => (new RegExp(`--${name}:\\s*([^;]+);`).exec(b)?.[1].trim() ?? '').split(' ').map(Number) as RGB
+const LIGHT = block(':root')
+const DARK = block('html[data-theme="orlen-dark"]')
+const colors = (tailwind as { theme: { extend: { colors: Record<string, Record<string, string>> } } }).theme.extend.colors
 
-describe('palettes', () => {
-  it('has the five Jarvis palettes (values 1:1) plus the light look', () => {
-    expect(PALETTES.map((p) => p.id)).toEqual(['nexus', 'nebula', 'emerald', 'sapphire', 'titanium', 'light', 'corp-light', 'corp-dark'])
-    expect(PALETTES[0].swatch).toEqual(['#0a0f1c', '#0f172a', '#00d4ff']) // Nexus Cyan, the default
+describe('ORLEN Unipetrol palettes', () => {
+  it('offers exactly the light (default) and dark brand looks', () => {
+    expect(PALETTES.map((p) => p.id)).toEqual(['orlen-light', 'orlen-dark'])
+    expect(PALETTES.map((p) => p.swatch[2])).toEqual([BRAND.red, BRAND.red])
   })
 
-  it('every dark palette has CSS tokens that match its swatch', () => {
-    for (const p of PALETTES.filter((x) => x.dark)) {
-      const b = block(p.id)
-      expect(token(b, 'pm-bg'), p.id).toBe(triplet(hexToRgb(p.swatch[0])))
-      expect(token(b, 'pm-card'), p.id).toBe(triplet(hexToRgb(p.swatch[1])))
-      expect(token(b, 'pm-primary'), p.id).toBe(triplet(hexToRgb(p.swatch[2])))
+  it('maps palettes saved by older versions to the brand look of the same brightness', () => {
+    for (const id of ['nexus', 'nebula', 'emerald', 'sapphire', 'titanium', 'corp-dark', 'dark', 'orlen-dark']) expect(validPalette(id), id).toBe('orlen-dark')
+    for (const id of ['light', 'corp-light', 'orlen-light', 'nonsense', null, undefined]) expect(validPalette(id), String(id)).toBe('orlen-light')
+    expect(isDark('orlen-dark')).toBe(true)
+    expect(isDark('orlen-light')).toBe(false)
+  })
+
+  it('primary buttons are the brand red #d81e04 with readable white text on both looks', () => {
+    for (const b of [LIGHT, DARK]) {
+      expect(token(b, 'pm-brand-600')).toEqual(hexToRgb(BRAND.red))
+      expect(contrast(token(b, 'pm-brand-600'), WHITE)).toBeGreaterThanOrEqual(4.5)
     }
   })
 
-  it('white button text stays readable (>= 4.5:1) on every palette and on arbitrary accents', () => {
-    for (const p of PALETTES.filter((x) => x.dark)) {
-      expect(contrast(brandScale(p.swatch[2], p.swatch[0])[600], WHITE), p.id).toBeGreaterThanOrEqual(4.5)
-      expect(contrast(hexToRgb(token(block(p.id), 'pm-brand-600')!.split(' ').map(Number).reduce((a, v) => a + v.toString(16).padStart(2, '0'), '#')), WHITE), `${p.id} css`).toBeGreaterThanOrEqual(4.5)
+  it('body text, red text and secondary grey text keep >= 4.5 : 1 on page and cards', () => {
+    const light = { page: token(LIGHT, 'pm-bg'), card: token(LIGHT, 'pm-card') }
+    const dark = { page: token(DARK, 'pm-bg'), card: token(DARK, 'pm-card') }
+    for (const bg of [light.page, light.card]) {
+      expect(contrast(token(LIGHT, 'pm-text'), bg)).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(token(LIGHT, 'pm-brand-600'), bg)).toBeGreaterThanOrEqual(4.5) // red text
+      expect(contrast(hexToRgb(colors.gray[500]), bg)).toBeGreaterThanOrEqual(4.5) // brand grey #676d6f
     }
-    for (const accent of ['#ffffff', '#ffff00', '#00ff00', '#ff0000', '#000000', '#7f7f7f']) {
-      expect(contrast(brandScale(accent, '#0a0f1c')[600], WHITE), accent).toBeGreaterThanOrEqual(4.5)
+    for (const bg of [dark.page, dark.card]) {
+      expect(contrast(token(DARK, 'pm-text'), bg)).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(token(DARK, 'pm-brand-300'), bg)).toBeGreaterThanOrEqual(4.5) // red text on dark
+      expect(contrast(hexToRgb(colors.gray[400]), bg)).toBeGreaterThanOrEqual(4.5) // secondary text on dark
     }
   })
 
-  it('corporate palettes use the brand red and keep white button text readable', () => {
-    for (const id of ['corp-light', 'corp-dark']) {
-      const b = block(id)
-      expect(token(b, 'pm-primary'), id).toBe('216 30 4')
-      expect(token(b, 'pm-brand-600'), id).toBe('216 30 4')
-      expect(isDark(id as never)).toBe(id === 'corp-dark')
-    }
-    expect(contrast(hexToRgb(CORPORATE.red), WHITE)).toBeGreaterThanOrEqual(4.5)
-    // links / active text on the dark corporate page stay readable
-    const soft = token(block('corp-dark'), 'pm-brand-300')!.split(' ').map(Number) as [number, number, number]
-    expect(contrast(soft, hexToRgb('#1c1e1f'))).toBeGreaterThanOrEqual(4.5)
+  it('status text colours (600 steps) stay readable on white', () => {
+    for (const scale of ['red', 'green', 'yellow', 'blue', 'slate', 'orange']) expect(contrast(hexToRgb(colors[scale][600]), WHITE), scale).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('a custom accent sets the primary and the whole brand scale', () => {
-    const v = accentVars('#ff8800', '#0a0f1c')
-    expect(v['--pm-primary']).toBe('255 136 0')
-    expect(Object.keys(v)).toHaveLength(11)
+  it('uses the brand colours of the manual', () => {
+    expect(colors.gray[500]).toBe('#676d6f') // Pantone 431 C
+    expect(colors.gray[400]).toBe('#aeafab') // Pantone 429 C
+    expect(colors.red[500]).toBe('#d81e04') // Pantone 485 C
+    for (const c of CHART_COLORS) expect(BRAND.supplementary as readonly string[]).toContain(c)
   })
+})
 
-  it('falls back to the default for unknown values; validates hex', () => {
-    expect(validPalette('nonsense')).toBe('nexus')
-    expect(validPalette(null)).toBe('nexus')
-    expect(validPalette('light')).toBe('light')
-    expect(isHex('#00d4ff')).toBe(true)
-    expect(isHex('red')).toBe(false)
+describe('ORLEN Unipetrol trade mark', () => {
+  it('is the vector mark from the manual in the brand colours only', () => {
+    expect(LOGO_RED_PATHS).toHaveLength(6) // ORLEN box with knocked-out letters (3 paths) + bird (3 paths)
+    expect(LOGO_GREY_PATHS).toHaveLength(1) // Unipetrol
+    expect([...new Set(logoSvg('color').match(/fill="[^"]+"/g))].sort()).toEqual(['fill="#676d6f"', 'fill="#d81e04"'])
+    expect([...new Set(logoSvg('negative').match(/fill="[^"]+"/g))]).toEqual(['fill="#ffffff"'])
   })
 })

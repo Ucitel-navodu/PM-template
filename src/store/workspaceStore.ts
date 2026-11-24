@@ -122,7 +122,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       const setTaskList = (fn: (tasks: Task[]) => Task[]) => setProject((p) => ({ ...p, tasks: fn(p.tasks) }))
 
       return {
-        workspace: { fileType: 'pm-web-workspace', schemaVersion: 3, id: '', revision: 0, calendar: { holidays: [], workingDays: [], orangeTolerance: 0.1, redTolerance: 0.25 }, absences: [], reportSettings: { organization: '', accentColor: '#4f46e5', footer: '' }, projects: [] },
+        workspace: { fileType: 'pm-web-workspace', schemaVersion: 3, id: '', revision: 0, calendar: { holidays: [], workingDays: [], orangeTolerance: 0.1, redTolerance: 0.25 }, absences: [], reportSettings: { organization: '', accentColor: '#d81e04', footer: '' }, projects: [] },
         activeProjectId: '',
         readOnly: false,
 

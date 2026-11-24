@@ -30,7 +30,7 @@ export function Card({
       className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[rgb(var(--pm-card))] ${className}`}
     >
       {title && (
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <h3 className="mb-3 flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200">
           {icon && (
             <span
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-sm ${ACCENT_CLASSES[accent]}`}

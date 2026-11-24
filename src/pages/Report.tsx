@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { BrandSymbol, ThemedLogo } from '../components/Brand'
 import { useApp } from '../context/AppContext'
 import { useActiveProject, useWorkspaceStore } from '../store/workspaceStore'
 import { usePrefsStore } from '../store/prefsStore'
@@ -26,9 +27,13 @@ type Form = Pick<StatusReport, 'rag' | 'ragComment' | 'summary' | 'achievements'
 export function printLight() {
   const root = document.documentElement
   const dark = root.classList.contains('dark')
+  const theme = root.dataset.theme
+  // Paper is always the light corporate design (the palette tokens are keyed by data-theme).
   root.classList.remove('dark')
+  root.dataset.theme = 'orlen-light'
   const restore = () => {
     if (dark) root.classList.add('dark')
+    if (theme) root.dataset.theme = theme
     window.removeEventListener('afterprint', restore)
   }
   window.addEventListener('afterprint', restore)
@@ -54,7 +59,7 @@ function EditableText({ value, onChange, rows = 5, label }: { value: string; onC
 function Section({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <section className={`break-inside-avoid rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-gray-300 ${className}`}>
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{title}</h3>
+      <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-brand-600 dark:text-brand-300">{title}</h3>
       {children}
     </section>
   )
@@ -185,9 +190,11 @@ export function ReportPage() {
 
       {/* The report document (this is what gets printed) */}
       <article className="report-doc space-y-4" data-testid="report">
-        <header className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-0 print:p-0">
+        <header className="relative flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-4 pr-32 dark:border-white/10 dark:bg-[rgb(var(--pm-card))] print:border-0 print:p-0 print:pr-32">
+          <BrandSymbol size={150} corner="top-right" />
           <div>
-            <div className="text-xs uppercase tracking-wide text-gray-500">{[reportSettings.organization, tr('report_title')].filter(Boolean).join(' · ')}</div>
+            <ThemedLogo height={28} className="-ml-2 -mt-2 mb-1" />
+            <div className="text-xs font-bold uppercase tracking-wide text-brand-600 dark:text-brand-300">{[reportSettings.organization, tr('report_title')].filter(Boolean).join(' · ')}</div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{project.info.projectName}</h2>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {tr('report_period')}: {formatDate(period.from)} – {formatDate(period.to)}

@@ -104,7 +104,7 @@ export function Dashboard() {
       <Card title={tr('dash_task_status')} icon="📊" accent="slate">
         <div className="space-y-1.5">
           {Object.entries(statusCounts).map(([status, count]) => (
-            <BarRow key={status} label={status} count={count} total={tasks.length} color="#6d4dfd" />
+            <BarRow key={status} label={status} count={count} total={tasks.length} color="#00779c" />
           ))}
         </div>
       </Card>
@@ -135,7 +135,7 @@ export function Dashboard() {
                   <span className="flex shrink-0 items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
                     <span
                       className="h-1.5 w-1.5 rounded-full"
-                      style={{ backgroundColor: health ? HEALTH_COLOR[health] : '#9ca3af' }}
+                      style={{ backgroundColor: health ? HEALTH_COLOR[health] : '#aeafab' }}
                     />
                     {formatDate(task.currentFinish)}
                   </span>

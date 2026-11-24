@@ -1,4 +1,4 @@
-// E2E: colour palettes (Settings > Appearance) in the portable build via file:// (Europe/Prague).
+// E2E: ORLEN Unipetrol look (Settings > Appearance) in the portable build via file:// (Europe/Prague).
 // Usage: node tests/e2e/appearance.mjs [path-to-index.html] [screenshot-dir]
 import { chromium } from 'playwright'
 import { resolve } from 'node:path'
@@ -24,102 +24,96 @@ const check = (name, ok, detail = '') => {
 }
 const bodyBg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor)
 const theme = () => page.evaluate(() => document.documentElement.dataset.theme)
-const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`
+const headerLogo = () => page.locator('header [data-testid=brand-logo]:visible')
 const openSettings = async () => {
   await page.getByRole('button', { name: 'Nastavení' }).click()
   await page.getByRole('radiogroup').waitFor()
 }
-
-const PALETTES = { nexus: '#0a0f1c', nebula: '#100c1f', emerald: '#071612', sapphire: '#091321', titanium: '#101318' }
+const contrastOf = (selector) =>
+  page.evaluate((sel) => {
+    const lum = ([r, g, b]) => [r, g, b].map((v) => v / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((a, c, i) => a + c * [0.2126, 0.7152, 0.0722][i], 0)
+    const el = document.querySelector(sel)
+    const cs = getComputedStyle(el)
+    const [a, b] = [lum(cs.color.match(/\d+/g).map(Number)), lum(cs.backgroundColor.match(/\d+/g).map(Number))].sort((x, y) => y - x)
+    return (a + 0.05) / (b + 0.05)
+  }, selector)
 
 await page.goto(`${url}#/dashboard`)
 await page.waitForSelector('nav button')
-check('first start uses Nexus Cyan', (await theme()) === 'nexus' && (await bodyBg()) === rgb(PALETTES.nexus), await bodyBg())
+
+// light corporate look by default
+check('first start uses the light ORLEN look', (await theme()) === 'orlen-light' && (await bodyBg()) === 'rgb(248, 246, 246)', `${await theme()} ${await bodyBg()}`)
+const font = await page.evaluate(() => getComputedStyle(document.body).fontFamily)
+check('font is Arial (manual: internal materials)', font.startsWith('Arial'), font)
+check('header shows the colour trade mark', (await headerLogo().count()) === 1 && (await headerLogo().getAttribute('data-variant')) === 'color')
+const box = await headerLogo().locator('svg').boundingBox()
+check('logo is at least 50 px wide (manual: digital minimum)', box.width >= 50, `${box.width.toFixed(0)} px`)
+const zone = await headerLogo().evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft))
+check('logo keeps its exclusion zone (height of the O)', zone >= box.height * 0.2, `${zone}px for a ${box.height}px mark`)
+const fills = await headerLogo().locator('path').evaluateAll((ps) => [...new Set(ps.map((p) => p.getAttribute('fill')))].sort().join())
+check('logo uses only the brand red and grey', fills === '#676d6f,#d81e04', fills)
+check('active tab is the brand red with readable text', (await contrastOf('nav button[aria-current=page]')) >= 4.5)
+if (shots) await page.screenshot({ path: `${shots}/orlen-light.png` })
 
 await openSettings()
-check('picker offers 8 looks', (await page.locator('[data-palette]').count()) === 8)
-for (const [id, bg] of Object.entries(PALETTES)) {
-  await page.locator(`[data-palette="${id}"]`).click()
-  await page.waitForTimeout(250) // body background has a short transition
-  check(`${id}: page colour matches Jarvis`, (await theme()) === id && (await bodyBg()) === rgb(bg), `${await theme()} ${await bodyBg()}`)
-  if (shots) await page.screenshot({ path: `${shots}/palette-${id}.png` })
-}
-
-// a primary button keeps readable text (white on the darkened accent)
-const btnContrast = await page.evaluate(() => {
-  const lum = ([r, g, b]) => [r, g, b].map((v) => v / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((a, c, i) => a + c * [0.2126, 0.7152, 0.0722][i], 0)
-  const btn = [...document.querySelectorAll('button')].find((b) => /Zavřít/.test(b.textContent))
-  const m = getComputedStyle(btn).backgroundColor.match(/\d+/g).map(Number)
-  const l = lum(m)
-  return (1.05) / (l + 0.05)
-})
-check('primary button contrast >= 4.5', btnContrast >= 4.5, btnContrast.toFixed(2))
-
-// corporate palettes: brand red, light and dark
-await page.locator('[data-palette="corp-light"]').click()
-await page.waitForTimeout(250)
-const corp = await page.evaluate(() => ({ dark: document.documentElement.classList.contains('dark'), primary: getComputedStyle(document.documentElement).getPropertyValue('--pm-primary').trim(), bg: getComputedStyle(document.body).backgroundColor }))
-check('corporate light: brand red on a light page', !corp.dark && corp.primary === '216 30 4' && corp.bg === 'rgb(242, 242, 241)', JSON.stringify(corp))
-if (shots) await page.screenshot({ path: `${shots}/palette-corp-light.png` })
-await page.getByTestId('report-use-palette').click()
-check('report takes the palette colour', (await page.getByTestId('report-use-palette').isDisabled()) && (await page.getByRole('dialog').innerText()).includes('#d81e04'))
-await page.locator('[data-palette="corp-dark"]').click()
-await page.waitForTimeout(250)
-check('corporate dark', (await theme()) === 'corp-dark' && (await bodyBg()) === 'rgb(28, 30, 31)', await bodyBg())
-if (shots) await page.screenshot({ path: `${shots}/palette-corp-dark.png` })
-await page.locator('[data-palette="titanium"]').click()
-
-// custom accent
-await page.getByTestId('accent-input').fill('#ff8800')
-await page.waitForTimeout(150)
-const accent = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--pm-primary').trim())
-check('custom accent overrides the palette accent', accent === '255 136 0', accent)
-if (shots) await page.screenshot({ path: `${shots}/palette-custom-accent.png` })
-await page.getByRole('button', { name: /Vrátit barvu palety/ }).click()
-check('accent can be reset', (await page.evaluate(() => document.documentElement.style.getPropertyValue('--pm-primary'))) === '')
+check('picker offers exactly the two ORLEN looks', (await page.locator('[data-palette]').count()) === 2)
+check('the tiles preview the logo', (await page.locator('[data-palette] [data-testid=brand-logo]').count()) === 2)
+await page.locator('[data-palette="orlen-dark"]').click()
+await page.waitForTimeout(250) // body background has a short transition
+check('dark ORLEN look', (await theme()) === 'orlen-dark' && (await bodyBg()) === 'rgb(43, 48, 53)', `${await theme()} ${await bodyBg()}`)
+check('primary button: white on the brand red', (await page.getByRole('button', { name: 'Zavřít', exact: true }).last().evaluate((b) => getComputedStyle(b).backgroundColor)) === 'rgb(216, 30, 4)')
+await page.keyboard.press('Escape')
+check('dark header shows the white negative logo (manual 2.5)', (await headerLogo().getAttribute('data-variant')) === 'negative')
+if (shots) await page.screenshot({ path: `${shots}/orlen-dark.png` })
 
 // persistence + no flash: the palette is set before the app mounts
-await page.locator('[data-palette="emerald"]').click()
 await page.reload()
 await page.waitForSelector('nav button')
-check('palette survives a reload', (await theme()) === 'emerald')
-const early = await (async () => {
+check('look survives a reload', (await theme()) === 'orlen-dark')
+const early = async (init) => {
   const p2 = await ctx.newPage()
-  await p2.addInitScript(() => document.addEventListener('DOMContentLoaded', () => (window.__early = document.documentElement.dataset.theme)))
+  await p2.addInitScript((v) => {
+    if (v) localStorage.setItem('pm-web:palette', JSON.stringify(v))
+    document.addEventListener('DOMContentLoaded', () => (window.__early = document.documentElement.dataset.theme))
+  }, init)
   await p2.goto(`${url}#/dashboard`)
   const v = await p2.evaluate(() => window.__early)
   await p2.close()
   return v
-})()
-check('palette is applied before the app code runs (no flash)', early === 'emerald', String(early))
+}
+check('look is applied before the app code runs (no flash)', (await early()) === 'orlen-dark')
+check('a saved Jarvis palette becomes the dark ORLEN look', (await early('nebula')) === 'orlen-dark')
+check('a saved light palette becomes the light ORLEN look', (await early('light')) === 'orlen-light')
+await page.evaluate(() => localStorage.setItem('pm-web:palette', JSON.stringify('orlen-dark')))
 
-// sun/moon toggles light <-> last dark palette
+// sun/moon toggles light <-> dark
 await page.getByRole('button', { name: /^Světlý$/ }).click()
 await page.waitForTimeout(300)
-check('toggle -> light look', (await theme()) === 'light' && (await bodyBg()) === 'rgb(244, 245, 247)', await bodyBg())
-if (shots) await page.screenshot({ path: `${shots}/palette-light.png` })
+check('toggle -> light look', (await theme()) === 'orlen-light' && (await bodyBg()) === 'rgb(248, 246, 246)', await bodyBg())
 await page.getByRole('button', { name: /^Tmavý$/ }).click()
-check('toggle returns to the last dark palette', (await theme()) === 'emerald')
+check('toggle -> dark look', (await theme()) === 'orlen-dark')
 
-// opened drop-down lists stay readable on a dark palette (text vs. list background)
+// opened drop-down lists stay readable on the dark look (text vs. list background)
 await page.locator('nav button', { hasText: 'Úkoly' }).first().click()
 await page.waitForSelector('tbody tr select')
-const opt = await page.evaluate(() => {
-  const lum = (c) => c.match(/\d+/g).slice(0, 3).map((v) => v / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((a, c, i) => a + c * [0.2126, 0.7152, 0.0722][i], 0)
-  const cs = getComputedStyle(document.querySelector('tbody tr select option'))
-  const [a, b] = [lum(cs.color), lum(cs.backgroundColor)].sort((x, y) => y - x)
-  return { ratio: (a + 0.05) / (b + 0.05), color: cs.color, bg: cs.backgroundColor }
-})
-check('drop-down options are readable in dark mode (contrast >= 7)', opt.ratio >= 7, JSON.stringify(opt))
+check('drop-down options are readable in dark mode (contrast >= 7)', (await contrastOf('tbody tr select option')) >= 7)
 
-// every page renders in a non-default palette (visual smoke + no errors)
+// report: logo + graphic symbol cut by the edge
+await page.locator('nav button', { hasText: 'Report' }).first().click()
+await page.waitForSelector('[data-testid=report]')
+const sym = await page.locator('[data-testid=report] header [data-brand-symbol]').boundingBox()
+const head = await page.locator('[data-testid=report] header').boundingBox()
+check('report header has the logo', (await page.locator('[data-testid=report] header [data-testid=brand-logo]:visible').count()) === 1)
+check('graphic symbol is cut by the edge (manual 5.4)', sym.x + sym.width > head.x + head.width && sym.y < head.y, JSON.stringify({ sym, head }))
+
+// every page renders in the dark look (visual smoke + no errors)
 for (const tab of ['Úkoly', 'Gantt', 'Kanban', 'RAID', 'Report', 'Portfolio']) {
   await page.locator('nav button', { hasText: tab }).first().click()
   await page.waitForTimeout(250)
-  if (shots) await page.screenshot({ path: `${shots}/emerald-${tab}.png` })
+  if (shots) await page.screenshot({ path: `${shots}/dark-${tab}.png` })
 }
 
-check('only the HTML file was loaded (reload included)', new Set(requests).size === 1, [...new Set(requests)].join(', '))
+check('only the HTML file was loaded (reloads included)', new Set(requests.filter((r) => !r.startsWith('data:'))).size === 1, [...new Set(requests)].join(', '))
 check('no console errors or CSP violations', errors.length === 0, errors.join(' | '))
 await browser.close()
 console.log(failed ? `\n${failed} check(s) failed` : '\nall checks passed')

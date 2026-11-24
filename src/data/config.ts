@@ -25,34 +25,44 @@ export const RISK_STATUSES: RiskStatus[] = ['Open', 'Mitigated', 'Closed', 'Acce
 
 export const IMPACT_LEVELS: ImpactLevel[] = ['Low', 'Medium', 'High', 'Critical']
 
+// Health colours from the supplementary colours of the ORLEN Unipetrol manual (4.2);
+// red is the brand red. Fills (bars, dots) use HEALTH_COLOR, text uses HEALTH_TEXT (>= 4.5 : 1).
 export const HEALTH_COLOR: Record<Health, string> = {
-  Green: '#2e7d32',
-  Orange: '#e08a00',
-  Red: '#c62828',
-  Grey: '#8a8f98',
-  Blue: '#2962ff',
+  Green: '#689425',
+  Orange: '#fbba00',
+  Red: '#d81e04',
+  Grey: '#90a3b2',
+  Blue: '#00779c',
+}
+
+export const HEALTH_TEXT: Record<Health, string> = {
+  Green: '#456319',
+  Orange: '#7d5700',
+  Red: '#a11603',
+  Grey: '#465767',
+  Blue: '#005f7d',
 }
 
 export const HEALTH_BG: Record<Health, string> = {
-  Green: '#e8f5e9',
-  Orange: '#fff3e0',
-  Red: '#ffebee',
-  Grey: '#f1f2f4',
-  Blue: '#e3edff',
+  Green: '#f1f6ea',
+  Orange: '#fff8e1',
+  Red: '#fdf0ee',
+  Grey: '#f3f6f8',
+  Blue: '#e6f6fd',
 }
 
 export const HEALTH_COLOR_DARK: Record<Health, string> = {
-  Green: '#6fcf7a',
-  Orange: '#ffb74d',
-  Red: '#ff6b6b',
-  Grey: '#b5b9c2',
-  Blue: '#7ea6ff',
+  Green: '#a5c46f',
+  Orange: '#fdcf4d',
+  Red: '#ff8a78',
+  Grey: '#adbdc9',
+  Blue: '#4cc4ef',
 }
 
 export const HEALTH_BG_DARK: Record<Health, string> = {
-  Green: 'rgba(46, 125, 50, 0.22)',
-  Orange: 'rgba(224, 138, 0, 0.22)',
-  Red: 'rgba(198, 40, 40, 0.24)',
-  Grey: 'rgba(138, 143, 152, 0.22)',
-  Blue: 'rgba(41, 98, 255, 0.22)',
+  Green: 'rgba(104, 148, 37, 0.24)',
+  Orange: 'rgba(251, 186, 0, 0.2)',
+  Red: 'rgba(216, 30, 4, 0.26)',
+  Grey: 'rgba(144, 163, 178, 0.22)',
+  Blue: 'rgba(0, 177, 235, 0.2)',
 }

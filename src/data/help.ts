@@ -273,7 +273,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         },
         {
           q: 'Jak změním barvy (tmavý režim, palety)?',
-          a: '⚙️ Nastavení → Vzhled: vyber barevnou paletu – Nexus Cyan (výchozí), Nebula Violet, Emerald Matrix, Sapphire Command, Titanium Graphite (stejné palety jako v Jarvisovi) nebo Světlý. Volitelně si nastav vlastní akcentovou barvu. Ikona ☀️/🌙 vedle jazyka přepíná mezi světlým vzhledem a poslední tmavou paletou. Volba platí jen pro tento počítač; tisk, PDF a PowerPoint jsou vždy světlé.',
+          a: '⚙️ Nastavení → Vzhled: aplikace používá firemní vizuál ORLEN Unipetrol podle Manuálu vizuálního stylu – světlý (výchozí) nebo tmavý vzhled, firemní červenou a šedé, písmo Arial a logo. Ikona ☀️/🌙 vedle jazyka mezi nimi přepíná. Volba platí jen pro tento počítač; tisk, PDF a PowerPoint jsou vždy ve světlé firemní podobě.',
         },
       ],
     },
@@ -559,7 +559,7 @@ export const helpContent: Record<Lang, HelpSection[]> = {
         { q: 'How do I switch CZ/EN?', a: 'The "EN"/"CZ" button in the top-right of the header.' },
         {
           q: 'How do I change the colours (dark mode, palettes)?',
-          a: '⚙️ Settings → Appearance: pick a colour palette - Nexus Cyan (default), Nebula Violet, Emerald Matrix, Sapphire Command, Titanium Graphite (the same palettes as in Jarvis) or Light. Optionally set your own accent colour. The ☀️/🌙 icon next to the language switches between the light look and your last dark palette. The choice applies to this computer only; print, PDF and PowerPoint are always light.',
+          a: '⚙️ Settings → Appearance: the app uses the ORLEN Unipetrol corporate design from the visual style manual - a light (default) or dark look, the corporate red and greys, Arial and the logo. The ☀️/🌙 icon next to the language switches between them. The choice applies to this computer only; print, PDF and PowerPoint always use the light corporate design.',
         },
       ],
     },
