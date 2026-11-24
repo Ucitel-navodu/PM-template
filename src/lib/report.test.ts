@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { WORKSPACE_SCHEMA_VERSION } from '../types'
 import { addDays, buildRoadmap, buildStatusReport, defaultPeriod } from './report'
 import { createSampleWorkspace, parseAnyFile, serializeWorkspace } from '../domain/workspace'
+import { riskMatrix, riskScore } from './raid'
+import { paginate } from './pptx'
 
 const ws = createSampleWorkspace()
 const project = ws.projects[0]
@@ -65,5 +67,34 @@ describe('schema 6 migration', () => {
     expect(parsed.workspace.reportSettings.accentColor).toMatch(/^#/)
     expect(parsed.workspace.projects[0].statusReports).toEqual([])
     expect(parsed.workspace.schemaVersion).toBe(WORKSPACE_SCHEMA_VERSION)
+  })
+})
+
+describe('risk register page', () => {
+  const many = Array.from({ length: 11 }, (_, i) => ({ ...project.risks[0], id: `X-${String(i).padStart(2, '0')}`, probability: i % 2 ? ('Low' as const) : ('High' as const), impact: 'High' as const }))
+  const p = { ...project, risks: [...project.risks, ...many, { ...project.risks[0], id: 'X-CLOSED', status: 'Closed' as const }] }
+  const r = buildStatusReport(p, ws.calendar, { from: '2026-07-01', to: '2026-08-31' })
+
+  it('the register holds every open risk and issue, highest exposure first; the summary keeps the top 6', () => {
+    expect(r.riskRegister).toHaveLength(13)
+    expect(r.riskRegister.some((x) => x.id === 'X-CLOSED')).toBe(false)
+    expect(r.riskRegister.some((x) => x.type === 'Decision' || x.type === 'Assumption')).toBe(false)
+    const scores = r.riskRegister.map((x) => riskScore(x))
+    expect([...scores].sort((a, b) => b - a)).toEqual(scores)
+    expect(r.risks).toEqual(r.riskRegister.slice(0, 6))
+  })
+
+  it('the map counts open risks and issues per probability x impact', () => {
+    const m = riskMatrix(p.risks)
+    const total = Object.values(m).reduce((n, row) => n + Object.values(row).reduce((a, b) => a + b, 0), 0)
+    expect(total).toBe(13)
+    expect(m.High.High).toBe(6)
+    expect(m.Low.High).toBe(5)
+  })
+
+  it('slides: 8 rows next to the map, then 12 per continuation slide', () => {
+    expect(paginate(r.riskRegister, 8, 12).map((x) => x.length)).toEqual([8, 5])
+    expect(paginate([], 8, 12)).toEqual([[]])
+    expect(paginate(Array(30).fill(0), 8, 12).map((x) => x.length)).toEqual([8, 12, 10])
   })
 })

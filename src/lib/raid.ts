@@ -16,3 +16,18 @@ export function scoreClass(score: number): string {
   if (score >= 4) return 'bg-amber-400 text-gray-900'
   return 'bg-emerald-500 text-white'
 }
+
+/** Open risks and issues per cell of the P x I map: counts[probability][impact]. */
+export function riskMatrix(risks: Risk[]): Record<ImpactLevel, Record<ImpactLevel, number>> {
+  const zero = (): Record<ImpactLevel, number> => ({ Low: 0, Medium: 0, High: 0, Critical: 0 })
+  const m = { Low: zero(), Medium: zero(), High: zero(), Critical: zero() }
+  for (const r of risks) if (r.status === 'Open' && isScored(r) && m[r.probability] && r.impact in m[r.probability]) m[r.probability][r.impact]++
+  return m
+}
+
+/** Heat colour of a score as hex fills for PowerPoint (brand: red / supplementary yellow / green). */
+export function scoreFill(score: number): { fill: string; text: string } {
+  if (score >= 9) return { fill: 'D81E04', text: 'FFFFFF' }
+  if (score >= 4) return { fill: 'FBBA00', text: '2B3035' }
+  return { fill: '689425', text: 'FFFFFF' }
+}

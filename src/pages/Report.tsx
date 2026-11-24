@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { RiskMatrix } from '../components/RiskMatrix'
 import { BrandSymbol, ThemedLogo } from '../components/Brand'
 import { useApp } from '../context/AppContext'
 import { useActiveProject, useWorkspaceStore } from '../store/workspaceStore'
@@ -311,24 +312,51 @@ export function ReportPage() {
           </Section>
         </div>
 
-        <Section title={tr('dash_risks')}>
-          <table className="w-full text-sm">
-            <tbody>
-              {data.risks.map((r) => (
-                <tr key={r.id}>
-                  <td className={`${td} w-12`}>
-                    <span className={`inline-block min-w-[2rem] rounded px-1 text-center text-xs font-semibold ${scoreClass(riskScore(r))}`}>{riskScore(r)}</span>
-                  </td>
-                  <td className={`${td} w-16 text-gray-500`}>{r.id}</td>
-                  <td className={td}>
-                    <b>{r.title || r.description}</b> <span className="text-xs text-gray-500">({r.type})</span>
-                  </td>
-                  <td className={`${td} text-gray-600 dark:text-gray-300`}>{r.type === 'Issue' ? r.resolution : r.mitigation}</td>
-                  <td className={`${td} w-32 text-gray-500`}>{r.owner}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Section title={tr('report_risks_title')} className="report-risks">
+          <div className="grid gap-4 lg:grid-cols-[15rem_1fr] print:grid-cols-[13rem_1fr]">
+            <div>
+              <RiskMatrix items={project.risks} compact />
+            </div>
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full text-xs" data-testid="risk-register">
+                <thead>
+                  <tr className="bg-brand-600 text-left text-white print:bg-[#d81e04]">
+                    {['ID', tr('risks_type'), tr('raid_title'), tr('common_project_area'), 'P', tr('report_impact_short'), 'P×I', tr('common_owner'), tr('raid_detail'), tr('risks_due_date'), tr('common_status')].map((h) => (
+                      <th key={h} className="whitespace-nowrap px-2 py-1 font-bold">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.riskRegister.map((r, i) => (
+                    <tr key={r.id} className={`break-inside-avoid ${i % 2 ? 'bg-gray-50 dark:bg-white/[0.03] print:bg-[#f8f6f6]' : ''}`}>
+                      <td className={`${td} whitespace-nowrap text-gray-500`}>{r.id}</td>
+                      <td className={td}>{r.type}</td>
+                      <td className={`${td} font-semibold`}>{r.title || r.description}</td>
+                      <td className={td}>{r.area}</td>
+                      <td className={`${td} whitespace-nowrap`}>{r.probability}</td>
+                      <td className={`${td} whitespace-nowrap`}>{r.impact}</td>
+                      <td className={td}>
+                        <span className={`inline-block min-w-[2rem] rounded px-1 text-center font-semibold ${scoreClass(riskScore(r))}`}>{riskScore(r)}</span>
+                      </td>
+                      <td className={td}>{r.owner}</td>
+                      <td className={`${td} text-gray-600 dark:text-gray-300`}>{r.type === 'Issue' ? r.resolution || r.mitigation : r.mitigation}</td>
+                      <td className={`${td} whitespace-nowrap`}>{formatDate(r.dueDate)}</td>
+                      <td className={td}>{r.status}</td>
+                    </tr>
+                  ))}
+                  {data.riskRegister.length === 0 && (
+                    <tr>
+                      <td className={`${td} text-gray-400`} colSpan={11}>
+                        —
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </Section>
 
         <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-2">

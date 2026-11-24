@@ -36,7 +36,10 @@ export interface StatusReportData {
   next: Task[]
   late: { task: Task; days: number }[]
   milestones: { overdue: Milestone[]; upcoming: Milestone[] }
+  /** Top 6 open risks and issues (summary, escalations). */
   risks: Risk[]
+  /** All open risks and issues, highest P x I first (risk register page). */
+  riskRegister: Risk[]
   decisions: Risk[]
   changes: { open: ChangeRequest[]; decided: ChangeRequest[] }
   texts: { achievements: string; nextSteps: string; escalations: string }
@@ -126,10 +129,10 @@ export function buildStatusReport(project: Project, calendar: CalendarSettings, 
       .slice(0, 5),
   }
 
-  const risks = project.risks
+  const riskRegister = project.risks
     .filter((r) => r.status === 'Open' && isScored(r))
-    .sort((a, b) => riskScore(b) - riskScore(a))
-    .slice(0, 6)
+    .sort((a, b) => riskScore(b) - riskScore(a) || a.id.localeCompare(b.id))
+  const risks = riskRegister.slice(0, 6)
   const decisions = project.risks.filter((r) => r.type === 'Decision' && within(r.decisionDate, from, to))
   const changes = {
     open: project.changes.filter((c) => c.status === 'Open'),
@@ -147,7 +150,7 @@ export function buildStatusReport(project: Project, calendar: CalendarSettings, 
     ].join('\n'),
   }
 
-  return { project, period: { from, to, nextTo }, summary, finish, baselineFinish, finishVariance, budget, health, done, next, late, milestones, risks, decisions, changes, texts }
+  return { project, period: { from, to, nextTo }, summary, finish, baselineFinish, finishVariance, budget, health, done, next, late, milestones, risks, riskRegister, decisions, changes, texts }
 }
 
 /** Default period: since the last saved report, otherwise the last 14 days. */

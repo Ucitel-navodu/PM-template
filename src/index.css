@@ -112,4 +112,11 @@ html.dark select optgroup {
   .report-doc header {
     box-shadow: none !important;
   }
+  /* The risk register may run over several pages; its header row repeats. */
+  .report-doc section.report-risks {
+    break-inside: auto;
+  }
+  .report-doc thead {
+    display: table-header-group;
+  }
 }

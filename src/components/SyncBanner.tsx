@@ -107,9 +107,18 @@ export function SyncBanner() {
       return wrap(
         rose,
         <>
-          <span className="flex-1">{fill('banner_error')}</span>
+          <span className="flex-1" data-testid="save-error">
+            {fill('banner_error')}
+            <span className="mt-0.5 block text-xs opacity-90">{tr('banner_error_hint')}</span>
+          </span>
           <button className={btn} onClick={() => void saveNow()}>
             {tr('banner_retry')}
+          </button>
+          <button className={btn} onClick={requestSaveAs}>
+            {tr('banner_save_elsewhere')}
+          </button>
+          <button className={btn} onClick={() => void downloadCopy()}>
+            {tr('file_download_copy')}
           </button>
         </>,
       )

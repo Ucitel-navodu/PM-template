@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
+import { RiskMatrix } from '../components/RiskMatrix'
 import { useApp } from '../context/AppContext'
 import { useActiveProject } from '../store/workspaceStore'
 import { IMPACT_LEVELS, RISK_RESPONSES, RISK_STATUSES, RISK_TYPES } from '../data/config'
 import { nextSequentialId } from '../lib/ids'
 import { toDateKey } from '../lib/dates'
-import { IMPACT_LEVELS_DESC, isScored, riskScore, scoreClass } from '../lib/raid'
+import { isScored, riskScore, scoreClass } from '../lib/raid'
 import { btnPrimary, btnSecondary, deleteBtn, inputGhost, selectFilter, selectGhost, tableWrap, tbodyRow, theadRow } from '../lib/ui'
 import type { TKey } from '../i18n'
 import type { ImpactLevel, Risk, RiskType } from '../types'
@@ -23,7 +24,6 @@ type Tab = 'all' | RiskType
 /** P x I heat map; counts open risks and issues, a click filters the table. */
 function Heatmap({ items, cell, onCell }: { items: Risk[]; cell?: [ImpactLevel, ImpactLevel]; onCell: (c?: [ImpactLevel, ImpactLevel]) => void }) {
   const { tr } = useApp()
-  const open = items.filter((r) => r.status === 'Open' && isScored(r))
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-[rgb(var(--pm-card))]">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -36,37 +36,7 @@ function Heatmap({ items, cell, onCell }: { items: Risk[]; cell?: [ImpactLevel, 
           </button>
         )}
       </div>
-      <div className="grid grid-cols-[auto_repeat(4,minmax(2.5rem,1fr))] gap-1 text-xs">
-        {IMPACT_LEVELS_DESC.map((p) => (
-          <div key={p} className="contents">
-            <div className="flex items-center pr-1 text-gray-500 dark:text-gray-400">{p}</div>
-            {IMPACT_LEVELS.map((i) => {
-              const n = open.filter((r) => r.probability === p && r.impact === i).length
-              const active = cell?.[0] === p && cell?.[1] === i
-              return (
-                <button
-                  key={i}
-                  data-cell={`${p}-${i}`}
-                  onClick={() => onCell(active ? undefined : [p, i])}
-                  className={`h-9 rounded font-semibold ${scoreClass(riskScore({ probability: p, impact: i }))} ${n ? '' : 'opacity-40'} ${active ? 'ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-[rgb(var(--pm-card))]' : ''}`}
-                >
-                  {n || ''}
-                </button>
-              )
-            })}
-          </div>
-        ))}
-        <div />
-        {IMPACT_LEVELS.map((i) => (
-          <div key={i} className="text-center text-gray-500 dark:text-gray-400">
-            {i}
-          </div>
-        ))}
-      </div>
-      <div className="mt-1 flex justify-between text-[11px] text-gray-400">
-        <span>↑ {tr('risks_probability')}</span>
-        <span>{tr('risks_impact')} →</span>
-      </div>
+      <RiskMatrix items={items} cell={cell} onCell={onCell} />
     </div>
   )
 }

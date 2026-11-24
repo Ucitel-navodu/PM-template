@@ -6,6 +6,10 @@ import { riskScore } from './raid'
 import { formatDate, formatMoney, formatPercent } from './format'
 import { itemColor, timeline, type ColorBy } from '../components/Roadmap'
 import { LOGO_RATIO, logoSvg, symbolSvg } from './brand'
+import { IMPACT_LEVELS_DESC, riskMatrix, scoreFill } from './raid'
+import type { ImpactLevel, Risk } from '../types'
+
+const LEVELS_ASC: ImpactLevel[] = ['Low', 'Medium', 'High', 'Critical']
 
 /*
  * PowerPoint decks built with pptxgenjs (MIT): native, editable text boxes,
@@ -61,6 +65,34 @@ function redSlide(pptx: PptxGenJS, title: string, lines: string[] = []) {
   return slide
 }
 
+/**
+ * Corporate defaults for every slide (manual 3.3 / PPT template 6.1): Arial for all text, tables and
+ * charts; table body rows striped #f8f6f6 under the red header row; table lines #e2e2e0.
+ */
+function brandSlides(pptx: PptxGenJS) {
+  const addSlide = pptx.addSlide.bind(pptx)
+  pptx.addSlide = ((opts?: PptxGenJS.AddSlideProps) => {
+    const slide = addSlide(opts)
+    const addText = slide.addText.bind(slide)
+    const addTable = slide.addTable.bind(slide)
+    const addChart = slide.addChart.bind(slide)
+    slide.addText = ((text: Parameters<typeof addText>[0], o?: PptxGenJS.TextPropsOptions) => addText(text, { fontFace: FONT, ...o })) as typeof slide.addText
+    slide.addTable = ((rows: PptxGenJS.TableRow[], o?: PptxGenJS.TableProps) => {
+      const striped = rows.map((row, ri) =>
+        row.map((cell) => {
+          const options = { fontFace: FONT, color: DARK, ...cell.options }
+          if (ri > 0 && ri % 2 === 0 && !cell.options?.fill) options.fill = { color: 'F8F6F6' }
+          return { ...cell, options }
+        }),
+      )
+      return addTable(striped, { fontFace: FONT, valign: 'middle', ...o })
+    }) as typeof slide.addTable
+    slide.addChart = ((type: Parameters<typeof addChart>[0], data: Parameters<typeof addChart>[1], o?: PptxGenJS.IChartOpts) =>
+      addChart(type, data, { catAxisLabelFontFace: FONT, valAxisLabelFontFace: FONT, dataLabelFontFace: FONT, legendFontFace: FONT, titleFontFace: FONT, catAxisLabelColor: DARK, valAxisLabelColor: GREY, catAxisLineColor: 'CBCCC9', valAxisLineColor: 'CBCCC9', valGridLine: { color: 'E2E2E0', size: 0.75 }, ...o })) as typeof slide.addChart
+    return slide
+  }) as typeof pptx.addSlide
+}
+
 async function newDeck(settings: ReportSettings, title: string): Promise<PptxGenJS> {
   const { default: Pptx } = await import('pptxgenjs')
   const img: BrandImages = await brandImages()
@@ -71,6 +103,7 @@ async function newDeck(settings: ReportSettings, title: string): Promise<PptxGen
   pptx.theme = { headFontFace: FONT, bodyFontFace: FONT }
   const logoH = 0.34
   const logoW = logoH * LOGO_RATIO
+  brandSlides(pptx)
   pptx.defineSlideMaster({
     title: 'PM',
     background: { color: 'FFFFFF' },
@@ -122,6 +155,77 @@ const headerRow = (cells: string[], accent: string): PptxGenJS.TableRow =>
 const textBox = (slide: PptxGenJS.Slide, title: string, body: string, x: number, y: number, w: number, h: number) => {
   slide.addText(title, { x, y, w, h: 0.35, fontSize: 13, bold: true, color: DARK })
   slide.addText(body || '—', { x, y: y + 0.38, w, h: h - 0.38, fontSize: 11, color: DARK, valign: 'top', paraSpaceAfter: 2 })
+}
+
+const clip = (t: string | undefined, n: number) => (t && t.length > n ? `${t.slice(0, n - 1)}…` : t ?? '')
+
+/** Split rows into slides: `first` rows next to the map, then `next` rows per continuation slide. */
+export function paginate<T>(rows: T[], first: number, next: number): T[][] {
+  const pages = [rows.slice(0, first)]
+  for (let i = first; i < rows.length; i += next) pages.push(rows.slice(i, i + next))
+  return pages
+}
+
+/** P x I map as native shapes (counts of open risks and issues). */
+function riskMap(slide: PptxGenJS.Slide, risks: Risk[], tr: Tr, x: number, y: number) {
+  const m = riskMatrix(risks)
+  const cw = 0.68
+  const ch = 0.55
+  const lw = 0.8
+  slide.addText(tr('raid_heatmap'), { x, y: y - 0.45, w: lw + 4 * cw, h: 0.35, fontSize: 11, bold: true, color: DARK })
+  IMPACT_LEVELS_DESC.forEach((pr, ri) => {
+    slide.addText(pr, { x, y: y + ri * (ch + 0.06), w: lw - 0.05, h: ch, fontSize: 8, color: GREY, align: 'right', valign: 'middle' })
+    LEVELS_ASC.forEach((im, ci) => {
+      const n = m[pr][im]
+      const { fill, text } = scoreFill(riskScore({ probability: pr, impact: im }))
+      const cx = x + lw + ci * (cw + 0.06)
+      const cy = y + ri * (ch + 0.06)
+      slide.addShape('rect', { x: cx, y: cy, w: cw, h: ch, fill: { color: fill, transparency: n ? 0 : 70 }, line: { color: fill, transparency: n ? 0 : 70 } })
+      if (n) slide.addText(String(n), { x: cx, y: cy, w: cw, h: ch, fontSize: 14, bold: true, color: text, align: 'center', valign: 'middle' })
+    })
+  })
+  const by = y + 4 * (ch + 0.06)
+  LEVELS_ASC.forEach((im, ci) => slide.addText(im, { x: x + lw + ci * (cw + 0.06), y: by, w: cw, h: 0.3, fontSize: 8, color: GREY, align: 'center' }))
+  slide.addText(`↑ ${tr('risks_probability')}`, { x, y: by + 0.3, w: 1.8, h: 0.3, fontSize: 8, color: GREY })
+  slide.addText(`${tr('risks_impact')} →`, { x: x + lw + 4 * cw - 1.5, y: by + 0.3, w: 1.75, h: 0.3, fontSize: 8, color: GREY, align: 'right' })
+}
+
+/** Risk register rows (ID, type, title, area, score, owner, action, due, status). */
+function riskRows(rows: Risk[]): PptxGenJS.TableRow[] {
+  return rows.map((r) => {
+    const sc = riskScore(r)
+    const { fill, text } = scoreFill(sc)
+    return [
+      { text: r.id },
+      { text: r.type },
+      { text: clip(r.title || r.description, 70), options: { bold: true } },
+      { text: clip(r.area, 30) },
+      { text: String(sc), options: { bold: true, align: 'center' as const, color: text, fill: { color: fill } } },
+      { text: clip(r.owner, 30) },
+      { text: clip(r.type === 'Issue' ? r.resolution || r.mitigation : r.mitigation, 120) },
+      { text: formatDate(r.dueDate) },
+      { text: r.status },
+    ]
+  })
+}
+
+/** Risks slide: map on the left, register on the right; the rest of the register on continuation slides. */
+export function addRiskSlides(pptx: PptxGenJS, all: Risk[], register: Risk[], tr: Tr) {
+  const header = headerRow(['ID', tr('risks_type'), tr('raid_title'), tr('common_project_area'), 'P×I', tr('common_owner'), tr('raid_detail'), tr('risks_due_date'), tr('common_status')], RED)
+  const empty: PptxGenJS.TableRow = Array.from({ length: 9 }, (_, i) => ({ text: i ? '' : '—' }))
+  const pages = paginate(register, 8, 12)
+  pages.forEach((rows, i) => {
+    const slide = pptx.addSlide({ masterName: 'PM' })
+    const title = tr('report_risks_title')
+    heading(slide, i ? `${title} (${tr('report_risks_more')} ${i + 1}/${pages.length})` : title, i ? undefined : `${register.length} × ${tr('report_open_raid')}`)
+    const body = rows.length ? riskRows(rows) : [empty]
+    if (i === 0) {
+      riskMap(slide, all, tr, 0.5, 1.9)
+      slide.addTable([header, ...body], { x: 4.4, y: 1.3, w: 8.45, colW: [0.55, 0.65, 1.65, 0.85, 0.45, 0.95, 2.05, 0.75, 0.55], fontSize: 8, border: { type: 'solid', color: LINE, pt: 0.75 } })
+    } else {
+      slide.addTable([header, ...body], { x: 0.5, y: 1.3, w: 12.35, colW: [0.6, 0.8, 2.6, 1.3, 0.55, 1.45, 3.35, 0.9, 0.8], fontSize: 9, border: { type: 'solid', color: LINE, pt: 0.75 } })
+    }
+  })
 }
 
 /** RoadMap as native shapes: one slide, swimlanes, bars, milestone diamonds, today line. */
@@ -207,7 +311,7 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
     [p.info.projectId, p.info.itpm && `ITPM: ${p.info.itpm}`, p.info.businessOwner && `Business owner: ${p.info.businessOwner}`].filter(Boolean).join('   ·   '),
   ])
   s1.addShape('roundRect', { x: 0.8, y: 4.75, w: 1.6, h: 0.5, fill: { color: 'FFFFFF' }, rectRadius: 0.1, line: { color: 'FFFFFF' } })
-  s1.addText(ragLabel(report.rag), { x: 0.8, y: 4.75, w: 1.6, h: 0.5, fontSize: 14, bold: true, color: RAG_HEX[report.rag] === 'FBBA00' ? '7D5700' : RAG_HEX[report.rag] ?? DARK, align: 'center', valign: 'middle' })
+  s1.addText(ragLabel(report.rag), { x: 0.8, y: 4.75, w: 1.6, h: 0.5, fontSize: 14, bold: true, color: RAG_HEX[report.rag] === 'FBBA00' ? DARK : RAG_HEX[report.rag] ?? DARK, align: 'center', valign: 'middle' })
 
   // 2 Executive summary
   const s2 = pptx.addSlide({ masterName: 'PM' })
@@ -251,28 +355,8 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
   textBox(s5, tr('report_achievements'), report.achievements, 0.5, 1.3, 6.0, 5.6)
   textBox(s5, tr('report_next_steps'), report.nextSteps, 6.9, 1.3, 5.9, 5.6)
 
-  // 6 Risks and issues
-  const s6 = pptx.addSlide({ masterName: 'PM' })
-  heading(s6, tr('dash_risks'))
-  s6.addTable(
-    [
-      headerRow(['ID', tr('risks_type'), tr('raid_title'), 'P×I', tr('common_owner'), tr('raid_detail')], accent),
-      ...(data.risks.length
-        ? data.risks.map((r) => {
-            const sc = riskScore(r)
-            return [
-              { text: r.id },
-              { text: r.type },
-              { text: r.title || r.description },
-              { text: String(sc), options: { bold: true, align: 'center' as const, color: sc >= 9 || sc < 4 ? 'FFFFFF' : DARK, fill: { color: sc >= 9 ? RED : sc >= 4 ? 'FBBA00' : '689425' } } },
-              { text: r.owner },
-              { text: r.type === 'Issue' ? r.resolution ?? '' : r.mitigation },
-            ]
-          })
-        : [[{ text: '—' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }]]),
-    ],
-    { x: 0.5, y: 1.3, w: 12.3, colW: [0.9, 1.1, 3.6, 0.7, 1.8, 4.2], fontSize: 10, border: { type: 'solid', color: LINE, pt: 0.75 } },
-  )
+  // 6 Risks and issues: P x I map + the whole register of open risks and issues (continued on more slides)
+  addRiskSlides(pptx, p.risks, data.riskRegister, tr)
 
   // 7 Changes and decisions
   const s7 = pptx.addSlide({ masterName: 'PM' })
@@ -327,7 +411,7 @@ export async function downloadStatusDeck({ data, report, roadmap, colorBy, setti
             [{ text: '– OPEX' }, { text: formatMoney(b.opex, cur), options: { align: 'right' as const } }],
           ]
         : []),
-      [{ text: tr('report_variance'), options: { bold: true } }, { text: formatMoney(b.variance, cur), options: { bold: true, align: 'right', color: b.variance < 0 ? RED : '567B1F' } }],
+      [{ text: tr('report_variance'), options: { bold: true } }, { text: formatMoney(b.variance, cur), options: { bold: true, align: 'right', color: b.variance < 0 ? RED : '163D14' } }],
     ],
     { x: 8.6, y: 1.5, w: 4.2, colW: [2.2, 2], fontSize: 11, border: { type: 'solid', color: LINE, pt: 0.75 } },
   )

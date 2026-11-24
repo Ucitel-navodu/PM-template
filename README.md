@@ -158,11 +158,11 @@ tests/e2e/                 Playwright scénáře
   slidy s červeným nadpisem, logem vlevo dole a symbolem vpravo dole, tabulky s červeným záhlavím.
 - Report / PDF s logem a symbolem; export do Excelu s červeným záhlavím a písmem Arial.
 
-## SharePoint a sdílení (v0.10.1)
+## SharePoint a sdílení (SharePoint Server, v0.11.0)
 
-- Pracovní soubor patří do knihovny SharePointu **synchronizované přes OneDrive** („Synchronizovat“ / „Přidat zástupce
-  do Mých souborů“); aplikace pak ukládá do běžné složky a OneDrive soubor nahraje. Síťová jednotka (WebDAV) ani ruční
-  nahrávání nejsou podporované.
-- HTML je jen program: každý ho spouští ve svém prohlížeči. Společná data jsou jen ve společném pracovním souboru –
-  jeden zapisující, ostatní „jen pro čtení“; kolize se pozná, ale neslučuje; nejsou práva po projektech.
+- HTML lze otevřít odkazem ze SharePointu přímo v Edge; každý uživatel ale vidí data ze svého prohlížeče, dokud
+  neotevře společný pracovní soubor (jeden zapisující, ostatní „jen pro čtení“, kolize se pozná, neslučuje se).
+- Automatické ukládání do „umístění v síti“ (knihovna přes WebDAV) může skončit chybou – prohlížeč zapisuje přes
+  dočasný soubor. Aplikace pak nabídne „Uložit jinam…“ a „Stáhnout kopii“. Spolehlivé: místní / OneDrive složka
+  a kopírování na SharePoint, případně synchronizace knihovny přes OneDrive (SharePoint Server 2019+).
 - Report a PPTX používají vždy firemní červenou (volba barvy byla odebrána).
